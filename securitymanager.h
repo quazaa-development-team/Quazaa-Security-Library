@@ -85,7 +85,7 @@ private:
 	typedef CSecurityRuleList::const_iterator CIterator;
 
 	// contains all rules
-	CSecurityRuleList	m_Rules;
+	CSecurityRuleList   m_Rules;
 
 	// Used to manage newly added rules during sanity check
 	CSecurityRuleList	m_loadedAddressRules;
