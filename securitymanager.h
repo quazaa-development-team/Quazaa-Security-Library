@@ -88,7 +88,7 @@ private:
 	CSecurityRuleList   m_Rules;
 
 	// Used to manage newly added rules during sanity check
-	CSecurityRuleList	m_loadedAddressRules;
+	CSecurityRuleList   m_loadedAddressRules;
 	CNewRulesQueue		m_newAddressRules;
 	CSecurityRuleList	m_loadedHitRules;
 	CNewRulesQueue		m_newHitRules;
