@@ -58,7 +58,8 @@ CSecurity::CSecurity() :
 	m_bIsLoading( false ),
 	m_bNewRulesLoaded( false ),
 	m_nPendingOperations( 0 ),
-	m_bSaved( true ),
+	m_nMaxUnsavedRules( 100 ),
+	m_nUnsaved( 0 ),
 	m_bDenyPolicy( false )
 {
 }
@@ -423,7 +424,12 @@ void CSecurity::add(CSecureRule* pRule)
 		m_newHitRules.push( pRule->getCopy() );
 	}
 
-	m_bSaved = false;
+	quint32 tNow = getTNowUTC();
+	// if ( indefinite or longer than 1,5h ) increase unsaved rules counter
+	if ( !pRule->m_tExpire || pRule->m_tExpire - tNow > 60 * 90 )
+	{
+		m_nUnsaved.fetchAndAddRelaxed( 1 );
+	}
 
 	// Inform CSecurityTableModel about new rule.
 	emit ruleAdded( pRule );
@@ -482,7 +488,7 @@ void CSecurity::clear()
 	signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval );
 	missCacheClear( true );
 
-	m_bSaved = false;
+	m_nUnsaved.fetchAndStoreRelaxed( 0 );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1226,17 +1232,16 @@ void CSecurity::writeToFile(const void * const pManager, QFile& oFile)
 /**
   * Saves the security rules to HDD. Skips saving if there haven't
   * been any important changes and bForceSaving is not set to true.
-  * Locking: R (+RW - very short)
+  * Locking: R
   */
 bool CSecurity::save(bool bForceSaving) const
 {
-	m_pRWLock.lockForRead();
-
-	if ( m_bSaved && !bForceSaving )		// Saving not required ATM.
+	if ( m_nUnsaved.loadAcquire() < m_nMaxUnsavedRules && !bForceSaving )
 	{
-		m_pRWLock.unlock();
-		return true;
+		return true;		// Saving not required ATM.
 	}
+
+	m_pRWLock.lockForRead();
 
 	if ( !common::securredSaveFile( common::userDataFiles, "security.dat", tr( "[Security] " ),
 	                                this, &Security::CSecurity::writeToFile ) )
@@ -1244,13 +1249,12 @@ bool CSecurity::save(bool bForceSaving) const
 		m_pRWLock.unlock();
 		return false;
 	}
-
-	m_pRWLock.unlock();
-	m_pRWLock.lockForWrite(); // temporary switch to write lock
-	m_bSaved = true;
-
-	m_pRWLock.unlock();
-	return true;
+	else
+	{
+		m_pRWLock.unlock();
+		m_nUnsaved.fetchAndStoreOrdered( 0 );
+		return true;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1700,6 +1704,7 @@ CSecurity::CIterator CSecurity::getUUID(const QUuid& oUUID) const
 	return m_Rules.end();
 }
 
+/** Requires locking: yes */
 void CSecurity::remove(CIterator it)
 {
 	if ( it == m_Rules.end() )
@@ -1841,7 +1846,7 @@ void CSecurity::remove(CIterator it)
 		Q_ASSERT( false );
 	}
 
-	m_bSaved = false;
+	m_nUnsaved.fetchAndAddRelaxed( 1 );
 
 	// Remove rule entry from list of all rules
 	// m_Rules.erase( common::getRWIterator<CSecurityRuleList>( m_Rules, it ) );

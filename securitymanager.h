@@ -41,6 +41,7 @@
 // TODO: Use UTC times accross the security manager.
 // DODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
 // TODO: Enable/disable this according to the visibility within the GUI
+// TODO: m_nMaxUnsavedRules >> Settings
 
 namespace Security
 {
@@ -133,8 +134,8 @@ private:
 	bool                m_bNewRulesLoaded;    // true if new rules for sanity check have been loaded.
 	unsigned short      m_nPendingOperations; // Counts the number of program modules that still need to call back after having finished a requested sanity check operation.
 
-	QAtomicInt          m_nSaved;
-	mutable bool        m_bSaved;             // true if current security manager state has already been saved to file, false otherwise
+	quint16             m_nMaxUnsavedRules;   // maximal number of unsaved rules to tolerate before forcing save
+	mutable QAtomicInt  m_nUnsaved;           // count of unsaved rules
 
 	bool                m_bDenyPolicy;
 	// m_bDenyPolicy == false : everything but specifically blocked IPs is allowed (default)
