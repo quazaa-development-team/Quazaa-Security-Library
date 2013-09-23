@@ -24,7 +24,10 @@
 
 #include "securitymanager.h"
 #include "securerule.h"
+
+#if SECURITY_ENABLE_GEOIP
 #include "geoiplist.h"
+#endif
 
 #include "debug_new.h"
 
@@ -205,9 +208,11 @@ void CSecureRule::load(CSecureRule*& pRule, QDataStream &fsFile, int)
 		pRule->parseContent( sTmp );
 		break;
 	case 3:
+#if SECURITY_ENABLE_GEOIP
 		pRule = new CCountryRule();
 		fsFile >> sTmp;
 		pRule->parseContent( sTmp );
+#endif
 		break;
 	case 4:
 		pRule = new CHashRule();
@@ -238,11 +243,14 @@ void CSecureRule::load(CSecureRule*& pRule, QDataStream &fsFile, int)
 		break;
 	}
 
-	pRule->m_nAction  = (Policy)nAction;
-	pRule->m_sComment = sComment;
-	pRule->m_oUUID    = QUuid( sUUID );
-	pRule->m_tExpire  = tExpire;
-    pRule->m_nTotal.storeRelease(nTotal);
+	if ( pRule )
+	{
+		pRule->m_nAction  = (Policy)nAction;
+		pRule->m_sComment = sComment;
+		pRule->m_oUUID    = QUuid( sUUID );
+		pRule->m_tExpire  = tExpire;
+		pRule->m_nTotal.storeRelease(nTotal);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -446,6 +454,7 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 			}
 		}
 	}
+#if SECURITY_ENABLE_GEOIP
 	else if ( sType.compare( "country", Qt::CaseInsensitive ) == 0 )
 	{
 		CCountryRule* rule = new CCountryRule();
@@ -457,6 +466,7 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 
 		pRule = rule;
 	}
+#endif // SECURITY_ENABLE_GEOIP
 	else
 	{
 		return NULL;
@@ -650,6 +660,7 @@ void CIPRangeRule::toXML(QXmlStreamWriter& oXMLdocument) const
 //////////////////////////////////////////////////////////////////////
 // CCountryRule
 
+#if SECURITY_ENABLE_GEOIP
 CCountryRule::CCountryRule()
 {
 	m_nType = srContentCountry;
@@ -690,6 +701,7 @@ void CCountryRule::toXML(QXmlStreamWriter& oXMLdocument) const
 
 	oXMLdocument.writeEndElement();
 }
+#endif // SECURITY_ENABLE_GEOIP
 
 //////////////////////////////////////////////////////////////////////
 // CHashRule

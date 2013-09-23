@@ -33,6 +33,9 @@
 #include "securerule.h"
 #include "commonfunctions.h"
 
+// Enable/disable GeoIP support of the library.
+#define SECURITY_ENABLE_GEOIP 0
+
 // Increment this if there have been made changes to the way of storing security rules.
 #define SECURITY_CODE_VERSION	0
 // History:
@@ -77,7 +80,9 @@ private:
 	typedef std::set< uint > CMissCache;
 
 	typedef std::map< uint, CIPRule*           > CAddressRuleMap;
+#if SECURITY_ENABLE_GEOIP
 	typedef std::map< QString, CCountryRule*   > CCountryRuleMap;
+#endif // SECURITY_ENABLE_GEOIP
 	typedef std::map< QString, CUserAgentRule* > CUserAgentRuleMap;
 
 	// Note: Using a multimap eliminates eventual problems of hash
@@ -104,8 +109,10 @@ private:
 	// multiple IP blocking rules
 	CIPRangeRuleList    m_IPRanges;
 
+#if SECURITY_ENABLE_GEOIP
 	// country rules
 	CCountryRuleMap     m_Countries;
+#endif // SECURITY_ENABLE_GEOIP
 
 	// hash rules
 	CHashRuleMap        m_Hashes;

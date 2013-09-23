@@ -191,7 +191,7 @@ void CSecurity::add(CSecureRule* pRule)
 			evaluateCacheUsage();
 	}
 	break;
-
+#if SECURITY_ENABLE_GEOIP
 	case CSecureRule::srContentCountry:
 	{
 		QString country = ((CCountryRule*)pRule)->getContentString();
@@ -229,7 +229,7 @@ void CSecurity::add(CSecureRule* pRule)
 			evaluateCacheUsage();
 	}
 	break;
-
+#endif // SECURITY_ENABLE_GEOIP
 	case CSecureRule::srContentHash:
 	{
 		CHashRule* pHashRule = (CHashRule*)pRule;
@@ -387,7 +387,11 @@ void CSecurity::add(CSecureRule* pRule)
 	break;
 
 	default:
+#if SECURITY_ENABLE_GEOIP
 		Q_ASSERT( false );
+#else
+		Q_ASSERT( type == CSecureRule::srContentCountry );
+#endif // SECURITY_ENABLE_GEOIP
 	}
 
 	// Add rule to list of all rules
@@ -859,6 +863,7 @@ bool CSecurity::isDenied(const CEndPoint &oAddress, const QString& /*source*/)
 	}
 
 	// Third, look up the IP in our country rule map.
+#if SECURITY_ENABLE_GEOIP
 	CCountryRuleMap::const_iterator it_2;
 	it_2 = m_Countries.find( oAddress.country() );
 
@@ -877,6 +882,7 @@ bool CSecurity::isDenied(const CEndPoint &oAddress, const QString& /*source*/)
 				Q_ASSERT( pCountryRule->m_nAction == CSecureRule::srNull );
 		}
 	}
+#endif // SECURITY_ENABLE_GEOIP
 
 	// Fourth, check whether the IP is contained within one of the IP range rules.
 	CIPRangeRuleList::const_iterator it_3 = m_IPRanges.begin();
@@ -1753,6 +1759,7 @@ void CSecurity::remove(CIterator it)
 	}
 	break;
 
+#if SECURITY_ENABLE_GEOIP
 	case CSecureRule::srContentCountry:
 	{
 		QString country = pRule->getContentString();
@@ -1767,6 +1774,7 @@ void CSecurity::remove(CIterator it)
 		}
 	}
 	break;
+#endif // SECURITY_ENABLE_GEOIP
 
 	case CSecureRule::srContentHash:
 	{
@@ -1845,7 +1853,11 @@ void CSecurity::remove(CIterator it)
 	break;
 
 	default:
+#if SECURITY_ENABLE_GEOIP
 		Q_ASSERT( false );
+#else
+		Q_ASSERT( type == CSecureRule::srContentCountry );
+#endif // SECURITY_ENABLE_GEOIP
 	}
 
 	m_nUnsaved.fetchAndAddRelaxed( 1 );
@@ -1920,7 +1932,10 @@ void CSecurity::evaluateCacheUsage()
 {
 	double nCache		= m_Cache.size();
 	double nIPMap		= m_IPs.size();
+
+#if SECURITY_ENABLE_GEOIP
 	double nCountryMap	= m_Countries.size();
+#endif // SECURITY_ENABLE_GEOIP
 
 	static const double log2	= log( 2.0 );
 
@@ -1928,8 +1943,11 @@ void CSecurity::evaluateCacheUsage()
 	static double s_nLogCache	= 0;
 
 	static double s_nIPMap		= -1;
-	static double s_nCountryMap	= 0;
 	static double s_nLogMult	= 0;
+
+#if SECURITY_ENABLE_GEOIP
+	static double s_nCountryMap	= 0;
+#endif // SECURITY_ENABLE_GEOIP
 
 	// Only do the heavy log operations if necessary.
 	if ( s_nCache != nCache )
@@ -1943,17 +1961,29 @@ void CSecurity::evaluateCacheUsage()
 	}
 
 	// Only do the heavy log operations if necessary.
-	if ( s_nIPMap != nIPMap || s_nCountryMap != nCountryMap )
+	if ( s_nIPMap != nIPMap
+#if SECURITY_ENABLE_GEOIP
+	     || s_nCountryMap != nCountryMap
+#endif // SECURITY_ENABLE_GEOIP
+	     )
 	{
 		s_nIPMap		= nIPMap;
+#if SECURITY_ENABLE_GEOIP
 		s_nCountryMap	= nCountryMap;
+#endif // SECURITY_ENABLE_GEOIP
 
 		if ( !nIPMap )
 			nIPMap = 1;
+#if SECURITY_ENABLE_GEOIP
 		if ( !nCountryMap )
 			nCountryMap = 1;
+#endif // SECURITY_ENABLE_GEOIP
 
-		s_nLogMult	= log( nIPMap * nCountryMap );
+		s_nLogMult	= log( nIPMap
+#if SECURITY_ENABLE_GEOIP
+		                   * nCountryMap
+#endif // SECURITY_ENABLE_GEOIP
+		                   );
 	}
 
 	m_bUseMissCache = ( s_nLogCache < s_nLogMult + m_IPRanges.size() * log2 );

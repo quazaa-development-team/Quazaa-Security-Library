@@ -315,7 +315,7 @@ bool CIPRangeRule::match(const CEndPoint& oAddress) const
 /*  ------------------------------------------------------------ */
 /*  ---------------------- CCountryRule ------------------------ */
 /*  ------------------------------------------------------------ */
-
+#if SECURITY_ENABLE_GEOIP
 class CCountryRule : public CSecureRule
 {
 public:
@@ -333,6 +333,7 @@ CSecureRule* CCountryRule::getCopy() const
 {
 	return new CCountryRule( *this );
 }
+#endif // SECURITY_ENABLE_GEOIP
 
 /*  ------------------------------------------------------------ */
 /*  ------------------------ CHashRule ------------------------- */
