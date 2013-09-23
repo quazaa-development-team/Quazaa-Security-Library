@@ -29,7 +29,6 @@
 
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
-#include <QHostAddress>
 
 #if QT_VERSION >= 0x050000
 #  include <QRegularExpression>
@@ -41,6 +40,7 @@
 #include <QUuid>
 #include <QAtomicInt>
 
+#include "NetworkCore/endpoint.h"
 #include "NetworkCore/Hashes/hash.h"
 #include "NetworkCore/queryhit.h"
 
@@ -121,7 +121,7 @@ public:
 	inline RuleType type() const;
 
 	// Check content for hits
-	virtual bool    match(const QHostAddress& oAddress) const;
+	virtual bool    match(const CEndPoint& oAddress) const;
 	virtual bool    match(const QString& sContent) const;
 	virtual bool    match(const CQueryHit* const pHit) const;
 	virtual bool    match(const QList<QString>& lQuery, const QString& sContent) const;
@@ -244,7 +244,7 @@ public:
 
 	inline CSecureRule*	getCopy() const;
 
-	bool				match(const QHostAddress& oAddress) const;
+	bool				match(const CEndPoint& oAddress) const;
 	void				toXML(QXmlStreamWriter& oXMLdocument) const;
 
 };
@@ -284,7 +284,7 @@ public:
 
 	inline CSecureRule*	getCopy() const;
 
-	inline bool			match(const QHostAddress& oAddress) const;
+	inline bool			match(const CEndPoint& oAddress) const;
 	void				toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
@@ -303,7 +303,7 @@ CSecureRule* CIPRangeRule::getCopy() const
 	return new CIPRangeRule( *this );
 }
 
-bool CIPRangeRule::match(const QHostAddress &oAddress) const
+bool CIPRangeRule::match(const CEndPoint& oAddress) const
 {
 #ifdef _DEBUG
 	Q_ASSERT( m_nType == srContentAddressRange );
@@ -325,7 +325,7 @@ public:
 
 	inline CSecureRule*	getCopy() const;
 
-	bool				match(const QHostAddress& oAddress) const;
+	bool				match(const CEndPoint& oAddress) const;
 	void				toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 

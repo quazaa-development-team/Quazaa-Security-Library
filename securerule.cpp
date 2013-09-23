@@ -121,7 +121,7 @@ void CSecureRule::unRegisterPointer(CSecureRule** pRule)
 //////////////////////////////////////////////////////////////////////
 // CSecureRule match
 
-bool CSecureRule::match(const QHostAddress&) const
+bool CSecureRule::match(const CEndPoint&) const
 {
 	return false;
 }
@@ -586,7 +586,7 @@ bool CIPRule::parseContent(const QString& sContent)
 	return false;
 }
 
-bool CIPRule::match(const QHostAddress& oAddress) const
+bool CIPRule::match(const CEndPoint& oAddress) const
 {
 	Q_ASSERT( !oAddress.isNull() && m_nType == srContentAddress );
 
@@ -657,7 +657,7 @@ CCountryRule::CCountryRule()
 
 bool CCountryRule::parseContent(const QString& sContent)
 {
-	if ( GeoIP.countryNameFromCode( sContent ) != "Unknown" )
+	if ( geoIP.countryNameFromCode( sContent ) != "Unknown" )
 	{
 		m_sContent = sContent;
 		return true;
@@ -665,11 +665,13 @@ bool CCountryRule::parseContent(const QString& sContent)
 	return false;
 }
 
-bool CCountryRule::match(const QHostAddress& oAddress) const
+bool CCountryRule::match(const CEndPoint& oAddress) const
 {
 	Q_ASSERT( !oAddress.isNull() && m_nType == srContentCountry );
 
-	if ( !oAddress.isNull() && m_sContent == GeoIP.findCountryCode( oAddress ) )
+	++geoIP.m_nDebugOldCalls;
+
+	if ( m_sContent == oAddress.country() )
 		return true;
 
 	return false;

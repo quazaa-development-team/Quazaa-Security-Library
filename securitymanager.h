@@ -42,6 +42,7 @@
 // DODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
 // TODO: Enable/disable this according to the visibility within the GUI
 // TODO: m_nMaxUnsavedRules >> Settings
+// TODO: add log calls + defines to enable/disable
 
 namespace Security
 {
@@ -168,10 +169,10 @@ public:
 //	void            ban(const CFile& oFile, BanLength nBanLength, bool bMessage = true, const QString& sComment = "");
 
 	// Methods used during sanity check
-	bool            isNewlyDenied(const QHostAddress& oAddress);
+	bool            isNewlyDenied(const CEndPoint& oAddress);
 	bool            isNewlyDenied(const CQueryHit* pHit, const QList<QString>& lQuery);
 
-	bool            isDenied(const QHostAddress& oAddress, const QString &source = "Unknown");
+	bool            isDenied(const CEndPoint& oAddress, const QString &source = "Unknown");
 	// This does not check for the hit IP to avoid double checking.
 	bool            isDenied(const CQueryHit* const pHit, const QList<QString>& lQuery);
 

@@ -32,7 +32,6 @@
 
 #include "securitymanager.h"
 
-#include "geoiplist.h"
 #include "quazaasettings.h"
 #include "timedsignalqueue.h"
 #include "Misc/timeoutwritelocker.h"
@@ -727,7 +726,7 @@ void CSecurity::ban(const QHostAddress& oAddress, BanLength nBanLength, bool bMe
   * Checks an IP against the list of loaded new security rules.
   * Locking: R
   */
-bool CSecurity::isNewlyDenied(const QHostAddress& oAddress)
+bool CSecurity::isNewlyDenied(const CEndPoint& oAddress)
 {
 	if ( oAddress.isNull() )
 		return false;
@@ -812,7 +811,7 @@ bool CSecurity::isNewlyDenied(const CQueryHit* pHit, const QList<QString>& lQuer
   * Checks an IP against the security database. Writes a message to the system log if LogIPCheckHits is true.
   * Locking: R (+ RW if new IP is added to miss cache)
   */
-bool CSecurity::isDenied(const QHostAddress& oAddress, const QString& /*source*/)
+bool CSecurity::isDenied(const CEndPoint &oAddress, const QString& /*source*/)
 {
 	if ( oAddress.isNull() )
 		return false;
@@ -861,7 +860,7 @@ bool CSecurity::isDenied(const QHostAddress& oAddress, const QString& /*source*/
 
 	// Third, look up the IP in our country rule map.
 	CCountryRuleMap::const_iterator it_2;
-	it_2 = m_Countries.find( GeoIP.findCountryCode( oAddress ) );
+	it_2 = m_Countries.find( oAddress.country() );
 
 	if ( it_2 != m_Countries.end() )
 	{
@@ -1592,6 +1591,9 @@ void CSecurity::settingsChanged()
 		m_tMissCacheExpiryInterval = quazaaSettings.Security.MissCacheExpiryInterval * 1000;
 		signalQueue.setInterval( m_idMissCacheExpiry, m_tMissCacheExpiryInterval );
 	}
+
+	// TODO: load from settings.
+	m_nMaxUnsavedRules = 100;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1895,10 +1897,13 @@ void CSecurity::missCacheAdd(const uint &nIP)
 {
 	if ( m_bUseMissCache )
 	{
-		m_pRWLock.lockForWrite();
-		m_Cache.insert( nIP );
-		evaluateCacheUsage();
-		m_pRWLock.unlock();
+		// Make sure not to wait longer than 100ms for lock.
+		if ( m_pRWLock.tryLockForWrite( 100 ) )
+		{
+			m_Cache.insert( nIP );
+			evaluateCacheUsage();
+			m_pRWLock.unlock();
+		}
 	}
 }
 void CSecurity::missCacheClear(bool bRefreshInterval)
