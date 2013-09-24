@@ -202,7 +202,7 @@ public:
 	bool            stop(); // makes the Security Manager ready for destruction
 	bool            load();
 	bool            save(bool bForceSaving = false) const;
-	static void     writeToFile(const void* const pManager, QFile& oFile); // used by save()
+	static quint32  writeToFile(const void* const pManager, QFile& oFile); // used by save()
 	bool            import(const QString& sPath);
 	bool            toXML(const QString& sPath) const;
 	bool            fromXML(const QString& sPath);

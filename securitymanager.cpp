@@ -1247,7 +1247,7 @@ bool CSecurity::load( QString sPath )
   * Helper method for save()
   * Requires Locking: R
   */
-void CSecurity::writeToFile(const void * const pManager, QFile& oFile)
+quint32 CSecurity::writeToFile(const void * const pManager, QFile& oFile)
 {
 	quint16 nVersion = SECURITY_CODE_VERSION;
 
@@ -1263,6 +1263,8 @@ void CSecurity::writeToFile(const void * const pManager, QFile& oFile)
 		const CSecureRule* pRule = *i;
 		CSecureRule::save( pRule, oStream );
 	}
+
+	return pSManager->getCount();
 }
 
 /**
@@ -1277,20 +1279,22 @@ bool CSecurity::save(bool bForceSaving) const
 		return true;		// Saving not required ATM.
 	}
 
+	bool bReturn;
 	m_pRWLock.lockForRead();
 
-	if ( !common::securredSaveFile( common::userDataFiles, "security.dat", tr( "[Security] " ),
+	if ( !common::securredSaveFile( common::userDataFiles, "security.dat", m_sMessage,
 	                                this, &Security::CSecurity::writeToFile ) )
 	{
-		m_pRWLock.unlock();
-		return false;
+		bReturn = false;
 	}
 	else
 	{
-		m_pRWLock.unlock();
 		m_nUnsaved.fetchAndStoreOrdered( 0 );
-		return true;
+		bReturn = true;
 	}
+
+	m_pRWLock.unlock();
+	return bReturn;
 }
 
 //////////////////////////////////////////////////////////////////////
