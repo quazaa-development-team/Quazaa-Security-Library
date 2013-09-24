@@ -878,7 +878,6 @@ bool CSecurity::isDenied(const CEndPoint &oAddress, const QString& /*source*/)
 #if SECURITY_ENABLE_GEOIP
 	TCountryRuleMap::const_iterator it_2;
 	it_2 = m_Countries.find( oAddress.country() );
-	++geoIP.m_nDebugOldCalls;
 
 	if ( it_2 != m_Countries.end() )
 	{

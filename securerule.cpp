@@ -676,8 +676,6 @@ bool CCountryRule::match(const CEndPoint& oAddress) const
 {
 	Q_ASSERT( !oAddress.isNull() && m_nType == srContentCountry );
 
-	++geoIP.m_nDebugOldCalls;
-
 	if ( m_sContent == oAddress.country() )
 		return true;
 
