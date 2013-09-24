@@ -30,21 +30,22 @@
 #include <queue>
 #include <set>
 
-#include "securerule.h"
-#include "commonfunctions.h"
-
 // Enable/disable GeoIP support of the library.
-#define SECURITY_ENABLE_GEOIP 0
+#define SECURITY_ENABLE_GEOIP 1
 
 // Increment this if there have been made changes to the way of storing security rules.
 #define SECURITY_CODE_VERSION	0
 // History:
 // 0 - Initial implementation
 
+#include "securerule.h"
+#include "commonfunctions.h"
+
 // DODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
 // TODO: Enable/disable this according to the visibility within the GUI
 // TODO: m_nMaxUnsavedRules >> Settings
 // TODO: add log calls + defines to enable/disable
+// TODO: user agent blocking case insensitive + partial matching
 
 namespace Security
 {
@@ -64,66 +65,68 @@ public:
 	typedef enum
 	{
 		banSession, ban5Mins, ban30Mins, ban2Hours, banWeek, banMonth, banForever
-	} BanLength;
+	} TBanLength;
 
 private:
-	typedef std::pair< uint, CHashRule* > CHashPair;
+	typedef std::pair< uint, CHashRule* > THashPair;
 
-	typedef std::list< CSecureRule*  > CSecurityRuleList;
-	typedef std::list< CIPRangeRule* > CIPRangeRuleList;
-	typedef std::list< CRegExpRule*  > CRegExpRuleList;
-	typedef std::list< CContentRule* > CContentRuleList;
+	typedef std::list< CSecureRule*  > TSecurityRuleList;
+	typedef std::list< CIPRangeRule* > TIPRangeRuleList;
+	typedef std::list< CRegExpRule*  > TRegExpRuleList;
+	typedef std::list< CContentRule* > TContentRuleList;
 
-	typedef std::queue< CSecureRule* > CNewRulesQueue;
+	typedef std::queue< CSecureRule* > TNewRulesQueue;
 
-	typedef std::set< uint > CMissCache;
+	typedef std::set< uint >           TMissCache;
 
-	typedef std::map< uint, CIPRule*           > CAddressRuleMap;
+	typedef std::map< uint, CIPRule*           > TAddressRuleMap;
 #if SECURITY_ENABLE_GEOIP
-	typedef std::map< QString, CCountryRule*   > CCountryRuleMap;
+	typedef std::map< QString, CCountryRule*   > TCountryRuleMap;
 #endif // SECURITY_ENABLE_GEOIP
-	typedef std::map< QString, CUserAgentRule* > CUserAgentRuleMap;
+	typedef std::map< QString, CUserAgentRule* > TUserAgentRuleMap;
 
 	// Note: Using a multimap eliminates eventual problems of hash
 	// collisions caused by weaker hashes like MD5 for example.
-	typedef std::multimap< uint, CHashRule* > CHashRuleMap;
+	typedef std::multimap< uint, CHashRule* > THashRuleMap;
 
-	typedef CSecurityRuleList::const_iterator CIterator;
+	typedef TSecurityRuleList::const_iterator TConstIterator;
+
+	QString             m_sMessage;
 
 	// contains all rules
-	CSecurityRuleList   m_Rules;
+	TSecurityRuleList   m_Rules;
 
 	// Used to manage newly added rules during sanity check
-	CSecurityRuleList   m_loadedAddressRules;
-	CNewRulesQueue      m_newAddressRules;
-	CSecurityRuleList   m_loadedHitRules;
-	CNewRulesQueue      m_newHitRules;
+	TSecurityRuleList   m_loadedAddressRules;
+	TNewRulesQueue      m_newAddressRules;
+	TSecurityRuleList   m_loadedHitRules;
+	TNewRulesQueue      m_newHitRules;
 
 	// IP rule miss cache
-	CMissCache          m_Cache;
+	TMissCache          m_Cache;
 
 	// single IP blocking rules
-	CAddressRuleMap     m_IPs;
+	TAddressRuleMap     m_IPs;
 
 	// multiple IP blocking rules
-	CIPRangeRuleList    m_IPRanges;
+	TIPRangeRuleList    m_IPRanges;
 
 #if SECURITY_ENABLE_GEOIP
 	// country rules
-	CCountryRuleMap     m_Countries;
+	TCountryRuleMap     m_Countries;
 #endif // SECURITY_ENABLE_GEOIP
 
 	// hash rules
-	CHashRuleMap        m_Hashes;
+	THashRuleMap        m_Hashes;
 
 	// all other content rules
-	CContentRuleList    m_Contents;
+	TContentRuleList    m_Contents;
 
 	// RegExp rules
-	CRegExpRuleList     m_RegExpressions;
+	TRegExpRuleList     m_RegExpressions;
 
 	// User agent rules
-	CUserAgentRuleMap   m_UserAgents;
+	TUserAgentRuleMap   m_UserAgents;
 
 	// Security manager settings
 	QString             m_sDataPath;                // Path to the security.dat file
@@ -171,7 +174,7 @@ public:
 	inline void     remove(CSecureRule* pRule, bool bLockRequired = true);
 	void            clear();
 
-	void            ban(const QHostAddress& oAddress, BanLength nBanLength, bool bMessage = true, const QString& sComment = "");
+	void            ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bMessage = true, const QString& sComment = "");
 //	void            ban(const CFile& oFile, BanLength nBanLength, bool bMessage = true, const QString& sComment = "");
 
 	// Methods used during sanity check
@@ -246,12 +249,12 @@ private:
 	bool            load(QString sPath);
 
 	// this returns the first rule found. Note that there might be others, too.
-	CIterator       getHash(const QList< CHash >& hashes) const;
-	CIterator       getUUID(const QUuid& oUUID) const;
+	TConstIterator  getHash(const QList< CHash >& hashes) const;
+	TConstIterator  getUUID(const QUuid& oUUID) const;
 
-	void            remove(CIterator i);
+	void            remove(TConstIterator i);
 
-	bool            isAgentDenied(const QString& strUserAgent);
+	bool            isAgentDenied(const QString& sUserAgent);
 
 	void            missCacheAdd(const uint& nIP);
 	void            missCacheClear(bool bRefreshInterval);
@@ -261,9 +264,11 @@ private:
 	bool            isDenied(const CQueryHit* const pHit);
 	bool            isDenied(const QList<QString>& lQuery, const QString& sContent);
 
+	static void     postLog(LogSeverity::Severity severity, QString message, bool bDebug = false);
+
 	inline void     hit(CSecureRule *pRule);
 
-	inline CSecurityRuleList::iterator getRWIterator(CIterator const_it);
+	inline TSecurityRuleList::iterator getRWIterator(TConstIterator constIt);
 };
 
 quint32 CSecurity::getCount() const
@@ -301,11 +306,11 @@ void CSecurity::hit(CSecureRule* pRule)
 	emit securityHit();
 }
 
-CSecurity::CSecurityRuleList::iterator CSecurity::getRWIterator(CIterator const_it)
+CSecurity::TSecurityRuleList::iterator CSecurity::getRWIterator(TConstIterator constIt)
 {
-	CSecurityRuleList::iterator i = m_Rules.begin();
-	CIterator const_begin = m_Rules.begin();
-	int nDistance = std::distance< CIterator >( const_begin, const_it );
+	TSecurityRuleList::iterator i = m_Rules.begin();
+	TConstIterator const_begin = m_Rules.begin();
+	int nDistance = std::distance< TConstIterator >( const_begin, constIt );
 	std::advance( i, nDistance );
 	return i;
 }

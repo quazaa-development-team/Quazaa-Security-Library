@@ -25,10 +25,6 @@
 #include "securitymanager.h"
 #include "securerule.h"
 
-#if SECURITY_ENABLE_GEOIP
-#include "geoiplist.h"
-#endif
-
 #include "debug_new.h"
 
 using namespace Security;
@@ -245,7 +241,7 @@ void CSecureRule::load(CSecureRule*& pRule, QDataStream &fsFile, int)
 
 	if ( pRule )
 	{
-		pRule->m_nAction  = (Policy)nAction;
+		pRule->m_nAction  = (TPolicy)nAction;
 		pRule->m_sComment = sComment;
 		pRule->m_oUUID    = QUuid( sUUID );
 		pRule->m_tExpire  = tExpire;

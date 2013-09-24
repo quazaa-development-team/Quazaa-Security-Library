@@ -40,6 +40,10 @@
 #include <QUuid>
 #include <QAtomicInt>
 
+#if SECURITY_ENABLE_GEOIP
+#include "geoiplist.h"
+#endif
+
 #include "NetworkCore/endpoint.h"
 #include "NetworkCore/Hashes/hash.h"
 #include "NetworkCore/queryhit.h"
@@ -50,18 +54,20 @@
 namespace Security
 {
 
+typedef quint16 TRuleID; // used for GUI updating
+
 class CSecureRule
 {
 public:
 	typedef enum { srContentUndefined = 0, srContentAddress = 1, srContentAddressRange = 2, srContentCountry = 3,
-	               srContentHash = 4, srContentRegExp = 5, srContentUserAgent = 6, srContentText = 7 } RuleType;
+	               srContentHash = 4, srContentRegExp = 5, srContentUserAgent = 6, srContentText = 7 } TRuleType;
 
-	typedef enum { srNull = 0, srAccept = 1, srDeny = 2 } Policy;
+	typedef enum { srNull = 0, srAccept = 1, srDeny = 2 } TPolicy;
 	enum { srIndefinite = 0, srSession = 1 };
 
 protected:
 	// Type is critical to functionality and may not be changed externally.
-	RuleType    m_nType;
+	TRuleType   m_nType;
 
 	// Contains a string representation of the rule content for faster GUI accesses.
 	// Can be accessed via getContentString().
@@ -77,7 +83,7 @@ private:
 	std::list<CSecureRule**> m_lPointers;
 
 public:
-	Policy      m_nAction;
+	TPolicy     m_nAction;
 	QUuid       m_oUUID;
 	quint32     m_tExpire;
 	QString     m_sComment;
@@ -118,7 +124,7 @@ public:
 	inline void     loadTotalCount(quint32 nTotal);
 
 	// get the rule type
-	inline RuleType type() const;
+	inline TRuleType type() const;
 
 	// Check content for hits
 	virtual bool    match(const CEndPoint& oAddress) const;
@@ -218,7 +224,7 @@ void CSecureRule::loadTotalCount( quint32 nTotal )
  * @return the rule type.
  * Requires Locking: R
  */
-CSecureRule::RuleType CSecureRule::type() const
+CSecureRule::TRuleType CSecureRule::type() const
 {
 	return m_nType;
 }
