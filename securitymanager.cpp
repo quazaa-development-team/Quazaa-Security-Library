@@ -427,7 +427,7 @@ void CSecurity::add(CSecureRule* pRule)
 		m_newHitRules.push( pRule->getCopy() );
 	}
 
-	quint32 tNow = getTNowUTC();
+	const quint32 tNow = getTNowUTC();
 	// if ( indefinite or longer than 1,5h ) increase unsaved rules counter
 	if ( !pRule->m_tExpire || pRule->m_tExpire - tNow > 60 * 90 )
 	{
@@ -511,7 +511,7 @@ void CSecurity::ban(const QHostAddress& oAddress, BanLength nBanLength, bool bMe
 
 	QWriteLocker mutex( &m_pRWLock );
 
-	quint32 tNow = getTNowUTC();
+	const quint32 tNow = getTNowUTC();
 
 	CAddressRuleMap::const_iterator i = m_IPs.find( qHash( oAddress ) );
 	if ( i != m_IPs.end() )
@@ -822,7 +822,7 @@ bool CSecurity::isDenied(const CEndPoint &oAddress, const QString& /*source*/)
 
 	QReadLocker mutex( &m_pRWLock );
 
-	quint32 tNow = getTNowUTC();
+	const quint32 tNow = getTNowUTC();
 
 	// First, check the miss cache if the IP is not included in the list of rules.
 	// If the address is in cache, it is a miss and no further lookup is needed.
@@ -1162,7 +1162,7 @@ bool CSecurity::load( QString sPath )
 		quint32 nCount;
 		fsFile >> nCount;
 
-		quint32 tNow = getTNowUTC();
+		const quint32 tNow = getTNowUTC();
 
 		QWriteLocker mutex( &m_pRWLock );
 		m_bDenyPolicy = bDenyPolicy;
@@ -1874,7 +1874,7 @@ bool CSecurity::isAgentDenied(const QString& strUserAgent)
 	if ( strUserAgent.isEmpty() )
 		return false;
 
-	quint32 tNow = getTNowUTC();
+	const quint32 tNow = getTNowUTC();
 
 	QReadLocker lock( &m_pRWLock );
 
@@ -1994,7 +1994,7 @@ bool CSecurity::isDenied(const QString& sContent)
 	if ( sContent.isEmpty() )
 		return false;
 
-	quint32 tNow = getTNowUTC();
+	const quint32 tNow = getTNowUTC();
 
 	QReadLocker mutex( &m_pRWLock );
 
@@ -2038,7 +2038,7 @@ bool CSecurity::isDenied(const CQueryHit* const pHit)
 
 	const QList<CHash>& lHashes = pHit->m_lHashes;
 
-	quint32 tNow = getTNowUTC();
+	const quint32 tNow = getTNowUTC();
 
 	QReadLocker mutex( &m_pRWLock );
 
@@ -2107,7 +2107,7 @@ bool CSecurity::isDenied(const QList<QString>& lQuery, const QString& sContent)
 	if ( lQuery.isEmpty() || sContent.isEmpty() )
 		return false;
 
-	quint32 tNow = getTNowUTC();
+	const quint32 tNow = getTNowUTC();
 
 	QReadLocker mutex( &m_pRWLock );
 

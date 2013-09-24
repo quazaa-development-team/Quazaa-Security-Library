@@ -107,7 +107,7 @@ public:
 	// Call this before removing a pointer you have previously registered.
 	void            unRegisterPointer(CSecureRule** pRule);
 
-	inline bool     isExpired(quint32 nNow, bool bSession = false) const;
+	inline bool     isExpired(quint32 tNow, bool bSession = false) const;
 	inline quint32  getExpiryTime() const;
 
 	// Hit count control
