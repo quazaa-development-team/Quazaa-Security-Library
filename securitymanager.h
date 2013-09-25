@@ -34,7 +34,7 @@
 #define SECURITY_ENABLE_GEOIP 1
 
 // Increment this if there have been made changes to the way of storing security rules.
-#define SECURITY_CODE_VERSION	0
+#define SECURITY_CODE_VERSION 0
 // History:
 // 0 - Initial implementation
 
@@ -211,8 +211,6 @@ public:
 	// are to the Security Manager Signals.
 	int             receivers(const char* signal) const;
 
-	inline quint32  getTNowUTC();
-
 signals:
 	void            ruleAdded(CSecureRule* pRule);
 	void            ruleRemoved(QSharedPointer<CSecureRule> pRule);
@@ -279,11 +277,6 @@ quint32 CSecurity::getCount() const
 bool CSecurity::denyPolicy() const
 {
 	return m_bDenyPolicy;
-}
-
-quint32 CSecurity::getTNowUTC()
-{
-	return QDateTime::currentDateTimeUtc().toTime_t();
 }
 
 void CSecurity::remove(CSecureRule* pRule, bool bLockRequired)

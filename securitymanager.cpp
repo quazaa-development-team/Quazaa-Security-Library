@@ -429,7 +429,7 @@ void CSecurity::add(CSecureRule* pRule)
 		m_newHitRules.push( pRule->getCopy() );
 	}
 
-	const quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 	// if ( indefinite or longer than 1,5h ) increase unsaved rules counter
 	if ( !pRule->m_tExpire || pRule->m_tExpire - tNow > 60 * 90 )
 	{
@@ -514,7 +514,7 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 
 	QWriteLocker mutex( &m_pRWLock );
 
-	const quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 
 	TAddressRuleMap::const_iterator i = m_IPs.find( qHash( oAddress ) );
 	if ( i != m_IPs.end() )
@@ -828,7 +828,7 @@ bool CSecurity::isDenied(const CEndPoint &oAddress, const QString& /*source*/)
 
 	QReadLocker mutex( &m_pRWLock );
 
-	const quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 
 	// First, check the miss cache if the IP is not included in the list of rules.
 	// If the address is in cache, it is a miss and no further lookup is needed.
@@ -1192,7 +1192,7 @@ bool CSecurity::load( QString sPath )
 		quint32 nCount;
 		fsFile >> nCount;
 
-		const quint32 tNow = getTNowUTC();
+		const quint32 tNow = common::getTNowUTC();
 
 		QWriteLocker mutex( &m_pRWLock );
 		m_bDenyPolicy = bDenyPolicy;
@@ -1389,7 +1389,7 @@ bool CSecurity::fromXML(const QString& sPath)
 		}
 	}
 
-	const quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 
 	QWriteLocker mutex( &m_pRWLock );
 	m_bIsLoading = true;
@@ -1485,7 +1485,7 @@ void CSecurity::sanityCheck()
 	bool bSuccess;
 	CTimeoutWriteLocker( &m_pRWLock, bSuccess, 500 );
 
-	quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 
 	if ( bSuccess )
 	{
@@ -1547,7 +1547,7 @@ void CSecurity::sanityCheckPerformed()
 		else // we didn't get a lock
 		{
 			// try again later
-			signalQueue.push( this, SLOT( sanityCheckPerformed() ), getTNowUTC() + 2 );
+			signalQueue.push( this, SLOT( sanityCheckPerformed() ), common::getTNowUTC() + 2 );
 		}
 	}
 }
@@ -1584,7 +1584,7 @@ void CSecurity::expire()
 
 	QWriteLocker l( &m_pRWLock );
 
-	quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 	quint16 nCount = 0;
 
 	TConstIterator j, i = m_Rules.begin();
@@ -1921,7 +1921,7 @@ bool CSecurity::isAgentDenied(const QString& sUserAgent)
 	if ( sUserAgent.isEmpty() )
 		return false;
 
-	const quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 
 	QReadLocker lock( &m_pRWLock );
 
@@ -2033,7 +2033,7 @@ bool CSecurity::isDenied(const QString& sContent)
 	if ( sContent.isEmpty() )
 		return false;
 
-	const quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 
 	QReadLocker mutex( &m_pRWLock );
 
@@ -2068,7 +2068,7 @@ bool CSecurity::isDenied(const CQueryHit* const pHit)
 
 	const QList<CHash>& lHashes = pHit->m_lHashes;
 
-	const quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 
 	QReadLocker mutex( &m_pRWLock );
 
@@ -2121,7 +2121,7 @@ bool CSecurity::isDenied(const QList<QString>& lQuery, const QString& sContent)
 	if ( lQuery.isEmpty() || sContent.isEmpty() )
 		return false;
 
-	const quint32 tNow = getTNowUTC();
+	const quint32 tNow = common::getTNowUTC();
 
 	QReadLocker mutex( &m_pRWLock );
 
