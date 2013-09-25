@@ -1090,7 +1090,7 @@ bool CSecurity::isVendorBlocked(const QString& sVendor) const
 {
 	// foxy - leecher client. (Tested, does not upload)
 	// having something like Authentication which is not defined on specification
-	if ( sVendor.startsWith( "foxy" ) ) return true;
+	if ( sVendor.startsWith( "foxy", Qt::CaseInsensitive ) ) return true;
 
 	// Allow it
 	return false;
