@@ -1104,6 +1104,10 @@ bool CSecurity::isVendorBlocked(const QString& sVendor) const
   */
 bool CSecurity::start()
 {
+	// We don't really need a lock here as nobody is supposed to use the manager before
+	// it is properly initialized.
+	m_sMessage = tr( "[Security] " );
+
 	// Register QSharedPointer<CSecureRule> to allow using this type with queued signal/slot
 	// connections.
 	qRegisterMetaType< QSharedPointer< CSecureRule > >( "QSharedPointer<CSecureRule>" );
@@ -1118,10 +1122,6 @@ bool CSecurity::start()
 	m_idRuleExpiry = signalQueue.push( this, "expire", m_tRuleExpiryInterval, true );
 	m_idMissCacheExpiry = signalQueue.push( this, "missCacheClear",
 	                                        m_tMissCacheExpiryInterval, true );
-
-	// We don't really need a lock here as nobody is supposed to use the manager before
-	// it is properly initialized.
-	m_sMessage = tr( "[Security] " );
 
 	return load(); // Load security rules from HDD.
 }
@@ -1533,22 +1533,29 @@ void CSecurity::sanityCheckPerformed()
 	bool bSuccess;
 	CTimeoutWriteLocker( &m_pRWLock, bSuccess, 500 );
 
-	if ( m_bNewRulesLoaded )
+	if ( bSuccess )
 	{
-		if ( bSuccess )
-		{
-			Q_ASSERT( m_nPendingOperations > 0 );
+		Q_ASSERT( m_bNewRulesLoaded );        // TODO: remove after testing
+		Q_ASSERT( m_nPendingOperations > 0 );
 
-			if ( --m_nPendingOperations == 0 )
-			{
-				clearNewRules();
-			}
-		}
-		else // we didn't get a lock
+		if ( --m_nPendingOperations == 0 )
 		{
-			// try again later
-			signalQueue.push( this, SLOT( sanityCheckPerformed() ), common::getTNowUTC() + 2 );
+			postLog( LogSeverity::Debug, QString( "Sanity Check finished successfully. " ) +
+			         QString( "Starting cleanup now." ), true );
+
+			clearNewRules();
 		}
+		else
+		{
+			postLog( LogSeverity::Debug, QString( "A component finished with sanity checking. " ) +
+			         QString( "Still waiting for %s other components to finish."
+			                  ).arg( m_nPendingOperations ), true );
+		}
+	}
+	else // we didn't get a lock
+	{
+		// try again later
+		signalQueue.push( this, SLOT( sanityCheckPerformed() ), common::getTNowUTC() + 2 );
 	}
 }
 
