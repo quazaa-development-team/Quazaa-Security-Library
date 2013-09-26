@@ -1097,6 +1097,7 @@ bool CUserAgentRule::match(const QString& sUserAgent) const
 
 bool CUserAgentRule::partialMatch(const QString& sUserAgent) const
 {
+    //TODO: Figure out why this is triggered when removing an agent rule
     Q_ASSERT( m_nType == srContentUserAgent );
 
     return sUserAgent.contains( m_sContent, Qt::CaseInsensitive );
