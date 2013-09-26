@@ -1918,18 +1918,24 @@ void CSecurity::remove(TConstIterator it)
 
 	case CSecureRule::srContentUserAgent:
 	{
-		TRegExpRuleList::iterator i = m_RegExpressions.begin();
+        QReadLocker lock( &m_pRWLock );
 
-		while ( i != m_RegExpressions.end() )
-		{
-			if ( (*i)->m_oUUID == pRule->m_oUUID )
+        TUserAgentRuleMap::iterator i = m_UserAgents.begin();
+
+        while ( i != m_UserAgents.end() )
+        {
+            CUserAgentRule* pIRule = (*i).second;
+
+            if ( ( pIRule->getContentString() == pRule->getContentString() ) )
 			{
-				m_RegExpressions.erase( i );
-				break;
+                m_UserAgents.erase( i );
+                break;
 			}
 
-			++i;
+            ++i;
 		}
+
+        m_pRWLock.unlock();
 	}
 	break;
 
