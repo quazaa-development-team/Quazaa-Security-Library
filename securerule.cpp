@@ -1095,6 +1095,13 @@ bool CUserAgentRule::match(const QString& sUserAgent) const
 	return true;
 }
 
+bool CUserAgentRule::partialMatch(const QString& sUserAgent) const
+{
+    Q_ASSERT( m_nType == srContentUserAgent );
+
+    return sUserAgent.contains( m_sContent, Qt::CaseInsensitive );
+}
+
 void CUserAgentRule::toXML(QXmlStreamWriter& oXMLdocument) const
 {
 	Q_ASSERT( m_nType == srContentUserAgent );

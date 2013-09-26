@@ -1975,6 +1975,27 @@ bool CSecurity::isAgentDenied(const QString& sUserAgent)
 		}
 	}
 
+    i = m_UserAgents.begin();
+    CUserAgentRule* pRule;
+    while ( i != m_UserAgents.end() )
+    {
+        pRule = (*i).second;
+        ++i;
+
+        if ( !pRule->isExpired( tNow ) )
+        {
+            if ( pRule->partialMatch( sUserAgent ) )
+            {
+                hit( pRule );
+
+                if ( pRule->m_nAction == CSecureRule::srAccept )
+                    return false;
+                else if ( pRule->m_nAction == CSecureRule::srDeny )
+                    return true;
+            }
+        }
+    }
+
 	return false;
 }
 
