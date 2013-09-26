@@ -544,6 +544,10 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 				pIPRule->m_tExpire = tNow + 7200;
 				break;
 
+			case ban1Day:
+				pIPRule->m_tExpire = tNow + 86400;
+				break;
+
 			case banWeek:
 				pIPRule->m_tExpire = tNow + 604800;
 				break;
@@ -583,36 +587,48 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 	switch( nBanLength )
 	{
 	case banSession:
-		pIPRule->m_tExpire	= CSecureRule::srSession;
-		pIPRule->m_sComment	= "Session Ban";
+		pIPRule->m_tExpire  = CSecureRule::srSession;
+		pIPRule->m_sComment = tr( "Session Ban" );
 		break;
+
 	case ban5Mins:
-		pIPRule->m_tExpire	= tNow + 300;
-		pIPRule->m_sComment	= "Temp Ignore";
+		pIPRule->m_tExpire  = tNow + 300;
+		pIPRule->m_sComment = tr( "Temp Ignore (5 min)" );
 		break;
+
 	case ban30Mins:
-		pIPRule->m_tExpire	= tNow + 1800;
-		pIPRule->m_sComment	= "Temp Ignore";
+		pIPRule->m_tExpire  = tNow + 1800;
+		pIPRule->m_sComment = tr( "Temp Ignore (30 min)" );
 		break;
+
 	case ban2Hours:
-		pIPRule->m_tExpire	= tNow + 7200;
-		pIPRule->m_sComment	= "Temp Ignore";
+		pIPRule->m_tExpire  = tNow + 7200;
+		pIPRule->m_sComment = tr( "Temp Ignore (2 h)" );
 		break;
+
+	case ban1Day:
+		pIPRule->m_tExpire  = tNow + 86400;
+		pIPRule->m_sComment = tr( "Temp Ignore (1 d)" );
+		break;
+
 	case banWeek:
-		pIPRule->m_tExpire	= tNow + 604800;
-		pIPRule->m_sComment	= "Client Block";
+		pIPRule->m_tExpire  = tNow + 604800;  // 60*60*24 = 1 day
+		pIPRule->m_sComment = tr( "Client Block (1 week)" );
 		break;
+
 	case banMonth:
-		pIPRule->m_tExpire	= tNow + 2592000; // 60*60*24*30 = 30 days
-		pIPRule->m_sComment	= "Quick IP Block";
+		pIPRule->m_tExpire  = tNow + 2592000; // 60*60*24*30 = 30 days
+		pIPRule->m_sComment = tr( "Quick IP Block (1 month)" );
 		break;
+
 	case banForever:
-		pIPRule->m_tExpire	= CSecureRule::srIndefinite;
-		pIPRule->m_sComment	= "Ban";
+		pIPRule->m_tExpire  = CSecureRule::srIndefinite;
+		pIPRule->m_sComment = tr( "Indefinite Ban" );
 		break;
+
 	default:
-		pIPRule->m_tExpire	= CSecureRule::srSession;
-		pIPRule->m_sComment	= "Session Ban";
+		pIPRule->m_tExpire  = CSecureRule::srSession;
+		pIPRule->m_sComment = tr( "Session Ban" );
 		Q_ASSERT( false ); // this should never happen
 	}
 
@@ -638,8 +654,7 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
   * Locking: R + RW while adding
   */
 // TODO: Implement priorization of hashes to not to ban too many hashes per file.
-/*void CSecurity::ban(const CFile& oFile, BanLength nBanLength, bool bMessage, const QString&
- * strComment)
+/*void CSecurity::ban(const CFile& oFile, TBanLength nBanLength, bool bMessage, const QString& sComment)
 {
 	if ( oFile.isNull() )
 	{
@@ -670,41 +685,53 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 		switch ( nBanLength )
 		{
 		case banSession:
-			pRule->m_tExpire	= CSecureRule::srSession;
-			pRule->m_sComment	= "Session Ban";
+			pIPRule->m_tExpire  = CSecureRule::srSession;
+			pIPRule->m_sComment = tr( "Session Ban" );
 			break;
+
 		case ban5Mins:
-			pRule->m_tExpire	= tNow + 300;
-			pRule->m_sComment	= "Temp Ignore";
+			pIPRule->m_tExpire  = tNow + 300;
+			pIPRule->m_sComment = tr( "Temp Ignore (5 min)" );
 			break;
+
 		case ban30Mins:
-			pRule->m_tExpire	= tNow + 1800;
-			pRule->m_sComment	= "Temp Ignore";
+			pIPRule->m_tExpire  = tNow + 1800;
+			pIPRule->m_sComment = tr( "Temp Ignore (30 min)" );
 			break;
+
 		case ban2Hours:
-			pRule->m_tExpire	= tNow + 7200;
-			pRule->m_sComment	= "Temp Ignore";
+			pIPRule->m_tExpire  = tNow + 7200;
+			pIPRule->m_sComment = tr( "Temp Ignore (2 h)" );
 			break;
+
+		case ban1Day:
+			pIPRule->m_tExpire  = tNow + 86400;
+			pIPRule->m_sComment = tr( "Temp Ignore (1 d)" );
+			break;
+
 		case banWeek:
-			pRule->m_tExpire	= tNow + 604800;
-			pRule->m_sComment	= "Client Block";
+			pIPRule->m_tExpire  = tNow + 604800;  // 60*60*24 = 1 day
+			pIPRule->m_sComment = tr( "Client Block (1 week)" );
 			break;
+
 		case banMonth:
-			pRule->m_tExpire	= tNow + 2592000; // 60*60*24*30 = 30 days
-			pRule->m_sComment	= "Quick IP Block";
+			pIPRule->m_tExpire  = tNow + 2592000; // 60*60*24*30 = 30 days
+			pIPRule->m_sComment = tr( "Quick IP Block (1 month)" );
 			break;
+
 		case banForever:
-			pRule->m_tExpire 	= CSecureRule::srIndefinite;
-			pRule->m_sComment	= "Ban";
+			pIPRule->m_tExpire  = CSecureRule::srIndefinite;
+			pIPRule->m_sComment = tr( "Indefinite Ban" );
 			break;
+
 		default:
-			pRule->m_tExpire	= CSecureRule::srSession;
-			pRule->m_sComment	= "Session Ban";
+			pIPRule->m_tExpire  = CSecureRule::srSession;
+			pIPRule->m_sComment = tr( "Session Ban" );
 			Q_ASSERT( false ); // this should never happen
 		}
 
-		if ( !( strComment.isEmpty() ) )
-			pRule->m_sComment = strComment;
+		if ( !( sComment.isEmpty() ) )
+			pRule->m_sComment = sComment;
 
 		QList<CHash> hashes = oFile.getHashes();
 

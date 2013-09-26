@@ -50,6 +50,11 @@
 namespace Security
 {
 
+typedef enum
+{
+	banSession, ban5Mins, ban30Mins, ban2Hours, ban1Day, banWeek, banMonth, banForever
+} TBanLength;
+
 class CSecurity : public QObject
 {
 	Q_OBJECT
@@ -61,11 +66,6 @@ public:
 	static const char* ruleInfoSignal;
 
 	mutable QReadWriteLock m_pRWLock;
-
-	typedef enum
-	{
-		banSession, ban5Mins, ban30Mins, ban2Hours, banWeek, banMonth, banForever
-	} TBanLength;
 
 private:
 	typedef std::pair< uint, CHashRule* > THashPair;
