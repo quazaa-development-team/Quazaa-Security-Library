@@ -30,9 +30,6 @@
 #include <queue>
 #include <set>
 
-// Enable/disable GeoIP support of the library.
-#define SECURITY_ENABLE_GEOIP 1
-
 // Increment this if there have been made changes to the way of storing security rules.
 #define SECURITY_CODE_VERSION 0
 // History:
@@ -58,15 +55,10 @@ typedef enum
 class CSecurity : public QObject
 {
 	Q_OBJECT
-	/* ================================================================ */
-	/* ========================== Attributes ========================== */
-	/* ================================================================ */
-public:
-	static const QString xmlns;
-	static const char* ruleInfoSignal;
 
-	mutable QReadWriteLock m_pRWLock;
-
+	/* ========================================================================================== */
+	/* ====================================== Definitions  ====================================== */
+	/* ========================================================================================== */
 private:
 	typedef std::pair< uint, CHashRule* > THashPair;
 
@@ -91,6 +83,16 @@ private:
 
 	typedef TSecurityRuleList::const_iterator TConstIterator;
 
+	/* ========================================================================================== */
+	/* ======================================= Attributes ======================================= */
+	/* ========================================================================================== */
+public:
+	static const QString xmlns;
+	static const char* ruleInfoSignal;
+
+	mutable QReadWriteLock m_pRWLock;
+
+private:
 	QString             m_sMessage;
 
 	// contains all rules
@@ -154,22 +156,22 @@ private:
 	// else does not make any sense.
 
 public:
-	/* ================================================================ */
-	/* ========================= Construction ========================= */
-	/* ================================================================ */
+	/* ========================================================================================== */
+	/* ====================================== Construction ====================================== */
+	/* ========================================================================================== */
 	CSecurity();
 	~CSecurity();
 
-	/* ================================================================ */
-	/* ========================== Operations ========================== */
-	/* ================================================================ */
+	/* ========================================================================================== */
+	/* ======================================= Operations ======================================= */
+	/* ========================================================================================== */
 	inline quint32  getCount() const;
 
 	inline bool     denyPolicy() const;
 	void            setDenyPolicy(bool bDenyPolicy);
 
 	bool            check(const CSecureRule* const pRule) const;
-	void            add(CSecureRule* pRule);
+	void            add(CSecureRule*& pRule);
 	// Use bLockRequired to enable/disable locking inside function.
 	inline void     remove(CSecureRule* pRule, bool bLockRequired = true);
 	void            clear();
@@ -181,7 +183,7 @@ public:
 	bool            isNewlyDenied(const CEndPoint& oAddress);
 	bool            isNewlyDenied(const CQueryHit* pHit, const QList<QString>& lQuery);
 
-	bool            isDenied(const CEndPoint& oAddress, const QString &source = "Unknown");
+	bool            isDenied(const CEndPoint& oAddress/*, const QString &source = "Unknown"*/);
 	// This does not check for the hit IP to avoid double checking.
 	bool            isDenied(const CQueryHit* const pHit, const QList<QString>& lQuery);
 
@@ -211,6 +213,9 @@ public:
 	// are to the Security Manager Signals.
 	int             receivers(const char* signal) const;
 
+	/* ========================================================================================== */
+	/* ======================================== Signals  ======================================== */
+	/* ========================================================================================== */
 signals:
 	void            ruleAdded(CSecureRule* pRule);
 	void            ruleRemoved(QSharedPointer<CSecureRule> pRule);
@@ -222,6 +227,9 @@ signals:
 	// This is used to inform other modules that a system wide sanity check has become necessary.
 	void            performSanityCheck();
 
+	/* ========================================================================================== */
+	/* ========================================= Slots  ========================================= */
+	/* ========================================================================================== */
 public slots:
 	// Trigger this to let the Security Manager emit all rules
 	void            requestRuleList();
@@ -239,6 +247,9 @@ public slots:
 	// Trigger this slot to inform the security manager about changes in the security settings.
 	void            settingsChanged();
 
+	/* ========================================================================================== */
+	/* ======================================== Privates ======================================== */
+	/* ========================================================================================== */
 private:
 	// Sanity check helper methods
 	void            loadNewRules();

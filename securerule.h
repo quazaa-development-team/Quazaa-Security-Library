@@ -40,13 +40,16 @@
 #include <QUuid>
 #include <QAtomicInt>
 
-#if SECURITY_ENABLE_GEOIP
-#include "geoiplist.h"
-#endif
-
 #include "NetworkCore/endpoint.h"
 #include "NetworkCore/Hashes/hash.h"
 #include "NetworkCore/queryhit.h"
+
+// Enable/disable GeoIP support of the security library.
+#define SECURITY_ENABLE_GEOIP 1
+
+#if SECURITY_ENABLE_GEOIP
+#include "geoiplist.h"
+#endif
 
 // Note: The locking information within the doxygen comments refers to the RW lock of the Security
 //       Manager.
@@ -59,8 +62,12 @@ typedef quint16 TRuleID; // used for GUI updating
 class CSecureRule
 {
 public:
-	typedef enum { srContentUndefined = 0, srContentAddress = 1, srContentAddressRange = 2, srContentCountry = 3,
-	               srContentHash = 4, srContentRegExp = 5, srContentUserAgent = 6, srContentText = 7 } TRuleType;
+	typedef enum
+	{
+		srContentUndefined = 0, srContentAddress = 1, srContentAddressRange = 2,
+		srContentCountry = 3, srContentHash = 4, srContentRegExp = 5, srContentUserAgent = 6,
+		srContentText = 7
+	} TRuleType;
 
 	typedef enum { srNull = 0, srAccept = 1, srDeny = 2 } TPolicy;
 	enum { srIndefinite = 0, srSession = 1 };
@@ -175,8 +182,8 @@ quint32 CSecureRule::getExpiryTime() const
  */
 void CSecureRule::count()
 {
-	m_nToday.fetchAndAddOrdered(1);
-	m_nTotal.fetchAndAddOrdered(1);
+	m_nToday.fetchAndAddOrdered( 1 );
+	m_nTotal.fetchAndAddOrdered( 1 );
 }
 
 /**
@@ -185,8 +192,8 @@ void CSecureRule::count()
  */
 void CSecureRule::resetCount()
 {
-	m_nToday.fetchAndStoreOrdered(0);
-	m_nTotal.fetchAndAddOrdered(0);
+	m_nToday.fetchAndStoreOrdered( 0 );
+	m_nTotal.fetchAndAddOrdered( 0 );
 }
 
 /**
@@ -231,10 +238,9 @@ CSecureRule::TRuleType CSecureRule::type() const
 
 void CSecureRule::toXML( QXmlStreamWriter& ) const {}
 
-/*  ------------------------------------------------------------ */
-/*  ------------------------- CIPRule -------------------------- */
-/*  ------------------------------------------------------------ */
-
+/* ============================================================================================== */
+/* ========================================== CIPRule  ========================================== */
+/* ============================================================================================== */
 class CIPRule : public CSecureRule
 {
 private:
@@ -244,14 +250,14 @@ public:
 	CIPRule();
 
 	inline QHostAddress IP() const;
-	inline void			setIP( const QHostAddress& oIP );
+	inline void         setIP( const QHostAddress& oIP );
 
-	bool				parseContent(const QString& sContent);
+	bool                parseContent(const QString& sContent);
 
-	inline CSecureRule*	getCopy() const;
+	inline CSecureRule* getCopy() const;
 
-	bool				match(const CEndPoint& oAddress) const;
-	void				toXML(QXmlStreamWriter& oXMLdocument) const;
+	bool                match(const CEndPoint& oAddress) const;
+	void                toXML(QXmlStreamWriter& oXMLdocument) const;
 
 };
 
@@ -271,10 +277,9 @@ CSecureRule* CIPRule::getCopy() const
 	return new CIPRule( *this );
 }
 
-/*  ------------------------------------------------------------ */
-/*  ---------------------- CIPRangeRule ------------------------ */
-/*  ------------------------------------------------------------ */
-
+/* ============================================================================================== */
+/* ======================================== CIPRangeRule ======================================== */
+/* ============================================================================================== */
 class CIPRangeRule : public CSecureRule
 {
 private:
@@ -283,15 +288,15 @@ private:
 public:
 	CIPRangeRule();
 
-	inline QHostAddress	IP() const;
-	inline int			mask() const;
+	inline QHostAddress IP() const;
+	inline int          mask() const;
 
-	bool				parseContent(const QString& sContent);
+	bool                parseContent(const QString& sContent);
 
-	inline CSecureRule*	getCopy() const;
+	inline CSecureRule* getCopy() const;
 
-	inline bool			match(const CEndPoint& oAddress) const;
-	void				toXML(QXmlStreamWriter& oXMLdocument) const;
+	inline bool         match(const CEndPoint& oAddress) const;
+	void                toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 QHostAddress CIPRangeRule::IP() const
@@ -318,21 +323,21 @@ bool CIPRangeRule::match(const CEndPoint& oAddress) const
 	return oAddress.isInSubnet( m_oSubNet );
 }
 
-/*  ------------------------------------------------------------ */
-/*  ---------------------- CCountryRule ------------------------ */
-/*  ------------------------------------------------------------ */
+/* ============================================================================================== */
+/* ======================================== CCountryRule ======================================== */
+/* ============================================================================================== */
 #if SECURITY_ENABLE_GEOIP
 class CCountryRule : public CSecureRule
 {
 public:
 	CCountryRule();
 
-	bool				parseContent(const QString& sContent);
+	bool                parseContent(const QString& sContent);
 
-	inline CSecureRule*	getCopy() const;
+	inline CSecureRule* getCopy() const;
 
-	bool				match(const CEndPoint& oAddress) const;
-	void				toXML(QXmlStreamWriter& oXMLdocument) const;
+	bool                match(const CEndPoint& oAddress) const;
+	void                toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 CSecureRule* CCountryRule::getCopy() const
@@ -341,31 +346,30 @@ CSecureRule* CCountryRule::getCopy() const
 }
 #endif // SECURITY_ENABLE_GEOIP
 
-/*  ------------------------------------------------------------ */
-/*  ------------------------ CHashRule ------------------------- */
-/*  ------------------------------------------------------------ */
-
+/* ============================================================================================== */
+/* ========================================= CHashRule  ========================================= */
+/* ============================================================================================== */
 class CHashRule : public CSecureRule
 {
 private:
-	QMap< CHash::Algorithm, CHash >	m_Hashes;
+	QMap< CHash::Algorithm, CHash > m_Hashes;
 
 public:
 	CHashRule();
 
-	QList< CHash >		getHashes() const;
-	void				setHashes(const QList< CHash >& hashes);
+	QList< CHash >      getHashes() const;
+	void                setHashes(const QList< CHash >& hashes);
 
-	bool				parseContent(const QString& sContent);
+	bool                parseContent(const QString& sContent);
 
-	inline CSecureRule*	getCopy() const;
+	inline CSecureRule* getCopy() const;
 
-	bool				hashEquals(CHashRule& oRule) const;
+	bool                hashEquals(CHashRule& oRule) const;
 
-	bool				match(const CQueryHit* const pHit) const;
-	bool				match(const QList<CHash>& lHashes) const;
+	bool                match(const CQueryHit* const pHit) const;
+	bool                match(const QList<CHash>& lHashes) const;
 
-	void				toXML(QXmlStreamWriter& oXMLdocument) const;
+	void                toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 CSecureRule* CHashRule::getCopy() const
@@ -373,37 +377,37 @@ CSecureRule* CHashRule::getCopy() const
 	return new CHashRule( *this );
 }
 
-/*  ------------------------------------------------------------ */
-/*  ----------------------- CRegExpRule ------------------------ */
-/*  ------------------------------------------------------------ */
-
-// There are two kinds of rules:1. Those which contain <_>, <1>...<9> or <>
-//								2. All other rules.
+/* ============================================================================================== */
+/* ======================================== CRegExpRule  ======================================== */
+/* ============================================================================================== */
 class CRegExpRule : public CSecureRule
 {
 private:
-	bool				m_bSpecialElements;
+	// There are two kinds of rules:
+	// 1. Those which contain <_>, <1>...<9> or <> (e.g. special elements)
+	// 2. All other rules.
+	bool                m_bSpecialElements; // contains special elements
 
 #if QT_VERSION >= 0x050000
-	QRegularExpression	m_regularExpressionContent;
+	QRegularExpression  m_regularExpressionContent;
 #else
-	QRegExp				m_regExpContent;
+	QRegExp             m_regExpContent;
 #endif
 
 public:
 	CRegExpRule();
 
-	bool				operator==(const CSecureRule& pRule) const;
+	bool                operator==(const CSecureRule& pRule) const;
 
-	bool				parseContent(const QString& sContent);
+	bool                parseContent(const QString& sContent);
 
-	inline CSecureRule*	getCopy() const;
+	inline CSecureRule* getCopy() const;
 
-	bool				match(const QList<QString>& lQuery, const QString& sContent) const;
-	void				toXML(QXmlStreamWriter& oXMLdocument) const;
+	bool                match(const QList<QString>& lQuery, const QString& sContent) const;
+	void                toXML(QXmlStreamWriter& oXMLdocument) const;
 
 private:
-	static bool			replace(QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent);
+	static bool         replace(QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent);
 };
 
 CSecureRule* CRegExpRule::getCopy() const
@@ -411,36 +415,38 @@ CSecureRule* CRegExpRule::getCopy() const
 	return new CRegExpRule( *this );
 }
 
-/*  ------------------------------------------------------------ */
-/*  ---------------------- CUserAgentRule ---------------------- */
-/*  ------------------------------------------------------------ */
-
+/* ============================================================================================== */
+/* ======================================= CUserAgentRule ======================================= */
+/* ============================================================================================== */
 class CUserAgentRule : public CSecureRule
 {
 private:
-	bool				m_bRegExp;  // is the content of this rule is a regular expression?
+	bool                m_bRegExp;  // is the content of this rule is a regular expression?
 
 #if QT_VERSION >= 0x050000
-	QRegularExpression	m_regularExpressionContent;
+	QRegularExpression  m_regularExpressionContent;
 #else
-	QRegExp				m_regExpContent;
+	QRegExp             m_regExpContent;
 #endif
 
 public:
 	CUserAgentRule();
 
-	bool				operator==(const CSecureRule& pRule) const;
+	bool                operator==(const CSecureRule& pRule) const;
 
-	void				setRegExp(bool bRegExp);
-	inline bool			getRegExp() const;
+	void                setRegExp(bool bRegExp);
+	inline bool         getRegExp() const;
 
-	bool				parseContent(const QString& sContent);
+	bool                parseContent(const QString& sContent);
 
-	inline CSecureRule*	getCopy() const;
+	inline CSecureRule* getCopy() const;
 
-	bool				match(const QString& sUserAgent) const;
-    bool                partialMatch(const QString &sUserAgent) const;
-    void				toXML(QXmlStreamWriter& oXMLdocument) const;
+	// partial and complete string matching as well as regEx matching
+	bool                match(const QString& sUserAgent) const;
+
+	// only string matching
+	bool                partialMatch(const QString &sUserAgent) const;
+	void                toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 CSecureRule* CUserAgentRule::getCopy() const
@@ -453,35 +459,34 @@ bool CUserAgentRule::getRegExp() const
 	return m_bRegExp;
 }
 
-/*  ------------------------------------------------------------ */
-/*  ----------------------- CContentRule ----------------------- */
-/*  ------------------------------------------------------------ */
-
+/* ============================================================================================== */
+/* ======================================== CContentRule ======================================== */
+/* ============================================================================================== */
 // contains everyting that does not fit into the other rule classes
 class CContentRule : public CSecureRule
 {
 private:
-	bool				m_bAll;
-	QList< QString >	m_lContent;
+	bool                m_bAll;
+	QList< QString >    m_lContent;
 
 	typedef QList< QString >::const_iterator CListIterator;
 
 public:
 	CContentRule();
 
-	bool				operator==(const CSecureRule& pRule) const;
+	bool                operator==(const CSecureRule& pRule) const;
 
-	inline void			setAll(bool all = true);
-	inline bool			getAll() const;
+	inline void         setAll(bool all = true);
+	inline bool         getAll() const;
 
-	bool				parseContent(const QString& sContent);
+	bool                parseContent(const QString& sContent);
 
-	inline CSecureRule*	getCopy() const;
+	inline CSecureRule* getCopy() const;
 
-	bool				match(const QString& sFileName) const;
-	bool				match(const CQueryHit* const pHit) const;
+	bool                match(const QString& sFileName) const;
+	bool                match(const CQueryHit* const pHit) const;
 
-	void				toXML(QXmlStreamWriter& oXMLdocument) const;
+	void                toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 CSecureRule* CContentRule::getCopy() const

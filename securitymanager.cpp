@@ -49,17 +49,17 @@ using namespace Security;
 // no qt specific calls (for example connect() or emit signal) may be used over here.
 // See initialize() for that kind of initializations.
 CSecurity::CSecurity() :
-	m_sDataPath( "" ),
-	m_bLogIPCheckHits( false ),
-	m_tRuleExpiryInterval( 0 ),
-	m_tMissCacheExpiryInterval( 0 ),
-	m_bUseMissCache( false ),
-	m_bIsLoading( false ),
-	m_bNewRulesLoaded( false ),
-	m_nPendingOperations( 0 ),
-	m_nMaxUnsavedRules( 100 ),
-	m_nUnsaved( 0 ),
-	m_bDenyPolicy( false )
+    m_sDataPath( "" ),
+    m_bLogIPCheckHits( false ),
+    m_tRuleExpiryInterval( 0 ),
+    m_tMissCacheExpiryInterval( 0 ),
+    m_bUseMissCache( false ),
+    m_bIsLoading( false ),
+    m_bNewRulesLoaded( false ),
+    m_nPendingOperations( 0 ),
+    m_nMaxUnsavedRules( 100 ),
+    m_nUnsaved( 0 ),
+    m_bDenyPolicy( false )
 {
 }
 
@@ -98,7 +98,7 @@ bool CSecurity::check(const CSecureRule* const pRule) const
   * adding.
   * Locking: RW
   */
-void CSecurity::add(CSecureRule* pRule)
+void CSecurity::add(CSecureRule*& pRule)
 {
 	if ( !pRule ) return;
 
@@ -126,8 +126,8 @@ void CSecurity::add(CSecureRule* pRule)
 		{
 			pExRule = (*i).second;
 			if ( pExRule->m_oUUID   != pRule->m_oUUID   ||
-				 pExRule->m_nAction != pRule->m_nAction ||
-				 pExRule->m_tExpire != pRule->m_tExpire )
+			     pExRule->m_nAction != pRule->m_nAction ||
+			     pExRule->m_tExpire != pRule->m_tExpire )
 			{
 				// remove conflicting rule if one of the important attributes
 				// differs from the rule we'd like to add
@@ -164,9 +164,9 @@ void CSecurity::add(CSecureRule* pRule)
 			if ( pOldRule->m_oUUID == pRule->m_oUUID )
 			{
 				if ( pOldRule->m_nAction != pRule->m_nAction ||
-					 pOldRule->m_tExpire != pRule->m_tExpire ||
-					 pOldRule->IP()      != ((CIPRangeRule*)pRule)->IP() ||
-					 pOldRule->mask()    != ((CIPRangeRule*)pRule)->mask() )
+				     pOldRule->m_tExpire != pRule->m_tExpire ||
+				     pOldRule->IP()      != ((CIPRangeRule*)pRule)->IP() ||
+				     pOldRule->mask()    != ((CIPRangeRule*)pRule)->mask() )
 				{
 					// remove conflicting rule if one of the important attributes
 					// differs from the rule we'd like to add
@@ -202,8 +202,8 @@ void CSecurity::add(CSecureRule* pRule)
 		{
 			pExRule = (*i).second;
 			if ( pExRule->m_oUUID   != pRule->m_oUUID   ||
-				 pExRule->m_nAction != pRule->m_nAction ||
-				 pExRule->m_tExpire != pRule->m_tExpire )
+			     pExRule->m_nAction != pRule->m_nAction ||
+			     pExRule->m_tExpire != pRule->m_tExpire )
 			{
 				// remove conflicting rule if one of the important attributes
 				// differs from the rule we'd like to add
@@ -251,8 +251,8 @@ void CSecurity::add(CSecureRule* pRule)
 			if ( pHashRule->hashEquals( *((CHashRule*)*i) ) )
 			{
 				if ( pExRule->m_oUUID   != pRule->m_oUUID   ||
-					 pExRule->m_nAction != pRule->m_nAction ||
-					 pExRule->m_tExpire != pRule->m_tExpire )
+				     pExRule->m_nAction != pRule->m_nAction ||
+				     pExRule->m_tExpire != pRule->m_tExpire )
 				{
 					// remove conflicting rule if one of the important attributes
 					// differs from the rule we'd like to add
@@ -291,8 +291,8 @@ void CSecurity::add(CSecureRule* pRule)
 			if ( (*i)->m_oUUID == pRule->m_oUUID )
 			{
 				if ( pOldRule->m_nAction != pRule->m_nAction ||
-					 pOldRule->m_tExpire != pRule->m_tExpire ||
-					 pOldRule->getContentString() != ((CRegExpRule*)pRule)->getContentString() )
+				     pOldRule->m_tExpire != pRule->m_tExpire ||
+				     pOldRule->getContentString() != ((CRegExpRule*)pRule)->getContentString() )
 				{
 					// remove conflicting rule if one of the important attributes
 					// differs from the rule we'd like to add
@@ -327,8 +327,8 @@ void CSecurity::add(CSecureRule* pRule)
 			if ( (*i)->m_oUUID == pRule->m_oUUID )
 			{
 				if ( pOldRule->m_nAction != pRule->m_nAction ||
-					 pOldRule->m_tExpire != pRule->m_tExpire ||
-					 pOldRule->getContentString() != ((CRegExpRule*)pRule)->getContentString() )
+				     pOldRule->m_tExpire != pRule->m_tExpire ||
+				     pOldRule->getContentString() != ((CRegExpRule*)pRule)->getContentString() )
 				{
 					// remove conflicting rule if one of the important attributes
 					// differs from the rule we'd like to add
@@ -355,14 +355,14 @@ void CSecurity::add(CSecureRule* pRule)
 	case CSecureRule::srContentUserAgent:
 	{
 		QString agent = ((CUserAgentRule*)pRule)->getContentString();
-		TUserAgentRuleMap::iterator i = m_UserAgents.find( agent );
+		TUserAgentRuleMap::iterator it = m_UserAgents.find( agent );
 
-		if ( i != m_UserAgents.end() ) // there is a conflicting rule in our map
+		if ( it != m_UserAgents.end() ) // there is a conflicting rule in our map
 		{
-			pExRule = (*i).second;
+			pExRule = (*it).second;
 			if ( pExRule->m_oUUID   != pRule->m_oUUID   ||
-				 pExRule->m_nAction != pRule->m_nAction ||
-				 pExRule->m_tExpire != pRule->m_tExpire )
+			     pExRule->m_nAction != pRule->m_nAction ||
+			     pExRule->m_tExpire != pRule->m_tExpire )
 			{
 				// remove conflicting rule if one of the important attributes
 				// differs from the rule we'd like to add
@@ -635,14 +635,17 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 
 	pIPRule->setIP( oAddress );
 
-	add( pIPRule );
+	CSecureRule* pRule = pIPRule;
+	quint32 tExpire    = pIPRule->m_tExpire;
+
+	add( pRule );
 
 	if ( bMessage )
 	{
 		postLog( LogSeverity::Security,
 		         tr( "Banned %1 until %2."
 		             ).arg( oAddress.toString(),
-		                    QDateTime::fromTime_t( pIPRule->m_tExpire ).toString() ) );
+		                    QDateTime::fromTime_t( tExpire ).toString() ) );
 	}
 }
 
@@ -683,48 +686,48 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 		switch ( nBanLength )
 		{
 		case banSession:
-			pIPRule->m_tExpire  = CSecureRule::srSession;
-			pIPRule->m_sComment = tr( "Session Ban" );
+			pRule->m_tExpire  = CSecureRule::srSession;
+			pRule->m_sComment = tr( "Session Ban" );
 			break;
 
 		case ban5Mins:
-			pIPRule->m_tExpire  = tNow + 300;
-			pIPRule->m_sComment = tr( "Temp Ignore (5 min)" );
+			pRule->m_tExpire  = tNow + 300;
+			pRule->m_sComment = tr( "Temp Ignore (5 min)" );
 			break;
 
 		case ban30Mins:
-			pIPRule->m_tExpire  = tNow + 1800;
-			pIPRule->m_sComment = tr( "Temp Ignore (30 min)" );
+			pRule->m_tExpire  = tNow + 1800;
+			pRule->m_sComment = tr( "Temp Ignore (30 min)" );
 			break;
 
 		case ban2Hours:
-			pIPRule->m_tExpire  = tNow + 7200;
-			pIPRule->m_sComment = tr( "Temp Ignore (2 h)" );
+			pRule->m_tExpire  = tNow + 7200;
+			pRule->m_sComment = tr( "Temp Ignore (2 h)" );
 			break;
 
 		case ban1Day:
-			pIPRule->m_tExpire  = tNow + 86400;
-			pIPRule->m_sComment = tr( "Temp Ignore (1 d)" );
+			pRule->m_tExpire  = tNow + 86400;
+			pRule->m_sComment = tr( "Temp Ignore (1 d)" );
 			break;
 
 		case banWeek:
-			pIPRule->m_tExpire  = tNow + 604800;  // 60*60*24 = 1 day
-			pIPRule->m_sComment = tr( "Client Block (1 week)" );
+			pRule->m_tExpire  = tNow + 604800;  // 60*60*24 = 1 day
+			pRule->m_sComment = tr( "Client Block (1 week)" );
 			break;
 
 		case banMonth:
-			pIPRule->m_tExpire  = tNow + 2592000; // 60*60*24*30 = 30 days
-			pIPRule->m_sComment = tr( "Quick IP Block (1 month)" );
+			pRule->m_tExpire  = tNow + 2592000; // 60*60*24*30 = 30 days
+			pRule->m_sComment = tr( "Quick IP Block (1 month)" );
 			break;
 
 		case banForever:
-			pIPRule->m_tExpire  = CSecureRule::srIndefinite;
-			pIPRule->m_sComment = tr( "Indefinite Ban" );
+			pRule->m_tExpire  = CSecureRule::srIndefinite;
+			pRule->m_sComment = tr( "Indefinite Ban" );
 			break;
 
 		default:
-			pIPRule->m_tExpire  = CSecureRule::srSession;
-			pIPRule->m_sComment = tr( "Session Ban" );
+			pRule->m_tExpire  = CSecureRule::srSession;
+			pRule->m_sComment = tr( "Session Ban" );
 			Q_ASSERT( false ); // this should never happen
 		}
 
@@ -783,7 +786,6 @@ bool CSecurity::isNewlyDenied(const CEndPoint& oAddress)
 		if ( pRule->match( oAddress ) )
 		{
 			// the rules are new, so we don't need to check whether they are expired or not
-
 			hit( pRule );
 
 			if ( pRule->m_nAction == CSecureRule::srAccept )
@@ -823,10 +825,9 @@ bool CSecurity::isNewlyDenied(const CQueryHit* pHit, const QList<QString>& lQuer
 		pRule = *i;
 
 		if ( pRule->match( pHit ) || pRule->match( pHit->m_sDescriptiveName ) ||
-			 pRule->match( lQuery, pHit->m_sDescriptiveName ) )
+		     pRule->match( lQuery, pHit->m_sDescriptiveName ) )
 		{
 			// The rules are new, so we don't need to check whether they are expired or not.
-
 			hit( pRule );
 
 			if ( pRule->m_nAction == CSecureRule::srAccept )
@@ -846,7 +847,7 @@ bool CSecurity::isNewlyDenied(const CQueryHit* pHit, const QList<QString>& lQuer
   * is true.
   * Locking: R (+ RW while/if new IP is added to miss cache)
   */
-bool CSecurity::isDenied(const CEndPoint &oAddress, const QString& /*source*/)
+bool CSecurity::isDenied(const CEndPoint &oAddress/*, const QString& source*/)
 {
 	if ( oAddress.isNull() )
 		return false;
@@ -864,7 +865,7 @@ bool CSecurity::isDenied(const CEndPoint &oAddress, const QString& /*source*/)
 			postLog( LogSeverity::Security,
 			         tr( "Skipped repeat IP security check for %s (%i IPs cached"
 			             ).arg( oAddress.toString(), (int)m_Cache.size() )
-//			         + tr( "; Call source: %s" ).arg( source )
+			         //+ tr( "; Call source: %s" ).arg( source )
 			         + tr( ")" ));
 		}
 
@@ -875,7 +876,7 @@ bool CSecurity::isDenied(const CEndPoint &oAddress, const QString& /*source*/)
 		postLog( LogSeverity::Security,
 		         tr( "Called first-time IP security check for %s"
 		             ).arg( oAddress.toString() )
-//		         + tr( " ( Call source: %s)" ).arg( source )
+		         //+ tr( " ( Call source: %s)" ).arg( source )
 		         );
 	}
 
@@ -1144,7 +1145,7 @@ bool CSecurity::start()
 	settingsChanged();
 
 	// Set up interval timed cleanup operations.
-	m_idRuleExpiry = signalQueue.push( this, "expire", m_tRuleExpiryInterval, true );
+	m_idRuleExpiry      = signalQueue.push( this, "expire", m_tRuleExpiryInterval, true );
 	m_idMissCacheExpiry = signalQueue.push( this, "missCacheClear",
 	                                        m_tMissCacheExpiryInterval, true );
 
@@ -1389,8 +1390,8 @@ bool CSecurity::fromXML(const QString& sPath)
 	QXmlStreamReader xmlDocument( &oFile );
 
 	if ( xmlDocument.atEnd() ||
-		 !xmlDocument.readNextStartElement() ||
-		 xmlDocument.name().toString().compare( "security", Qt::CaseInsensitive ) )
+	     !xmlDocument.readNextStartElement() ||
+	     xmlDocument.name().toString().compare( "security", Qt::CaseInsensitive ) )
 		return false;
 
 	postLog( LogSeverity::Information, tr( "Importing security rules from file: " ) + sPath );
@@ -1672,8 +1673,7 @@ void CSecurity::settingsChanged()
 		signalQueue.setInterval( m_idMissCacheExpiry, m_tMissCacheExpiryInterval );
 	}
 
-	// TODO: load from settings.
-	m_nMaxUnsavedRules = 100;
+	m_nMaxUnsavedRules = quazaaSettings.Security.MaxUnsavedRules;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -1916,24 +1916,18 @@ void CSecurity::remove(TConstIterator it)
 
 	case CSecureRule::srContentUserAgent:
 	{
-        QReadLocker lock( &m_pRWLock );
+		TUserAgentRuleMap::iterator i = m_UserAgents.begin();
 
-        TUserAgentRuleMap::iterator i = m_UserAgents.begin();
-
-        while ( i != m_UserAgents.end() )
-        {
-            CUserAgentRule* pIRule = (*i).second;
-
-            if ( ( pIRule->getContentString() == pRule->getContentString() ) )
+		while ( i != m_UserAgents.end() )
+		{
+			if ( (*i).second->m_oUUID == pRule->m_oUUID )
 			{
-                m_UserAgents.erase( i );
-                break;
+				m_UserAgents.erase( i );
+				break;
 			}
 
-            ++i;
+			++i;
 		}
-
-        m_pRWLock.unlock();
 	}
 	break;
 
@@ -1963,10 +1957,10 @@ bool CSecurity::isAgentDenied(const QString& sUserAgent)
 
 	QReadLocker lock( &m_pRWLock );
 
-	TUserAgentRuleMap::iterator i = m_UserAgents.find( sUserAgent );
-	if ( i != m_UserAgents.end() )
+	TUserAgentRuleMap::iterator it = m_UserAgents.find( sUserAgent );
+	if ( it != m_UserAgents.end() )
 	{
-		CUserAgentRule* pRule = (*i).second;
+		CUserAgentRule* pRule = (*it).second;
 
 		if ( !pRule->isExpired( tNow ) && pRule->match( sUserAgent ) )
 		{
@@ -1979,23 +1973,23 @@ bool CSecurity::isAgentDenied(const QString& sUserAgent)
 		}
 	}
 
-    i = m_UserAgents.begin();
-    CUserAgentRule* pRule;
-    while ( i != m_UserAgents.end() )
-    {
-        pRule = (*i).second;
-        ++i;
+	it = m_UserAgents.begin();
+	CUserAgentRule* pRule;
+	while ( it != m_UserAgents.end() )
+	{
+		pRule = (*it).second;
+		++it;
 
-        if ( !pRule->isExpired( tNow ) && pRule->partialMatch( sUserAgent ) )
-        {
-            hit( pRule );
+		if ( !pRule->isExpired( tNow ) && pRule->partialMatch( sUserAgent ) )
+		{
+			hit( pRule );
 
-            if ( pRule->m_nAction == CSecureRule::srAccept )
-                return false;
-            else if ( pRule->m_nAction == CSecureRule::srDeny )
-                return true;
-        }
-    }
+			if ( pRule->m_nAction == CSecureRule::srAccept )
+				return false;
+			else if ( pRule->m_nAction == CSecureRule::srDeny )
+				return true;
+		}
+	}
 
 	return false;
 }
