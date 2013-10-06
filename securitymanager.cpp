@@ -49,17 +49,17 @@ using namespace Security;
 // no qt specific calls (for example connect() or emit signal) may be used over here.
 // See initialize() for that kind of initializations.
 CSecurity::CSecurity() :
-    m_sDataPath( "" ),
-    m_bLogIPCheckHits( false ),
-    m_tRuleExpiryInterval( 0 ),
-    m_tMissCacheExpiryInterval( 0 ),
-    m_bUseMissCache( false ),
-    m_bIsLoading( false ),
-    m_bNewRulesLoaded( false ),
-    m_nPendingOperations( 0 ),
-    m_nMaxUnsavedRules( 100 ),
-    m_nUnsaved( 0 ),
-    m_bDenyPolicy( false )
+	m_sDataPath( "" ),
+	m_bLogIPCheckHits( false ),
+	m_tRuleExpiryInterval( 0 ),
+	m_tMissCacheExpiryInterval( 0 ),
+	m_bUseMissCache( false ),
+	m_bIsLoading( false ),
+	m_bNewRulesLoaded( false ),
+	m_nPendingOperations( 0 ),
+	m_nMaxUnsavedRules( 100 ),
+	m_nUnsaved( 0 ),
+	m_bDenyPolicy( false )
 {
 }
 
@@ -126,8 +126,8 @@ void CSecurity::add(CSecureRule*& pRule)
 		{
 			pExRule = (*i).second;
 			if ( pExRule->m_oUUID   != pRule->m_oUUID   ||
-			     pExRule->m_nAction != pRule->m_nAction ||
-			     pExRule->m_tExpire != pRule->m_tExpire )
+				 pExRule->m_nAction != pRule->m_nAction ||
+				 pExRule->m_tExpire != pRule->m_tExpire )
 			{
 				// remove conflicting rule if one of the important attributes
 				// differs from the rule we'd like to add
@@ -164,9 +164,9 @@ void CSecurity::add(CSecureRule*& pRule)
 			if ( pOldRule->m_oUUID == pRule->m_oUUID )
 			{
 				if ( pOldRule->m_nAction != pRule->m_nAction ||
-				     pOldRule->m_tExpire != pRule->m_tExpire ||
-				     pOldRule->IP()      != ((CIPRangeRule*)pRule)->IP() ||
-				     pOldRule->mask()    != ((CIPRangeRule*)pRule)->mask() )
+					 pOldRule->m_tExpire != pRule->m_tExpire ||
+					 pOldRule->IP()      != ((CIPRangeRule*)pRule)->IP() ||
+					 pOldRule->mask()    != ((CIPRangeRule*)pRule)->mask() )
 				{
 					// remove conflicting rule if one of the important attributes
 					// differs from the rule we'd like to add
@@ -202,8 +202,8 @@ void CSecurity::add(CSecureRule*& pRule)
 		{
 			pExRule = (*i).second;
 			if ( pExRule->m_oUUID   != pRule->m_oUUID   ||
-			     pExRule->m_nAction != pRule->m_nAction ||
-			     pExRule->m_tExpire != pRule->m_tExpire )
+				 pExRule->m_nAction != pRule->m_nAction ||
+				 pExRule->m_tExpire != pRule->m_tExpire )
 			{
 				// remove conflicting rule if one of the important attributes
 				// differs from the rule we'd like to add
@@ -251,8 +251,8 @@ void CSecurity::add(CSecureRule*& pRule)
 			if ( pHashRule->hashEquals( *((CHashRule*)*i) ) )
 			{
 				if ( pExRule->m_oUUID   != pRule->m_oUUID   ||
-				     pExRule->m_nAction != pRule->m_nAction ||
-				     pExRule->m_tExpire != pRule->m_tExpire )
+					 pExRule->m_nAction != pRule->m_nAction ||
+					 pExRule->m_tExpire != pRule->m_tExpire )
 				{
 					// remove conflicting rule if one of the important attributes
 					// differs from the rule we'd like to add
@@ -291,8 +291,8 @@ void CSecurity::add(CSecureRule*& pRule)
 			if ( (*i)->m_oUUID == pRule->m_oUUID )
 			{
 				if ( pOldRule->m_nAction != pRule->m_nAction ||
-				     pOldRule->m_tExpire != pRule->m_tExpire ||
-				     pOldRule->getContentString() != ((CRegExpRule*)pRule)->getContentString() )
+					 pOldRule->m_tExpire != pRule->m_tExpire ||
+					 pOldRule->getContentString() != ((CRegExpRule*)pRule)->getContentString() )
 				{
 					// remove conflicting rule if one of the important attributes
 					// differs from the rule we'd like to add
@@ -327,8 +327,8 @@ void CSecurity::add(CSecureRule*& pRule)
 			if ( (*i)->m_oUUID == pRule->m_oUUID )
 			{
 				if ( pOldRule->m_nAction != pRule->m_nAction ||
-				     pOldRule->m_tExpire != pRule->m_tExpire ||
-				     pOldRule->getContentString() != ((CRegExpRule*)pRule)->getContentString() )
+					 pOldRule->m_tExpire != pRule->m_tExpire ||
+					 pOldRule->getContentString() != ((CRegExpRule*)pRule)->getContentString() )
 				{
 					// remove conflicting rule if one of the important attributes
 					// differs from the rule we'd like to add
@@ -361,8 +361,8 @@ void CSecurity::add(CSecureRule*& pRule)
 		{
 			pExRule = (*it).second;
 			if ( pExRule->m_oUUID   != pRule->m_oUUID   ||
-			     pExRule->m_nAction != pRule->m_nAction ||
-			     pExRule->m_tExpire != pRule->m_tExpire )
+				 pExRule->m_nAction != pRule->m_nAction ||
+				 pExRule->m_tExpire != pRule->m_tExpire )
 			{
 				// remove conflicting rule if one of the important attributes
 				// differs from the rule we'd like to add
@@ -502,7 +502,7 @@ void CSecurity::clear()
   * Locking: RW
   */
 void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bMessage,
-                    const QString& sComment)
+					const QString& sComment)
 {
 	if ( oAddress.isNull() )
 	{
@@ -531,27 +531,35 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 				return;
 
 			case ban5Mins:
-				pIPRule->m_tExpire = tNow + 300;
+				pIPRule->m_tExpire = tNow + ban5Mins;
 				break;
 
 			case ban30Mins:
-				pIPRule->m_tExpire = tNow + 1800;
+				pIPRule->m_tExpire = tNow + ban30Mins;
 				break;
 
 			case ban2Hours:
-				pIPRule->m_tExpire = tNow + 7200;
+				pIPRule->m_tExpire = tNow + ban2Hours;
+				break;
+
+			case ban6Hours:
+				pIPRule->m_tExpire = tNow + ban6Hours;
+				break;
+
+			case ban12Hours:
+				pIPRule->m_tExpire = tNow + ban12Hours;
 				break;
 
 			case ban1Day:
-				pIPRule->m_tExpire = tNow + 86400;
+				pIPRule->m_tExpire = tNow + ban1Day;
 				break;
 
 			case banWeek:
-				pIPRule->m_tExpire = tNow + 604800;
+				pIPRule->m_tExpire = tNow + banWeek;
 				break;
 
 			case banMonth:
-				pIPRule->m_tExpire = tNow + 2592000;
+				pIPRule->m_tExpire = tNow + banMonth;
 				break;
 
 			case banForever:
@@ -565,9 +573,9 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 			if ( bMessage )
 			{
 				postLog( LogSeverity::Security,
-				         tr( "Adjusted ban expiry time of %1 to %2."
-				             ).arg( oAddress.toString(),
-				                    QDateTime::fromTime_t( pIPRule->m_tExpire ).toString() ) );
+						 tr( "Adjusted ban expiry time of %1 to %2."
+							 ).arg( oAddress.toString(),
+									QDateTime::fromTime_t( pIPRule->m_tExpire ).toString() ) );
 			}
 
 			return;
@@ -590,32 +598,42 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 		break;
 
 	case ban5Mins:
-		pIPRule->m_tExpire  = tNow + 300;
+		pIPRule->m_tExpire  = tNow + ban5Mins;
 		pIPRule->m_sComment = tr( "Temp Ignore (5 min)" );
 		break;
 
 	case ban30Mins:
-		pIPRule->m_tExpire  = tNow + 1800;
+		pIPRule->m_tExpire  = tNow + ban30Mins;
 		pIPRule->m_sComment = tr( "Temp Ignore (30 min)" );
 		break;
 
 	case ban2Hours:
-		pIPRule->m_tExpire  = tNow + 7200;
+		pIPRule->m_tExpire  = tNow + ban2Hours;
+		pIPRule->m_sComment = tr( "Temp Ignore (2 h)" );
+		break;
+
+	case ban6Hours:
+		pIPRule->m_tExpire  = tNow + ban6Hours;
+		pIPRule->m_sComment = tr( "Temp Ignore (2 h)" );
+		break;
+
+	case ban12Hours:
+		pIPRule->m_tExpire  = tNow + ban12Hours;
 		pIPRule->m_sComment = tr( "Temp Ignore (2 h)" );
 		break;
 
 	case ban1Day:
-		pIPRule->m_tExpire  = tNow + 86400;
+		pIPRule->m_tExpire  = tNow + ban1Day;
 		pIPRule->m_sComment = tr( "Temp Ignore (1 d)" );
 		break;
 
 	case banWeek:
-		pIPRule->m_tExpire  = tNow + 604800;  // 60*60*24 = 1 day
+		pIPRule->m_tExpire  = tNow + banWeek;
 		pIPRule->m_sComment = tr( "Client Block (1 week)" );
 		break;
 
 	case banMonth:
-		pIPRule->m_tExpire  = tNow + 2592000; // 60*60*24*30 = 30 days
+		pIPRule->m_tExpire  = tNow + banMonth;
 		pIPRule->m_sComment = tr( "Quick IP Block (1 month)" );
 		break;
 
@@ -643,9 +661,9 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 	if ( bMessage )
 	{
 		postLog( LogSeverity::Security,
-		         tr( "Banned %1 until %2."
-		             ).arg( oAddress.toString(),
-		                    QDateTime::fromTime_t( tExpire ).toString() ) );
+				 tr( "Banned %1 until %2."
+					 ).arg( oAddress.toString(),
+							QDateTime::fromTime_t( tExpire ).toString() ) );
 	}
 }
 
@@ -825,7 +843,7 @@ bool CSecurity::isNewlyDenied(const CQueryHit* pHit, const QList<QString>& lQuer
 		pRule = *i;
 
 		if ( pRule->match( pHit ) || pRule->match( pHit->m_sDescriptiveName ) ||
-		     pRule->match( lQuery, pHit->m_sDescriptiveName ) )
+			 pRule->match( lQuery, pHit->m_sDescriptiveName ) )
 		{
 			// The rules are new, so we don't need to check whether they are expired or not.
 			hit( pRule );
@@ -863,10 +881,10 @@ bool CSecurity::isDenied(const CEndPoint &oAddress/*, const QString& source*/)
 		if ( m_bLogIPCheckHits )
 		{
 			postLog( LogSeverity::Security,
-			         tr( "Skipped repeat IP security check for %s (%i IPs cached"
-			             ).arg( oAddress.toString(), (int)m_Cache.size() )
-			         //+ tr( "; Call source: %s" ).arg( source )
-			         + tr( ")" ));
+					 tr( "Skipped repeat IP security check for %s (%i IPs cached"
+						 ).arg( oAddress.toString(), (int)m_Cache.size() )
+//			         + tr( "; Call source: %s" ).arg( source )
+					 + tr( ")" ));
 		}
 
 		return m_bDenyPolicy;
@@ -874,10 +892,10 @@ bool CSecurity::isDenied(const CEndPoint &oAddress/*, const QString& source*/)
 	else if ( m_bLogIPCheckHits )
 	{
 		postLog( LogSeverity::Security,
-		         tr( "Called first-time IP security check for %s"
-		             ).arg( oAddress.toString() )
-		         //+ tr( " ( Call source: %s)" ).arg( source )
-		         );
+				 tr( "Called first-time IP security check for %s"
+					 ).arg( oAddress.toString() )
+//					+ tr( " ( Call source: %s)" ).arg( source )
+				 );
 	}
 
 	// Second, check the fast IP rules lookup map.
@@ -962,8 +980,8 @@ bool CSecurity::isDenied(const CEndPoint &oAddress/*, const QString& source*/)
 bool CSecurity::isDenied(const CQueryHit* const pHit, const QList<QString> &lQuery)
 {
 	return ( isDenied( pHit ) ||                             // test hashes, file size and extension
-	         isDenied( pHit->m_sDescriptiveName ) ||         // test file name
-	         isDenied( lQuery, pHit->m_sDescriptiveName ) ); // test regex
+			 isDenied( pHit->m_sDescriptiveName ) ||         // test file name
+			 isDenied( lQuery, pHit->m_sDescriptiveName ) ); // test regex
 }
 
 /**
@@ -1139,7 +1157,7 @@ bool CSecurity::start()
 	qRegisterMetaType< QSharedPointer< CSecureRule > >( "QSharedPointer<CSecureRule>" );
 
 	connect( &quazaaSettings, SIGNAL( securitySettingsChanged() ), SLOT( settingsChanged() ),
-	         Qt::QueuedConnection );
+			 Qt::QueuedConnection );
 
 	// Pull settings from global database to local copy.
 	settingsChanged();
@@ -1147,7 +1165,7 @@ bool CSecurity::start()
 	// Set up interval timed cleanup operations.
 	m_idRuleExpiry      = signalQueue.push( this, "expire", m_tRuleExpiryInterval, true );
 	m_idMissCacheExpiry = signalQueue.push( this, "missCacheClear",
-	                                        m_tMissCacheExpiryInterval, true );
+											m_tMissCacheExpiryInterval, true );
 
 	return load(); // Load security rules from HDD.
 }
@@ -1161,7 +1179,7 @@ bool CSecurity::start()
 bool CSecurity::stop()
 {
 	disconnect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
-	            this, SLOT( settingsChanged() ) );
+				this, SLOT( settingsChanged() ) );
 
 	bool bSaved = save( true ); // Save security rules to disk.
 	clear();                    // Release memory and free containers.
@@ -1308,7 +1326,7 @@ bool CSecurity::save(bool bForceSaving) const
 	m_pRWLock.lockForRead();
 
 	if ( !common::securredSaveFile( common::userDataFiles, "security.dat", m_sMessage,
-	                                this, &Security::CSecurity::writeToFile ) )
+									this, &Security::CSecurity::writeToFile ) )
 	{
 		bReturn = false;
 	}
@@ -1390,8 +1408,8 @@ bool CSecurity::fromXML(const QString& sPath)
 	QXmlStreamReader xmlDocument( &oFile );
 
 	if ( xmlDocument.atEnd() ||
-	     !xmlDocument.readNextStartElement() ||
-	     xmlDocument.name().toString().compare( "security", Qt::CaseInsensitive ) )
+		 !xmlDocument.readNextStartElement() ||
+		 xmlDocument.name().toString().compare( "security", Qt::CaseInsensitive ) )
 		return false;
 
 	postLog( LogSeverity::Information, tr( "Importing security rules from file: " ) + sPath );
@@ -1410,7 +1428,7 @@ bool CSecurity::fromXML(const QString& sPath)
 		if ( !bOK )
 		{
 			postLog( LogSeverity::Error,
-			         tr( "Failed to read the Security XML version number from file." ) );
+					 tr( "Failed to read the Security XML version number from file." ) );
 			nVersion = 1.0;
 		}
 	}
@@ -1457,8 +1475,8 @@ bool CSecurity::fromXML(const QString& sPath)
 		else
 		{
 			postLog( LogSeverity::Error,
-			         tr( "Unrecognized entry in XML file with name: " ) +
-			         xmlDocument.name().toString() );
+					 tr( "Unrecognized entry in XML file with name: " ) +
+					 xmlDocument.name().toString() );
 		}
 	}
 
@@ -1567,15 +1585,15 @@ void CSecurity::sanityCheckPerformed()
 		if ( --m_nPendingOperations == 0 )
 		{
 			postLog( LogSeverity::Debug, QString( "Sanity Check finished successfully. " ) +
-			         QString( "Starting cleanup now." ), true );
+					 QString( "Starting cleanup now." ), true );
 
 			clearNewRules();
 		}
 		else
 		{
 			postLog( LogSeverity::Debug, QString( "A component finished with sanity checking. " ) +
-			         QString( "Still waiting for %s other components to finish."
-			                  ).arg( m_nPendingOperations ), true );
+					 QString( "Still waiting for %s other components to finish."
+							  ).arg( m_nPendingOperations ), true );
 		}
 	}
 	else // we didn't get a lock
@@ -1595,8 +1613,8 @@ void CSecurity::forceEndOfSanityCheck()
 	if ( m_nPendingOperations )
 	{
 		QString sTmp = QString( "Sanity check aborted. Most probable reason: It took some " ) +
-		               QString( "component longer than 2min to call sanityCheckPerformed() " ) +
-		               QString( "after having recieved the signal performSanityCheck()." );
+					   QString( "component longer than 2min to call sanityCheckPerformed() " ) +
+					   QString( "after having recieved the signal performSanityCheck()." );
 		postLog( LogSeverity::Error, sTmp, true );
 		Q_ASSERT( false );
 	}
@@ -1798,10 +1816,9 @@ void CSecurity::remove(TConstIterator it)
 		return;
 
 	CSecureRule* pRule = *it;
-	CSecureRule::TRuleType type = pRule->type();
 
 	// Removing the rule from special containers for fast access.
-	switch ( type )
+	switch ( pRule->type() )
 	{
 	case CSecureRule::srContentAddress:
 	{
@@ -1935,7 +1952,7 @@ void CSecurity::remove(TConstIterator it)
 #if SECURITY_ENABLE_GEOIP
 		Q_ASSERT( false );
 #else
-		Q_ASSERT( type == CSecureRule::srContentCountry );
+		Q_ASSERT( pRule->type() == CSecureRule::srContentCountry );
 #endif // SECURITY_ENABLE_GEOIP
 	}
 
@@ -2052,9 +2069,9 @@ void CSecurity::evaluateCacheUsage()
 	// Only do the heavy log operations if necessary.
 	if ( s_nIPMap != nIPMap
 #if SECURITY_ENABLE_GEOIP
-	     || s_nCountryMap != nCountryMap
+		 || s_nCountryMap != nCountryMap
 #endif // SECURITY_ENABLE_GEOIP
-	     )
+		 )
 	{
 		s_nIPMap		= nIPMap;
 #if SECURITY_ENABLE_GEOIP
@@ -2070,9 +2087,9 @@ void CSecurity::evaluateCacheUsage()
 
 		s_nLogMult	= log( nIPMap
 #if SECURITY_ENABLE_GEOIP
-		                   * nCountryMap
+						   * nCountryMap
 #endif // SECURITY_ENABLE_GEOIP
-		                   );
+						   );
 	}
 
 	m_bUseMissCache = ( s_nLogCache < s_nLogMult + m_IPRanges.size() * log2 );

@@ -147,7 +147,7 @@ void CSecureRule::save(const CSecureRule* const pRule, QDataStream &oStream)
 	oStream << pRule->m_sComment;
 	oStream << pRule->m_oUUID.toString();
 	oStream << pRule->m_tExpire;
-    oStream << pRule->m_nTotal.loadAcquire();
+	oStream << pRule->m_nTotal.loadAcquire();
 
 	oStream << pRule->getContentString();
 
@@ -296,8 +296,8 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 					pos = sMask.indexOf( '.' );
 
 					if ( sMask.isEmpty() ||
-					     ( pos == -1 && ( i != 3 || sMask.length() > 3 ) ) ||
-					     !pos || pos > 2 )
+						 ( pos == -1 && ( i != 3 || sMask.length() > 3 ) ) ||
+						 !pos || pos > 2 )
 					{
 						break;
 					}
