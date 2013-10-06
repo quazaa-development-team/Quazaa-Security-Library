@@ -439,7 +439,8 @@ public:
 	inline CSecureRule*	getCopy() const;
 
 	bool				match(const QString& sUserAgent) const;
-	void				toXML(QXmlStreamWriter& oXMLdocument) const;
+    bool                partialMatch(const QString &sUserAgent) const;
+    void				toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 CSecureRule* CUserAgentRule::getCopy() const
