@@ -33,7 +33,7 @@
 #include "securitymanager.h"
 
 #include "quazaasettings.h"
-#include "timedsignalqueue.h"
+#include "Misc/timedsignalqueue.h"
 #include "Misc/timeoutwritelocker.h"
 
 #include "debug_new.h"
@@ -197,8 +197,6 @@ void CSecurity::add(CSecureRule* pRule)
 	{
 		QString country = ((CCountryRule*)pRule)->getContentString();
 		TCountryRuleMap::iterator i = m_Countries.find( country );
-
-		bNewAddress = true;
 
 		if ( i != m_Countries.end() ) // there is a potentially conflicting rule in our map
 		{
@@ -1529,7 +1527,7 @@ void CSecurity::sanityCheck()
 				loadNewRules();
 
 				// Failsafe mechanism in case there are massive problems somewhere else.
-				signalQueue.push( this, SLOT( forceEndOfSanityCheck() ), tNow + 120 );
+				signalQueue.push( this, "forceEndOfSanityCheck", tNow + 120 );
 
 				// Count how many "OK"s we need to get back.
 				m_nPendingOperations = receivers( SIGNAL( performSanityCheck() ) );
@@ -1540,14 +1538,14 @@ void CSecurity::sanityCheck()
 			else // other sanity check still in progress
 			{
 				// try again later
-				signalQueue.push( this, SLOT( sanityCheck() ), tNow + 5 );
+				signalQueue.push( this, "sanityCheck", tNow + 5 );
 			}
 		}
 	}
 	else // We didn't get a write lock in a timely manner.
 	{
 		// try again later
-		signalQueue.push( this, SLOT( sanityCheck() ), tNow + 5 );
+		signalQueue.push( this, "sanityCheck", tNow + 5 );
 	}
 }
 
@@ -1582,7 +1580,7 @@ void CSecurity::sanityCheckPerformed()
 	else // we didn't get a lock
 	{
 		// try again later
-		signalQueue.push( this, SLOT( sanityCheckPerformed() ), common::getTNowUTC() + 2 );
+		signalQueue.push( this, "sanityCheckPerformed", common::getTNowUTC() + 2 );
 	}
 }
 
