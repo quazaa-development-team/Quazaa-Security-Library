@@ -38,7 +38,8 @@
 #include "securerule.h"
 #include "commonfunctions.h"
 
-// DODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
+// TODO: handle m_bIsLoading and its locking more gracefully.
+// TODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
 // TODO: Enable/disable this according to the visibility within the GUI
 // TODO: m_nMaxUnsavedRules >> Settings
 // TODO: add log calls + defines to enable/disable
