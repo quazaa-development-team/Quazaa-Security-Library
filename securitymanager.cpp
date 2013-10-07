@@ -34,7 +34,6 @@
 
 #include "quazaasettings.h"
 #include "Misc/timedsignalqueue.h"
-#include "Misc/timeoutwritelocker.h"
 
 #include "debug_new.h"
 
@@ -54,7 +53,7 @@ CSecurity::CSecurity() :
 	m_tRuleExpiryInterval( 0 ),
 	m_tMissCacheExpiryInterval( 0 ),
 	m_bUseMissCache( false ),
-	m_bIsLoading( false ),
+	m_bIsLoading( 0 ),
 	m_bNewRulesLoaded( false ),
 	m_nPendingOperations( 0 ),
 	m_nMaxUnsavedRules( 100 ),
@@ -98,7 +97,7 @@ bool CSecurity::check(const CSecureRule* const pRule) const
   * adding.
   * Locking: RW
   */
-void CSecurity::add(CSecureRule*& pRule)
+void CSecurity::add(CSecureRule* pRule)
 {
 	if ( !pRule ) return;
 
@@ -438,7 +437,7 @@ void CSecurity::add(CSecureRule*& pRule)
 	emit ruleAdded( pRule );
 
 	// If we're not loading, check all lists for newly denied hosts.
-	if ( !m_bIsLoading )
+	if ( !m_bIsLoading.load() )
 	{
 		// Unlock mutex before performing system wide security check.
 		mutex.unlock();
@@ -1148,10 +1147,6 @@ bool CSecurity::isVendorBlocked(const QString& sVendor) const
   */
 bool CSecurity::start()
 {
-	// We don't really need a lock here as nobody is supposed to use the manager before
-	// it is properly initialized.
-	m_sMessage = tr( "[Security] " );
-
 	// Register QSharedPointer<CSecureRule> to allow using this type with queued signal/slot
 	// connections.
 	qRegisterMetaType< QSharedPointer< CSecureRule > >( "QSharedPointer<CSecureRule>" );
@@ -1240,8 +1235,10 @@ bool CSecurity::load( QString sPath )
 
 		QWriteLocker mutex( &m_pRWLock );
 		m_bDenyPolicy = bDenyPolicy;
-		m_bIsLoading = true; // Prevent sanity check from being executed at each add() operation.
 		mutex.unlock();
+
+		// Prevent sanity check from being executed at each add() operation.
+		m_bIsLoading.store( true );
 
 		while ( nCount > 0 )
 		{
@@ -1261,9 +1258,7 @@ bool CSecurity::load( QString sPath )
 			nCount--;
 		}
 
-		mutex.relock();
-		m_bIsLoading = false;
-		mutex.unlock();
+		m_bIsLoading.store( false );
 
 		// If necessary perform sanity check after loading.
 		sanityCheck();
@@ -1276,8 +1271,7 @@ bool CSecurity::load( QString sPath )
 		clear();
 		oFile.close();
 
-		QWriteLocker l( &m_pRWLock );
-		m_bIsLoading = false;
+		m_bIsLoading.store( false );
 
 		return false;
 	}
@@ -1325,7 +1319,7 @@ bool CSecurity::save(bool bForceSaving) const
 	bool bReturn;
 	m_pRWLock.lockForRead();
 
-	if ( !common::securredSaveFile( common::userDataFiles, "security.dat", m_sMessage,
+	if ( !common::securredSaveFile( common::userDataFiles, "security.dat", Components::Security,
 									this, &Security::CSecurity::writeToFile ) )
 	{
 		bReturn = false;
@@ -1435,9 +1429,7 @@ bool CSecurity::fromXML(const QString& sPath)
 
 	const quint32 tNow = common::getTNowUTC();
 
-	QWriteLocker mutex( &m_pRWLock );
-	m_bIsLoading = true;
-	mutex.unlock();
+	m_bIsLoading.store( true );
 
 	CSecureRule* pRule = NULL;
 	unsigned int nRuleCount = 0;
@@ -1456,7 +1448,7 @@ bool CSecurity::fromXML(const QString& sPath)
 
 			if ( pRule )
 			{
-				if ( getUUID( pRule->m_oUUID ) == m_Rules.end() && !pRule->isExpired( tNow ) )
+				if ( !pRule->isExpired( tNow ) )
 				{
 					add( pRule );
 				}
@@ -1480,8 +1472,7 @@ bool CSecurity::fromXML(const QString& sPath)
 		}
 	}
 
-	mutex.relock();
-	m_bIsLoading = false;
+	m_bIsLoading.store( false );
 
 	postLog( LogSeverity::Information, QString::number( nRuleCount ) + tr( " Rules imported." ) );
 
@@ -1520,24 +1511,19 @@ void CSecurity::requestRuleList()
 // Sanity checking slots
 /**
   * Qt slot. Triggers a system wide sanity check.
-  * The sanity check is delayed by 5s, if a write lock couldn't be aquired after 500ms.
+  * The sanity check is delayed by 5s, if a write lock couldn't be aquired after 200ms.
   * The sanity check is aborted if it takes longer than 2min to finish.
   * Locking: RW
   */
 void CSecurity::sanityCheck()
 {
-	bool bSuccess;
-	CTimeoutWriteLocker( &m_pRWLock, bSuccess, 500 );
-
-	const quint32 tNow = common::getTNowUTC();
-
-	if ( bSuccess )
+	if ( m_pRWLock.tryLockForWrite( 200 ) )
 	{
 		// This indicates that an error happend previously.
-		Q_ASSERT( !m_bNewRulesLoaded || !m_loadedAddressRules.empty() || !m_loadedHitRules.empty());
+		Q_ASSERT( m_bNewRulesLoaded || m_loadedAddressRules.empty() && m_loadedHitRules.empty() );
 
 		// Check whether there are new rules to deal with.
-		bool bNewRules = !( m_newAddressRules.empty() && m_newHitRules.empty() );
+		bool bNewRules = m_newAddressRules.size() || m_newHitRules.size();
 
 		if ( bNewRules )
 		{
@@ -1545,26 +1531,38 @@ void CSecurity::sanityCheck()
 			{
 				loadNewRules();
 
-				// Failsafe mechanism in case there are massive problems somewhere else.
-				signalQueue.push( this, "forceEndOfSanityCheck", tNow + 120 );
-
 				// Count how many "OK"s we need to get back.
 				m_nPendingOperations = receivers( SIGNAL( performSanityCheck() ) );
 
-				// Inform all other modules aber the necessity of a sanity check.
-				emit performSanityCheck();
+				// if there is anyone listening, start the sanity check
+				if ( m_nPendingOperations )
+				{
+#ifdef _DEBUG
+					// Failsafe mechanism in case there are massive problems somewhere else.
+					m_idForceEoSC = signalQueue.push( this, "forceEndOfSanityCheck", 120 );
+#endif
+
+					// Inform all other modules aber the necessity of a sanity check.
+					emit performSanityCheck();
+				}
+				else
+				{
+					clearNewRules();
+				}
 			}
 			else // other sanity check still in progress
 			{
 				// try again later
-				signalQueue.push( this, "sanityCheck", tNow + 5 );
+				signalQueue.push( this, "sanityCheck", 5 );
 			}
 		}
+
+		m_pRWLock.unlock();
 	}
 	else // We didn't get a write lock in a timely manner.
 	{
 		// try again later
-		signalQueue.push( this, "sanityCheck", tNow + 5 );
+		signalQueue.push( this, "sanityCheck", 5 );
 	}
 }
 
@@ -1574,41 +1572,36 @@ void CSecurity::sanityCheck()
   */
 void CSecurity::sanityCheckPerformed()
 {
-	bool bSuccess;
-	CTimeoutWriteLocker( &m_pRWLock, bSuccess, 500 );
+	m_pRWLock.lockForWrite();
 
-	if ( bSuccess )
+	Q_ASSERT( m_bNewRulesLoaded );        // TODO: remove after testing
+	Q_ASSERT( m_nPendingOperations > 0 );
+
+	if ( --m_nPendingOperations == 0 )
 	{
-		Q_ASSERT( m_bNewRulesLoaded );        // TODO: remove after testing
-		Q_ASSERT( m_nPendingOperations > 0 );
+		postLog( LogSeverity::Debug, QString( "Sanity Check finished successfully. " ) +
+				 QString( "Starting cleanup now." ), true );
 
-		if ( --m_nPendingOperations == 0 )
-		{
-			postLog( LogSeverity::Debug, QString( "Sanity Check finished successfully. " ) +
-					 QString( "Starting cleanup now." ), true );
-
-			clearNewRules();
-		}
-		else
-		{
-			postLog( LogSeverity::Debug, QString( "A component finished with sanity checking. " ) +
-					 QString( "Still waiting for %s other components to finish."
-							  ).arg( m_nPendingOperations ), true );
-		}
+		clearNewRules();
 	}
-	else // we didn't get a lock
+	else
 	{
-		// try again later
-		signalQueue.push( this, "sanityCheckPerformed", common::getTNowUTC() + 2 );
+		postLog( LogSeverity::Debug, QString( "A component finished with sanity checking. " ) +
+				 QString( "Still waiting for %s other components to finish."
+						  ).arg( m_nPendingOperations ), true );
 	}
+
+	m_pRWLock.unlock();
 }
 
 /**
   * Qt slot. Aborts the currently running sanity check by clearing its rule lists.
   * Locking: RW
   */
+#ifdef _DEBUG // use failsafe to abort sanity check only in debug version
 void CSecurity::forceEndOfSanityCheck()
 {
+	m_pRWLock.lockForWrite();
 #ifdef _DEBUG
 	if ( m_nPendingOperations )
 	{
@@ -1620,10 +1613,11 @@ void CSecurity::forceEndOfSanityCheck()
 	}
 #endif //_DEBUG
 
-	QWriteLocker l( &m_pRWLock );
 	clearNewRules();
 	m_nPendingOperations = 0;
+	m_pRWLock.unlock();
 }
+#endif //_DEBUG
 
 /**
   * Qt slot. Checks the security database for expired rules.
@@ -1697,6 +1691,7 @@ void CSecurity::settingsChanged()
 //////////////////////////////////////////////////////////////////////
 // Private method definitions
 
+/** Locking: REQUIRED */
 void CSecurity::loadNewRules()
 {
 	// should both be empty
@@ -1768,6 +1763,14 @@ void CSecurity::clearNewRules()
 		delete pRule;
 		pRule = NULL;
 	}
+
+#ifdef _DEBUG // use failsafe to abort sanity check only in debug version
+	if ( !m_idForceEoSC.isNull() )
+	{
+		Q_ASSERT( signalQueue.pop( m_idForceEoSC ) );
+		m_idForceEoSC = QUuid();
+	}
+#endif
 
 	m_bNewRulesLoaded = false;
 }
@@ -2227,7 +2230,7 @@ bool CSecurity::isDenied(const QList<QString>& lQuery, const QString& sContent)
  */
 void CSecurity::postLog(LogSeverity::Severity severity, QString message, bool bDebug)
 {
-	QString sMessage = securityManager.m_sMessage;
+	QString sMessage;
 
 	switch ( severity )
 	{
@@ -2251,10 +2254,11 @@ void CSecurity::postLog(LogSeverity::Severity severity, QString message, bool bD
 
 	if ( bDebug )
 	{
+		sMessage = systemLog.msgFromComponent( Components::Security ) + sMessage;
 		qDebug() << sMessage.toLocal8Bit().constData();
 	}
 	else
 	{
-		systemLog.postLog( severity, sMessage );
+		systemLog.postLog( severity, Components::Security, sMessage );
 	}
 }

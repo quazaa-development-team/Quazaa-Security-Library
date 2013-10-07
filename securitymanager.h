@@ -94,8 +94,6 @@ public:
 	mutable QReadWriteLock m_pRWLock;
 
 private:
-	QString             m_sMessage;
-
 	// contains all rules
 	TSecurityRuleList   m_Rules;
 
@@ -140,10 +138,13 @@ private:
 	// Timer IDs
 	QUuid               m_idRuleExpiry;       // The ID of the signalQueue object.
 	QUuid               m_idMissCacheExpiry;  // The ID of the signalQueue object.
+#ifdef _DEBUG // use failsafe to abort sanity check only in debug version
+	QUuid               m_idForceEoSC;        // The signalQueue ID (force end of sanity check)
+#endif
 
 	// Other
 	bool                m_bUseMissCache;
-	bool                m_bIsLoading;         // true during import operations. Used to avoid unnecessary GUI updates.
+	QAtomicInt          m_bIsLoading;         // true during import operations. Used to avoid unnecessary GUI updates.
 	bool                m_bNewRulesLoaded;    // true if new rules for sanity check have been loaded.
 	unsigned short      m_nPendingOperations; // Counts the number of program modules that still need to call back after having finished a requested sanity check operation.
 
@@ -172,7 +173,7 @@ public:
 	void            setDenyPolicy(bool bDenyPolicy);
 
 	bool            check(const CSecureRule* const pRule) const;
-	void            add(CSecureRule*& pRule);
+	void            add(CSecureRule* pRule);
 	// Use bLockRequired to enable/disable locking inside function.
 	inline void     remove(CSecureRule* pRule, bool bLockRequired = true);
 	void            clear();
@@ -240,7 +241,9 @@ public slots:
 	// This slot must be triggered by all listeners to performSanityCheck() once they have completed their work.
 	void            sanityCheckPerformed();
 	// Aborts all currently running sanity checks by clearing their rule lists.
+#ifdef _DEBUG // use failsafe to abort sanity check only in debug version
 	void            forceEndOfSanityCheck();
+#endif
 
 	void            expire();
 	void            missCacheClear();
