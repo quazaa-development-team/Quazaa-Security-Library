@@ -501,13 +501,21 @@ void CSecurity::clear()
   * Locking: RW
   */
 void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bMessage,
-					const QString& sComment)
+					const QString& sComment
+#ifdef _DEBUG
+					, const QString& sSender
+#endif
+					)
 {
 	if ( oAddress.isNull() )
 	{
 		Q_ASSERT( false ); // if this happens, make sure to fix the caller... :)
 		return;
 	}
+
+#ifdef _DEBUG
+	qDebug() << "[Security] CSecurity::ban() invoked by: " << sSender.toLocal8Bit().data();
+#endif
 
 	QWriteLocker mutex( &m_pRWLock );
 
@@ -571,6 +579,9 @@ void CSecurity::ban(const QHostAddress& oAddress, TBanLength nBanLength, bool bM
 
 			if ( bMessage )
 			{
+#ifdef _DEBUG
+				qDebug() << " *** PING ***                Sender: " << sSender.toLocal8Bit().data();
+#endif
 				postLog( LogSeverity::Security,
 						 tr( "Adjusted ban expiry time of %1 to %2."
 							 ).arg( oAddress.toString(),
