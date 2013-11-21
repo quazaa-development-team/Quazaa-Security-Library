@@ -25,16 +25,13 @@
 #ifndef REGEXPRULE_H
 #define REGEXPRULE_H
 
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
+#include "securerule.h"
 
 #if QT_VERSION >= 0x050000
 #  include <QRegularExpression>
 #else
 #  include <QRegExp>
 #endif
-
-#include "securerule.h"
 
 // Note: The locking information within the doxygen comments refers to the RW lock of the Security
 //       Manager.
@@ -44,7 +41,7 @@ namespace Security
 /* ============================================================================================== */
 /* ======================================== CRegExpRule  ======================================== */
 /* ============================================================================================== */
-class CRegExpRule : public CSecureRule
+class RegularExpressionRule : public Rule
 {
 private:
 	// There are two kinds of rules:
@@ -59,19 +56,18 @@ private:
 #endif
 
 public:
-	CRegExpRule();
+	RegularExpressionRule();
+	Rule*       getCopy() const;
 
-	bool                operator==(const CSecureRule& pRule) const;
+	bool        operator==(const Rule& pRule) const;
 
-	bool                parseContent(const QString& sContent);
+	bool        parseContent(const QString& sContent);
 
-	inline CSecureRule* getCopy() const;
-
-	bool                match(const QList<QString>& lQuery, const QString& sContent) const;
-	void                toXML(QXmlStreamWriter& oXMLdocument) const;
+	bool        match(const QList<QString>& lQuery, const QString& sContent) const;
+	void        toXML(QXmlStreamWriter& oXMLdocument) const;
 
 private:
-	static bool         replace(QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent);
+	static bool replace(QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent);
 };
 
 }

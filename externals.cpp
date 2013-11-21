@@ -1,5 +1,5 @@
 /*
-** countryrule.h
+** external.cpp
 **
 ** Copyright © Quazaa Development Team, 2009-2013.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
@@ -22,34 +22,42 @@
 ** Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef COUNTRYRULE_H
-#define COUNTRYRULE_H
+#include "externals.h"
 
-#include "securerule.h"
+using namespace Security;
 
-#if SECURITY_ENABLE_GEOIP
-
-// Note: The locking information within the doxygen comments refers to the RW lock of the Security
-//       Manager.
-
-namespace Security
+void Security::postLogMessage(LogSeverity::Severity eSeverity, QString sMessage, bool bDebug)
 {
-/* ============================================================================================== */
-/* ======================================== CCountryRule ======================================== */
-/* ============================================================================================== */
+	switch ( eSeverity )
+	{
+	case LogSeverity::Warning:
+		sMessage = QObject::tr ( "Warning: " ) + sMessage;
+		break;
 
-class CountryRule : public Rule
-{
-public:
-	CountryRule();
-	Rule*   getCopy() const;
+	case LogSeverity::Error:
+		sMessage = QObject::tr ( "Error: " ) + sMessage;
+		break;
 
-	bool    parseContent(const QString& sContent);
+	case LogSeverity::Critical:
+		sMessage = QObject::tr ( "Critical Error: " ) + sMessage;
+		break;
 
-	bool    match(const CEndPoint& oAddress) const;
-	void    toXML(QXmlStreamWriter& oXMLdocument) const;
-};
+	default:
+		break; // do nothing
+	}
 
+	if ( bDebug )
+	{
+		sMessage = systemLog.msgFromComponent( Components::Security ) + sMessage;
+		qDebug() << sMessage.toLocal8Bit().constData();
+	}
+	else
+	{
+		systemLog.postLog( eSeverity, Components::Security, sMessage );
+	}
 }
-#endif // SECURITY_ENABLE_GEOIP
-#endif // COUNTRYRULE_H
+
+QString Security::dataPath()
+{
+	return CQuazaaGlobals::DATA_PATH();
+}

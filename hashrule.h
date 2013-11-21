@@ -25,11 +25,7 @@
 #ifndef HASHRULE_H
 #define HASHRULE_H
 
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
-
 #include "securerule.h"
-#include "NetworkCore/Hashes/hash.h"
 
 // Note: The locking information within the doxygen comments refers to the RW lock of the Security
 //       Manager.
@@ -39,27 +35,29 @@ namespace Security
 /* ============================================================================================== */
 /* ========================================= CHashRule  ========================================= */
 /* ============================================================================================== */
-class CHashRule : public CSecureRule
+class HashRule : public Rule
 {
 private:
-	QMap< CHash::Algorithm, CHash > m_Hashes;
+	std::map< CHash::Algorithm, CHash > m_lmHashes;
 
 public:
-	CHashRule();
-	
-	CSecureRule*    getCopy() const;
-	
-	bool            parseContent(const QString& sContent);
+	HashRule();
 
-	QList< CHash >  getHashes() const;
-	void            setHashes(const QList< CHash >& hashes);
+	Rule*   getCopy() const;
 
-	bool            hashEquals(CHashRule& oRule) const;
+	bool    parseContent(const QString& sContent);
 
-	bool            match(const CQueryHit* const pHit) const;
-	bool            match(const QList<CHash>& lHashes) const;
+	HashVector  getHashes() const;
+	void        setHashes(const HashVector& hashes);
 
-	void            toXML(QXmlStreamWriter& oXMLdocument) const;
+	void    reduceByHashPriority(uint nNumberOfHashes);
+
+	bool    hashEquals(const HashRule& oRule) const;
+
+	bool    match(const CQueryHit* const pHit) const;
+	bool    match(const HashVector& lHashes) const;
+
+	void    toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 }

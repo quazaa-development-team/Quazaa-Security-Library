@@ -28,18 +28,7 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
-#if QT_VERSION >= 0x050000
-#  include <QRegularExpression>
-#else
-#  include <QRegExp>
-#endif
-
-// Enable/disable GeoIP support of the security library.
-#define SECURITY_ENABLE_GEOIP 1
-
-#if SECURITY_ENABLE_GEOIP
-#include "geoiplist.h"
-#endif
+#include "externals.h"
 
 // Note: The locking information within the doxygen comments refers to the RW lock of the Security
 //       Manager.
@@ -47,24 +36,40 @@
 namespace Security
 {
 
-typedef quint16 TRuleID; // used for GUI updating
+typedef quint32 ID; // used for GUI updating
 
-class CSecureRule
+namespace RuleType
 {
-public:
-	typedef enum
+	enum Type
 	{
-		srContentUndefined = 0, srContentAddress = 1, srContentAddressRange = 2,
-		srContentCountry = 3, srContentHash = 4, srContentRegExp = 5, srContentUserAgent = 6,
-		srContentText = 7
-	} TRuleType;
+		Undefined = 0, IPAddress = 1, IPAddressRange = 2, Country = 3, Hash = 4,
+		RegularExpression = 5, UserAgent = 6, Content = 7, NoOfTypes = 8
+	};
+}
 
-	typedef enum { srNull = 0, srAccept = 1, srDeny = 2 } TPolicy;
-	enum { srIndefinite = 0, srSession = 1 };
+namespace RuleAction
+{
+	enum Action
+	{
+		None = 0, Accept = 1, Deny = 2, NoOfActions = 3
+	};
+}
 
+namespace RuleTime
+{
+	enum Time
+	{
+		Forever = 0, Session = 1, FiveMinutes = 300, ThirtyMinutes = 1800, TwoHours = 7200,
+		SixHours = 21600, TwelveHours = 42300, Day = 86400, Week = 604800, Month = 2592000,
+		SixMonths = 15552000
+	};
+}
+
+class Rule
+{
 protected:
 	// Type is critical to functionality and may not be changed externally.
-	TRuleType   m_nType;
+	RuleType::Type  m_nType;
 
 	// Contains a string representation of the rule content for faster GUI accesses.
 	// Can be accessed via getContentString().
@@ -75,53 +80,53 @@ private:
 	QAtomicInt  m_nToday;
 	QAtomicInt  m_nTotal;
 
-	// List of pointers that will be set to 0 if this instance of CSecureRule is deleted.
-	// Note that the content of this list is not forwarded to copies of this rule.
-	std::list<CSecureRule**> m_lPointers;
+	quint32     m_tExpire;
+
+	// mechanism for allocating GUI IDs
+	static ID           m_nNextID;
+	static QMutex       m_oIDLock;
+	static std::set<ID> m_idCheck;
 
 public:
-	TPolicy     m_nAction;
-	QUuid       m_oUUID;
-	quint32     m_tExpire;
-	QString     m_sComment;
+	RuleAction::Action  m_nAction;
+	QUuid               m_idUUID;
+	ID                  m_nGUIID;    // used for GUI updating
+	QString             m_sComment;
+	bool                m_bAutomatic;
 
 public:
 	// Construction / Destruction
-	CSecureRule();
-	// See m_lPointers for why we don't use the default copy constructor.
-	CSecureRule(const CSecureRule& pRule);
-	virtual ~CSecureRule();
+	Rule();
+	Rule(const Rule& pRule);
+	virtual ~Rule();
 
 	// Returns a copy of the current rule. Note that this copy does not contain
 	// any information on pointers registered to the original CSecureRule object.
-	virtual CSecureRule* getCopy() const;
+	virtual Rule* getCopy() const;
 
 	// Operators
-	virtual bool    operator==(const CSecureRule& pRule) const;
-	bool            operator!=(const CSecureRule& pRule) const;
+	virtual bool    operator==(const Rule& pRule) const;
+	bool            operator!=(const Rule& pRule) const;
 
 	virtual bool    parseContent(const QString& sContent);
 	QString         getContentString() const;
 
-	// Registers a pointer to a Secure Rule to assure it is set to NULL if the Secure
-	// Rule is deleted. Note that a pointer who has been registered needs to be unregistered
-	// before freeing its memory.
-	void            registerPointer(CSecureRule** pRule);
-	// Call this before removing a pointer you have previously registered.
-	void            unRegisterPointer(CSecureRule** pRule);
+	bool    isExpired(quint32 tNow, bool bSession = false) const;
+	void    setExpiryTime(const quint32 tExpire);
+	void    addExpiryTime(const quint32 tAdd);
+	quint32 getExpiryTime() const;
 
-	inline bool     isExpired(quint32 tNow, bool bSession = false) const;
-	inline quint32  getExpiryTime() const;
+	void    mergeInto(Rule* pDestination);
 
 	// Hit count control
-	inline void     count();
-	inline void     resetCount();
-	inline quint32  getTodayCount() const;
-	inline quint32  getTotalCount() const;
-	inline void     loadTotalCount(quint32 nTotal);
+	void    count();
+	void    resetCount();
+	quint32 getTodayCount() const;
+	quint32 getTotalCount() const;
+	void    loadTotalCount(quint32 nTotal);
 
 	// get the rule type
-	inline TRuleType type() const;
+	RuleType::Type  type() const;
 
 	// Check content for hits
 	virtual bool    match(const CEndPoint& oAddress) const;
@@ -130,16 +135,16 @@ public:
 	virtual bool    match(const QList<QString>& lQuery, const QString& sContent) const;
 
 	// Read/write rule from/to file
-	static void     load(CSecureRule*& pRule, QDataStream& fsFile, const int nVersion);
-	static void     save(const CSecureRule* const pRule, QDataStream& oStream);
+	static void     load(Rule*& pRule, QDataStream& fsFile, const int nVersion);
+	static void     save(const Rule* const pRule, QDataStream& oStream);
 
 	// XML Import/Export functionality
-	static CSecureRule* fromXML(QXmlStreamReader& oXMLdocument, float nVersion);
-	inline virtual void toXML(QXmlStreamWriter& oXMLdocument) const;
+	static Rule*    fromXML(QXmlStreamReader& oXMLdocument, float nVersion);
+	virtual void    toXML(QXmlStreamWriter& oXMLdocument) const;
 
 protected:
 	// Contains default code for XML generation.
-	static void         toXML(const CSecureRule& oRule, QXmlStreamWriter& oXMLdocument);
+	static void     toXML(const Rule& oRule, QXmlStreamWriter& oXMLdocument);
 };
 
 }

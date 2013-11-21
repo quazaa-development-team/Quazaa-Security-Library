@@ -29,14 +29,19 @@
 using namespace Security;
 
 #if SECURITY_ENABLE_GEOIP
-CCountryRule::CCountryRule()
+CountryRule::CountryRule()
 {
-	m_nType = srContentCountry;
+	m_nType = RuleType::Country;
 }
 
-bool CCountryRule::parseContent(const QString& sContent)
+Rule* CountryRule::getCopy() const
 {
-	if ( geoIP.countryNameFromCode( sContent ) != "Unknown" )
+	return new CountryRule( *this );
+}
+
+bool CountryRule::parseContent(const QString& sContent)
+{
+	if ( geoIP.findCountryCode( sContent ) != "ZZ" )
 	{
 		m_sContent = sContent;
 		return true;
@@ -44,9 +49,9 @@ bool CCountryRule::parseContent(const QString& sContent)
 	return false;
 }
 
-bool CCountryRule::match(const CEndPoint& oAddress) const
+bool CountryRule::match(const CEndPoint& oAddress) const
 {
-	Q_ASSERT( !oAddress.isNull() && m_nType == srContentCountry );
+	Q_ASSERT( !oAddress.isNull() && m_nType == RuleType::Country );
 
 	if ( m_sContent == oAddress.country() )
 		return true;
@@ -54,23 +59,18 @@ bool CCountryRule::match(const CEndPoint& oAddress) const
 	return false;
 }
 
-void CCountryRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void CountryRule::toXML(QXmlStreamWriter& oXMLdocument) const
 {
-	Q_ASSERT( m_nType == srContentCountry );
+	Q_ASSERT( m_nType == RuleType::Country );
 
 	oXMLdocument.writeStartElement( "rule" );
 
 	oXMLdocument.writeAttribute( "type", "country" );
 	oXMLdocument.writeAttribute( "content", getContentString() );
 
-	CSecureRule::toXML( *this, oXMLdocument );
+	Rule::toXML( *this, oXMLdocument );
 
 	oXMLdocument.writeEndElement();
-}
-
-CSecureRule* CCountryRule::getCopy() const
-{
-	return new CCountryRule( *this );
 }
 
 #endif // SECURITY_ENABLE_GEOIP

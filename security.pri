@@ -22,15 +22,20 @@
 # Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
+QT_VERSION = $$[QT_VERSION]
+QT_VERSION = $$split(QT_VERSION, ".")
+
 INCLUDEPATH += $$PWD
 
 # Headers
 HEADERS += \
 		$$PWD/contentrule.h \
 		$$PWD/countryrule.h \
+		$$PWD/externals.h \
 		$$PWD/hashrule.h \
 		$$PWD/iprangerule.h \
 		$$PWD/iprule.h \
+		$$PWD/misscache.h \
 		$$PWD/regexprule.h \
 		$$PWD/securerule.h \
 		$$PWD/securitymanager.h \
@@ -40,9 +45,11 @@ HEADERS += \
 SOURCES += \
 		$$PWD/contentrule.cpp \
 		$$PWD/countryrule.cpp \
+		$$PWD/externals.cpp \
 		$$PWD/hashrule.cpp \
 		$$PWD/iprangerule.cpp \
 		$$PWD/iprule.cpp \
+		$$PWD/misscache.cpp \
 		$$PWD/regexprule.cpp \
 		$$PWD/securerule.cpp \
 		$$PWD/securitymanager.cpp \

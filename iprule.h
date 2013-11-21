@@ -25,11 +25,6 @@
 #ifndef IPRULE_H
 #define IPRULE_H
 
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
-
-#include <QHostAddress>
-
 #include "securerule.h"
 
 // Note: The locking information within the doxygen comments refers to the RW lock of the Security
@@ -40,24 +35,22 @@ namespace Security
 /* ============================================================================================== */
 /* ========================================== CIPRule  ========================================== */
 /* ============================================================================================== */
-class CIPRule : public CSecureRule
+class IPRule : public Rule
 {
 private:
-	QHostAddress m_oIP;
+	CEndPoint m_oIP;
 
 public:
-	CIPRule();
+	IPRule();
+	Rule*       getCopy() const;
 
-	inline QHostAddress IP() const;
-	inline void         setIP( const QHostAddress& oIP );
+	bool        parseContent(const QString& sContent);
 
-	bool                parseContent(const QString& sContent);
+	CEndPoint   IP() const;
+	void        setIP(const CEndPoint& oIP);
 
-	inline CSecureRule* getCopy() const;
-
-	bool                match(const CEndPoint& oAddress) const;
-	void                toXML(QXmlStreamWriter& oXMLdocument) const;
-
+	bool        match(const CEndPoint& oAddress) const;
+	void        toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 }

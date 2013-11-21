@@ -25,13 +25,12 @@
 #ifndef CONTENTRULE_H
 #define CONTENTRULE_H
 
-#include <QList>
-#include <QString>
-
 #include "securerule.h"
 
-// contains everyting that does not fit into the other rule classes
-class CContentRule : public CSecureRule
+namespace Security
+{
+// keyword (any/all) matching
+class ContentRule : public Rule
 {
 private:
 	bool                m_bAll;
@@ -40,20 +39,20 @@ private:
 	typedef QList< QString >::const_iterator CListIterator;
 
 public:
-	CContentRule();
-	CSecureRule*    getCopy() const;
+	ContentRule();
+	Rule*   getCopy() const;
 
-	bool            operator==(const CSecureRule& pRule) const;
-	
-	bool            parseContent(const QString& sContent);
+	bool    operator==(const Rule& pRule) const;
 
-	void            setAll(bool all = true);
-	bool            getAll() const;
+	bool    parseContent(const QString& sContent);
 
-	bool            match(const QString& sFileName) const;
-	bool            match(const CQueryHit* const pHit) const;
+	void    setAll(bool all = true);
+	bool    getAll() const;
 
-	void            toXML(QXmlStreamWriter& oXMLdocument) const;
+	bool    match(const QString& sFileName) const;
+	bool    match(const CQueryHit* const pHit) const;
+
+	void    toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 }

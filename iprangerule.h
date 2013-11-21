@@ -25,12 +25,6 @@
 #ifndef IPRANGERULE_H
 #define IPRANGERULE_H
 
-#include <QPair>
-#include <QHostAddress>
-
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
-
 #include "securerule.h"
 
 // Note: The locking information within the doxygen comments refers to the RW lock of the Security
@@ -38,30 +32,32 @@
 
 namespace Security
 {
-
 /* ============================================================================================== */
 /* ======================================== CIPRangeRule ======================================== */
 /* ============================================================================================== */
-class CIPRangeRule : public CSecureRule
+class IPRangeRule : public Rule
 {
 private:
-	QPair<QHostAddress, int> m_oSubNet;
+	CEndPoint m_oStartIP;
+	CEndPoint m_oEndIP;
 
 public:
-	CIPRangeRule();
-	
-	CSecureRule*    getCopy() const;
-	
+	IPRangeRule();
+
+	Rule*           getCopy() const;
+
 	bool            parseContent(const QString& sContent);
 
-	QHostAddress    IP() const;
-	int             mask() const;
+	CEndPoint       startIP() const;
+	CEndPoint       endIP() const;
+
+	IPRangeRule*    merge(IPRangeRule*& pOther);
 
 	bool            match(const CEndPoint& oAddress) const;
-	
+	bool            contains(const CEndPoint& oAddress) const;
+
 	void            toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 }
-
 #endif // IPRANGERULE_H

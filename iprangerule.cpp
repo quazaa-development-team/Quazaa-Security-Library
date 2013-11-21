@@ -28,59 +28,131 @@
 
 using namespace Security;
 
-CIPRangeRule::CIPRangeRule()
+IPRangeRule::IPRangeRule()
 {
-	m_nType = srContentAddressRange;
+	m_nType = RuleType::IPAddressRange;
 }
 
-CSecureRule* CIPRangeRule::getCopy() const
+Rule* IPRangeRule::getCopy() const
 {
-	return new CIPRangeRule( *this );
+	return new IPRangeRule( *this );
 }
 
-bool CIPRangeRule::parseContent(const QString& sContent)
+bool IPRangeRule::parseContent(const QString& sContent)
 {
-	QPair<QHostAddress, int> oPair = QHostAddress::parseSubnet( sContent );
+	QStringList addresses = sContent.split("-");
 
-	if ( oPair != qMakePair( QHostAddress(), -1 ) )
+	CEndPoint oStartAddress;
+	CEndPoint oEndAddress;
+	if ( oStartAddress.setAddress( addresses.at(0) ) && oEndAddress.setAddress( addresses.at(1) ) )
 	{
-		m_oSubNet = oPair;
-		m_sContent = m_oSubNet.first.toString() + "/" + QString::number( m_oSubNet.second );
+		m_oStartIP = oStartAddress;
+		m_oEndIP = oEndAddress;
+		m_sContent = sContent;
 		return true;
 	}
 	return false;
 }
 
-QHostAddress CIPRangeRule::IP() const
+CEndPoint IPRangeRule::startIP() const
 {
-	return m_oSubNet.first;
+	return m_oStartIP;
 }
 
-int CIPRangeRule::mask() const
+CEndPoint IPRangeRule::endIP() const
 {
-	return m_oSubNet.second;
+	return m_oEndIP;
 }
 
-bool CIPRangeRule::match(const CEndPoint& oAddress) const
+IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
+{
+	Q_ASSERT( pOther->m_oEndIP >= pOther->m_oStartIP );
+	Q_ASSERT(         m_oEndIP >=         m_oStartIP );
+
+	bool bContainsOtherStartIP = contains( pOther->startIP() );
+	bool bContainsOtherEndIP   = contains( pOther->endIP() );
+
+	if ( bContainsOtherStartIP && bContainsOtherEndIP )
+	{
+		if ( m_nAction != pOther->m_nAction )
+		{
+			if ( pOther->m_nAction == RuleAction::None )
+			{
+				delete pOther;
+				pOther = NULL;
+			}
+			else
+			{
+				IPRangeRule* pNewRule = (IPRangeRule*)getCopy();
+				pNewRule->m_oStartIP = pOther->m_oEndIP;
+				++pNewRule->m_oStartIP;
+
+				m_oEndIP = pOther->m_oStartIP;
+				--m_oEndIP;
+
+				Q_ASSERT( pNewRule->m_oEndIP >= pNewRule->m_oStartIP );
+				Q_ASSERT(           m_oEndIP >=           m_oStartIP );
+
+				return pNewRule;
+			}
+		}
+		else
+		{
+			pOther->mergeInto( this );
+
+			delete pOther;
+			pOther = NULL;
+		}
+	}
+	else if ( bContainsOtherStartIP )
+	{
+		m_oEndIP = pOther->m_oStartIP;
+		--m_oEndIP;
+
+		Q_ASSERT( m_oEndIP >= m_oStartIP );
+	}
+	else if ( bContainsOtherEndIP )
+	{
+		m_oStartIP = pOther->m_oEndIP;
+		++m_oStartIP;
+
+		Q_ASSERT( m_oEndIP >= m_oStartIP );
+	}
+
+	return NULL;
+}
+
+bool IPRangeRule::contains(const CEndPoint& oAddress) const
 {
 #ifdef _DEBUG
-	Q_ASSERT( m_nType == srContentAddressRange );
+	Q_ASSERT( m_nType == RuleType::IPAddressRange );
 #endif //_DEBUG
 
-	return oAddress.isInSubnet( m_oSubNet );
+	if ( oAddress > m_oStartIP && oAddress < m_oEndIP)
+		return true;
+
+	return false;
 }
 
-void CIPRangeRule::toXML(QXmlStreamWriter& oXMLdocument) const
+bool IPRangeRule::match(const CEndPoint& oAddress) const
 {
-	Q_ASSERT( m_nType == srContentAddressRange );
+	if ( oAddress >= m_oStartIP && oAddress <= m_oEndIP )
+		return true;
+
+	return false;
+}
+
+void IPRangeRule::toXML(QXmlStreamWriter& oXMLdocument) const
+{
+	Q_ASSERT( m_nType == RuleType::IPAddressRange );
 
 	oXMLdocument.writeStartElement( "rule" );
 
-	oXMLdocument.writeAttribute( "type", "address" );
-	oXMLdocument.writeAttribute( "address", m_oSubNet.first.toString() );
-	oXMLdocument.writeAttribute( "mask", QString( m_oSubNet.second ) );
+	oXMLdocument.writeAttribute( "type", "addressrange" );
+	oXMLdocument.writeAttribute( "startaddress", m_oStartIP.toString() );
+	oXMLdocument.writeAttribute( "endaddress", m_oEndIP.toString() );
 
-	CSecureRule::toXML( *this, oXMLdocument );
+	Rule::toXML( *this, oXMLdocument );
 
 	oXMLdocument.writeEndElement();
 }

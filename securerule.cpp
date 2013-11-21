@@ -24,114 +24,141 @@
 
 #include "securerule.h"
 
+#include "contentrule.h"
+#include "countryrule.h"
+#include "hashrule.h"
+#include "iprangerule.h"
+#include "iprule.h"
+#include "regexprule.h"
+#include "useragentrule.h"
+
+#include "securitymanager.h"
+
+#if QT_VERSION >= 0x050000
+#  include <QRegularExpression>
+#else
+#  include <QRegExp>
+#endif
+
 #include "debug_new.h"
 
 using namespace Security;
+
+ID           Rule::m_nNextID = 0;
+QMutex       Rule::m_oIDLock;
+std::set<ID> Rule::m_idCheck;
 
 /**
  * @brief CSecureRule::CSecureRule Constructor.
  * @param bCreate
  */
-CSecureRule::CSecureRule()
+Rule::Rule() :
+	m_nToday( 0 ),
+	m_nTotal( 0 ),
+	m_tExpire( 0 )
 {
-	// This invalidates rule as long as it does not contain any useful content.
-	m_nType   = srContentUndefined;
+	// This invalidates the rule as long as it does not contain any useful content.
+	m_nType   = RuleType::Undefined;
 
-	m_nAction = srDeny;
-	m_tExpire = srIndefinite;
-	m_nToday  = 0;
-	m_nTotal  = 0;
+	m_nAction = RuleAction::Deny;
+	m_idUUID  = QUuid::createUuid();
 
-	m_oUUID   = QUuid::createUuid();
+	m_oIDLock.lock();
+	static bool bNeedVerify = false;
+	bNeedVerify = m_nNextID++ == std::numeric_limits<ID>::max();
+
+	// We only need to start checking the ID after the first overflow of m_nNextID.
+	if ( bNeedVerify )
+	{
+		while ( m_idCheck.find( m_nNextID ) != m_idCheck.end() )
+		{
+			++m_nNextID;
+		}
+	}
+
+	m_idCheck.insert( m_nNextID );
+	m_nGUIID = m_nNextID;
+
+	m_oIDLock.unlock();
 }
 
-CSecureRule::CSecureRule(const CSecureRule& pRule)
+Rule::Rule(const Rule& pRule)
 {
 	// The usage of a custom copy constructor makes sure the list of registered
 	// pointers is NOT forwarded to a copy of this rule.
 
-	m_nType		= pRule.m_nType;
-	m_sContent	= pRule.m_sContent;
-	m_nToday	= pRule.m_nToday;
-	m_nTotal	= pRule.m_nTotal;
-	m_nAction	= pRule.m_nAction;
-	m_oUUID		= pRule.m_oUUID;
-	m_tExpire	= pRule.m_tExpire;
-	m_sComment	= pRule.m_sComment;
+	m_nType     = pRule.m_nType;
+	m_sContent  = pRule.m_sContent;
+	m_nToday    = pRule.m_nToday;
+	m_nTotal    = pRule.m_nTotal;
+	m_nAction   = pRule.m_nAction;
+	m_idUUID    = pRule.m_idUUID;
+	m_nGUIID    = pRule.m_nGUIID;
+	m_tExpire   = pRule.m_tExpire;
+	m_sComment  = pRule.m_sComment;
 }
 
-CSecureRule::~CSecureRule()
+Rule::~Rule()
 {
-	// Set all pointers to this rule to NULL to notify them about the deletion of this object.
-	for ( std::list<CSecureRule**>::iterator i = m_lPointers.begin();
-		  i != m_lPointers.end(); ++i )
-	{
-		*(*i) = NULL;
-	}
+	m_oIDLock.lock();
+	m_idCheck.erase( m_nGUIID );
+	m_oIDLock.unlock();
 }
 
-CSecureRule* CSecureRule::getCopy() const
+Rule* Rule::getCopy() const
 {
 	// This method should never be called.
 	Q_ASSERT( false );
 
-	return new CSecureRule( *this );
+	return new Rule( *this );
 }
 
-bool CSecureRule::operator==(const CSecureRule& pRule) const
+bool Rule::operator==(const Rule& pRule) const
 {
-	return ( m_nType	== pRule.m_nType	&&
-			 m_nAction	== pRule.m_nAction	&&
-			 m_sComment	== pRule.m_sComment	&&
-			 m_oUUID	== pRule.m_oUUID	&&
-			 m_tExpire	== pRule.m_tExpire	&&
-			 m_sContent	== pRule.m_sContent);
+	// we don't compare GUI IDs or hit counters
+	return m_nType      == pRule.m_nType      &&
+		   m_nAction    == pRule.m_nAction    &&
+		   m_tExpire    == pRule.m_tExpire    &&
+		   m_bAutomatic == pRule.m_bAutomatic &&
+		   m_idUUID     == pRule.m_idUUID     &&
+		   m_sContent   == pRule.m_sContent   &&
+		   m_sComment   == pRule.m_sComment;
 }
 
-bool CSecureRule::operator!=(const CSecureRule& pRule) const
+bool Rule::operator!=(const Rule& pRule) const
 {
 	return !( *this == pRule );
 }
 
-bool CSecureRule::parseContent(const QString&)
+bool Rule::parseContent(const QString&)
 {
 	Q_ASSERT( false );
 	return false;
 }
 
-QString CSecureRule::getContentString() const
+QString Rule::getContentString() const
 {
-	Q_ASSERT( m_nType != srContentUndefined );
+	Q_ASSERT( m_nType != RuleType::Undefined );
 
 	return m_sContent;
-}
-
-void CSecureRule::registerPointer(CSecureRule** pRule)
-{
-	m_lPointers.push_back( pRule );
-}
-
-void CSecureRule::unRegisterPointer(CSecureRule** pRule)
-{
-	m_lPointers.remove( pRule );
 }
 
 //////////////////////////////////////////////////////////////////////
 // CSecureRule match
 
-bool CSecureRule::match(const CEndPoint&) const
+bool Rule::match(const CEndPoint&) const
 {
 	return false;
 }
-bool CSecureRule::match(const QString&) const
+bool Rule::match(const QString&) const
 {
 	return false;
 }
-bool CSecureRule::match(const CQueryHit* const) const
+bool Rule::match(const CQueryHit* const) const
 {
 	return false;
 }
-bool CSecureRule::match(const QList<QString>&, const QString&) const
+bool Rule::match(const QList<QString>&, const QString&) const
 {
 	return false;
 }
@@ -139,28 +166,29 @@ bool CSecureRule::match(const QList<QString>&, const QString&) const
 //////////////////////////////////////////////////////////////////////
 // CSecureRule serialize
 
-void CSecureRule::save(const CSecureRule* const pRule, QDataStream &oStream)
+void Rule::save(const Rule* const pRule, QDataStream &oStream)
 {
 	oStream << (quint8)(pRule->m_nType);
 	oStream << (quint8)(pRule->m_nAction);
 	oStream << pRule->m_sComment;
-	oStream << pRule->m_oUUID.toString();
+	oStream << pRule->m_idUUID.toString();
 	oStream << pRule->m_tExpire;
 	oStream << pRule->m_nTotal.loadAcquire();
+	oStream << pRule->m_bAutomatic;
 
 	oStream << pRule->getContentString();
 
-	if ( pRule->m_nType == srContentUserAgent )
+	if ( pRule->m_nType == RuleType::UserAgent )
 	{
-		oStream << ((CUserAgentRule*)pRule)->getRegExp();
+		oStream << ((UserAgentRule*)pRule)->getRegExp();
 	}
-	else if ( pRule->m_nType == srContentText )
+	else if ( pRule->m_nType == RuleType::Content )
 	{
-		oStream << ((CContentRule*)pRule)->getAll();
+		oStream << ((ContentRule*)pRule)->getAll();
 	}
 }
 
-void CSecureRule::load(CSecureRule*& pRule, QDataStream &fsFile, int)
+void Rule::load(Rule*& pRule, QDataStream &fsFile, int)
 {
 	if ( pRule )
 	{
@@ -168,12 +196,14 @@ void CSecureRule::load(CSecureRule*& pRule, QDataStream &fsFile, int)
 		pRule = NULL;
 	}
 
-	quint8		nType;
-	quint8		nAction;
-	QString		sComment;
-	QString		sUUID;
-	quint32		tExpire;
-	quint32		nTotal;
+	quint8      nType;
+	quint8      nAction;
+	QString     sComment;
+	QString     sUUID;
+	quint32     tExpire;
+	quint32     nTotal;
+	bool        bAutomatic;
+	QString     sContent;
 
 	fsFile >> nType;
 	fsFile >> nAction;
@@ -181,77 +211,76 @@ void CSecureRule::load(CSecureRule*& pRule, QDataStream &fsFile, int)
 	fsFile >> sUUID;
 	fsFile >> tExpire;
 	fsFile >> nTotal;
+	fsFile >> bAutomatic;
+	fsFile >> sContent;
 
-	QString sTmp;
 	bool	bTmp = true;
 
 	switch ( nType )
 	{
-	case 0:
+	case RuleType::Undefined:
 		// contentless rule
-		pRule = new CSecureRule();
+		pRule = new Rule();
 		Q_ASSERT( false );
 		break;
-	case 1:
-		pRule = new CIPRule();
-		fsFile >> sTmp;
-		pRule->parseContent( sTmp );
+
+	case RuleType::IPAddress:
+		pRule = new IPRule();
 		break;
-	case 2:
-		pRule = new CIPRangeRule();
-		fsFile >> sTmp;
-		pRule->parseContent( sTmp );
+
+	case RuleType::IPAddressRange:
+		pRule = new IPRangeRule();
 		break;
-	case 3:
+
 #if SECURITY_ENABLE_GEOIP
-		pRule = new CCountryRule();
-		fsFile >> sTmp;
-		pRule->parseContent( sTmp );
+	case RuleType::Country:
+		pRule = new CountryRule();
+		break;
 #endif
+
+	case RuleType::Hash:
+		pRule = new HashRule();
 		break;
-	case 4:
-		pRule = new CHashRule();
-		fsFile >> sTmp;
-		pRule->parseContent( sTmp );
+
+	case RuleType::RegularExpression:
+		pRule = new RegularExpressionRule();
 		break;
-	case 5:
-		pRule = new CRegExpRule();
-		fsFile >> sTmp;
-		pRule->parseContent( sTmp );
-		break;
-	case 6:
-		pRule = new CUserAgentRule();
-		fsFile >> sTmp;
+
+	case RuleType::UserAgent:
+		pRule = new UserAgentRule();
 		fsFile >> bTmp;
-		pRule->parseContent( sTmp );
-		((CUserAgentRule*)pRule)->setRegExp( bTmp );
+		((UserAgentRule*)pRule)->setRegExp( bTmp );
 		break;
-	case 7:
-		pRule = new CContentRule();
-		fsFile >> sTmp;
+
+	case RuleType::Content:
+		pRule = new ContentRule();
 		fsFile >> bTmp;
-		pRule->parseContent( sTmp );
-		((CContentRule*)pRule)->setAll( bTmp );
+		((ContentRule*)pRule)->setAll( bTmp );
 		break;
+
 	default:
+		pRule = new Rule();
+#if SECURITY_ENABLE_GEOIP
 		Q_ASSERT( false );
+#else
+		Q_ASSERT( nType == RuleType::Country )
+#endif
 		break;
 	}
 
-	if ( pRule )
-	{
-		pRule->m_nAction  = (TPolicy)nAction;
-		pRule->m_sComment = sComment;
-		pRule->m_oUUID    = QUuid( sUUID );
-		pRule->m_tExpire  = tExpire;
-		pRule->m_nTotal.storeRelease(nTotal);
-	}
+	pRule->m_nAction    = (RuleAction::Action)nAction;
+	pRule->m_sComment   = sComment;
+	pRule->m_idUUID     = QUuid( sUUID );
+	pRule->m_tExpire    = tExpire;
+	pRule->m_nTotal.storeRelease( nTotal );
+	pRule->m_bAutomatic = bAutomatic;
+	pRule->parseContent( sContent );
 }
 
 //////////////////////////////////////////////////////////////////////
 // CSecureRule XML
 
-CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
+Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 {
 	QXmlStreamAttributes attributes = oXMLdocument.attributes();
 
@@ -260,119 +289,28 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 	if ( sType.isEmpty() )
 		return NULL;
 
-	CSecureRule* pRule = NULL;
+	Rule* pRule = NULL;
 
+	// TODO: Fix this mess and make it compatible with specs again.
+	// see 7bec0c44458e895eb306f83baabb29ed75018fa1 for messup
 	if ( sType.compare( "address", Qt::CaseInsensitive ) == 0 )
 	{
 		QString sAddress = attributes.value( "address" ).toString();
-		const QString sMask    = attributes.value( "mask" ).toString();
 
-		if ( sMask.isEmpty() )
-		{
-			pRule = new CIPRule();
-			pRule->parseContent( sAddress );
-		}
-		else
-		{
-			pRule = new CIPRangeRule();
-			sAddress = sAddress + '/' + sMask;
-			pRule->parseContent( sAddress );
-		}
+		pRule = new IPRule();
+		pRule->parseContent( sAddress );
+	}
+	else if ( sType.compare( "addressrange", Qt::CaseInsensitive ) == 0 )
+	{
+		QString sStartAddress = attributes.value( "startaddress" ).toString();
+		QString sEndAddress = attributes.value( "endaddress" ).toString();
 
-		/*QHostAddress oIP;
-		if ( oIP.setAddress( sAddress ) )
-		{
-			if ( oIP.protocol() == QAbstractSocket::IPv4Protocol )
-			{
-				quint8 x[4];
-				qint8 pos;
-				bool maskSet = false;
-
-				QString sByte;
-				// This converts the string smask into an array of bytes (quint8).
-				for ( quint8 i = 0; i < 4; i++ )
-				{
-					pos = sMask.indexOf( '.' );
-
-					if ( sMask.isEmpty() ||
-						 ( pos == -1 && ( i != 3 || sMask.length() > 3 ) ) ||
-						 !pos || pos > 2 )
-					{
-						break;
-					}
-
-					if ( pos != -1 )
-					{
-						sByte = sMask.left( pos );
-						sMask = sMask.mid( pos + 1 );
-					}
-					else
-					{
-						sByte = sMask;
-						sMask.clear();
-					}
-
-					int nTmp = sByte.toInt();
-
-					if ( nTmp > -1 && nTmp < 256 )
-					{
-						x[i] = (quint8)nTmp;
-					}
-					else
-					{
-						break;
-					}
-
-					if ( pos == -1 && *(quint32*)x != 0xFFFFFFFF)
-						maskSet = true;
-				}
-
-				if ( maskSet )
-				{
-					CIPRangeRule* rule = new CIPRangeRule();
-					rule->setIP( oIP );
-					rule->setMask( *(quint32*)x );
-
-					pRule = rule;
-				}
-				else
-				{
-					CIPRule* rule = new CIPRule();
-					rule->setIP( oIP );
-
-					pRule = rule;
-				}
-			}
-			else if ( oIP.protocol() == QAbstractSocket::IPv6Protocol )
-			{
-				if ( sMask )
-				{
-					CIPRangeRule* rule = new CIPRangeRule();
-
-				}
-				else
-				{
-					CIPRule* rule = new CIPRule();
-					rule->setIP( oIP );
-
-					pRule = rule;
-				}
-
-			}
-			else
-			{
-				return NULL;
-			}
-		}
-		else
-		{
-			// Error in XML entry.
-			return NULL;
-		}*/
+		pRule = new IPRangeRule();
+		pRule->parseContent( QString("%1-%2").arg(sStartAddress).arg(sEndAddress) );
 	}
 	else if ( sType.compare( "hash", Qt::CaseInsensitive ) == 0 )
 	{
-		CHashRule* rule = new CHashRule();
+		HashRule* rule = new HashRule();
 		if ( !rule->parseContent( attributes.value( "content" ).toString() ) )
 		{
 			delete rule;
@@ -383,7 +321,7 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 	}
 	else if ( sType.compare( "regexp", Qt::CaseInsensitive ) == 0 )
 	{
-		CRegExpRule* rule = new CRegExpRule();
+		RegularExpressionRule* rule = new RegularExpressionRule();
 		if ( !rule->parseContent( attributes.value( "content" ).toString() ) )
 		{
 			delete rule;
@@ -404,7 +342,7 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 			// This handles "old style" Shareaza RegExp rules.
 			if ( sMatch.compare( "regexp", Qt::CaseInsensitive ) == 0 )
 			{
-				CRegExpRule* rule = new CRegExpRule();
+				RegularExpressionRule* rule = new RegularExpressionRule();
 				if ( !rule->parseContent( sContent ) )
 				{
 					delete rule;
@@ -416,7 +354,7 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 			// This handles "old style" Shareaza hash rules.
 			else if ( sUrn.compare( "urn:", Qt::CaseInsensitive ) == 0 )
 			{
-				CHashRule* rule = new CHashRule();
+				HashRule* rule = new HashRule();
 				if ( !rule->parseContent( sContent ) )
 				{
 					delete rule;
@@ -433,7 +371,7 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 
 			if ( all || sMatch.compare( "any", Qt::CaseInsensitive ) == 0 )
 			{
-				CContentRule* rule = new CContentRule();
+				ContentRule* rule = new ContentRule();
 				if ( !rule->parseContent( sContent ) )
 				{
 					delete rule;
@@ -452,7 +390,7 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 #if SECURITY_ENABLE_GEOIP
 	else if ( sType.compare( "country", Qt::CaseInsensitive ) == 0 )
 	{
-		CCountryRule* rule = new CCountryRule();
+		CountryRule* rule = new CountryRule();
 		if ( !rule->parseContent( attributes.value( "content" ).toString() ) )
 		{
 			delete rule;
@@ -471,15 +409,15 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 
 	if ( sAction.compare( "deny", Qt::CaseInsensitive ) == 0 || sAction.isEmpty() )
 	{
-		pRule->m_nAction = srDeny;
+		pRule->m_nAction = RuleAction::Deny;
 	}
 	else if ( sAction.compare( "accept", Qt::CaseInsensitive ) == 0 )
 	{
-		pRule->m_nAction = srAccept;
+		pRule->m_nAction = RuleAction::Accept;
 	}
 	else if ( sAction.compare( "null", Qt::CaseInsensitive ) == 0 )
 	{
-		pRule->m_nAction = srNull;
+		pRule->m_nAction = RuleAction::None;
 	}
 	else
 	{
@@ -487,16 +425,23 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 		return NULL;
 	}
 
+// TODO: What is this for? / make backwards compatible
+	const QString sAutomatic = attributes.value( "automatic" ).toString();
+	if(sAutomatic == "true")
+		pRule->m_bAutomatic = true;
+	else
+		pRule->m_bAutomatic = false;
+
 	pRule->m_sComment = attributes.value( "comment" ).toString().trimmed();
 
 	QString sExpire = attributes.value( "expire" ).toString();
 	if ( sExpire.compare( "indefinite", Qt::CaseInsensitive ) == 0 )
 	{
-		pRule->m_tExpire = srIndefinite;
+		pRule->m_tExpire = RuleTime::Forever;
 	}
 	else if ( sExpire.compare( "session", Qt::CaseInsensitive ) == 0 )
 	{
-		pRule->m_tExpire = srSession;
+		pRule->m_tExpire = RuleTime::Session;
 	}
 	else
 	{
@@ -509,31 +454,31 @@ CSecureRule* CSecureRule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion
 
 	if ( sUUID.isEmpty() )
 	{
-		pRule->m_oUUID = QUuid::createUuid();
+		pRule->m_idUUID = QUuid::createUuid();
 	}
 	else
 	{
-		pRule->m_oUUID = QUuid( sUUID );
+		pRule->m_idUUID = QUuid( sUUID );
 	}
 
 	return pRule;
 }
 
 // Contains default code for XML generation.
-void CSecureRule::toXML(const CSecureRule& oRule, QXmlStreamWriter& oXMLdocument)
+void Rule::toXML(const Rule& oRule, QXmlStreamWriter& oXMLdocument)
 {
 	QString sValue;
 
 	// Write rule action to XML file.
 	switch ( oRule.m_nAction )
 	{
-	case srNull:
+	case RuleAction::None:
 		sValue = "null";
 		break;
-	case srAccept:
+	case RuleAction::Accept:
 		sValue = "accept";
 		break;
-	case srDeny:
+	case RuleAction::Deny:
 		sValue = "deny";
 		break;
 	default:
@@ -541,28 +486,28 @@ void CSecureRule::toXML(const CSecureRule& oRule, QXmlStreamWriter& oXMLdocument
 	}
 	oXMLdocument.writeAttribute( "action", sValue );
 
+	if ( oRule.m_bAutomatic )
+		oXMLdocument.writeAttribute( "automatic", "true" );
 
 	// Write expiry date.
-	if ( oRule.m_tExpire == srSession )
-	{
-		sValue = "session";
-	}
-	else if ( oRule.m_tExpire == srIndefinite )
+	if ( oRule.m_tExpire == RuleTime::Forever )
 	{
 		sValue = "indefinite";
 	}
-	else if ( oRule.m_tExpire > srSession )
+	else if ( oRule.m_tExpire == RuleTime::Session )
+	{
+		sValue = "session";
+	}
+	else
 	{
 		sValue = "%1";
 		sValue.arg( oRule.m_tExpire );
 	}
 	oXMLdocument.writeAttribute( "expire", sValue );
 
-
 	// Write rule UUID.
-	sValue = oRule.m_oUUID.toString();
+	sValue = oRule.m_idUUID.toString();
 	oXMLdocument.writeAttribute( "uuid", sValue );
-
 
 	// Write user comment.
 	if ( !( oRule.m_sComment.isEmpty() ) )
@@ -578,11 +523,40 @@ void CSecureRule::toXML(const CSecureRule& oRule, QXmlStreamWriter& oXMLdocument
  * cases, set this to true and the return value for session ban rules will be true.
  * @return true if the rule has expired, false otherwise
  */
-bool CSecureRule::isExpired(quint32 tNow, bool bSession) const
+bool Rule::isExpired(quint32 tNow, bool bSession) const
 {
-	if ( m_tExpire == srIndefinite ) return false;
-	if ( m_tExpire == srSession ) return bSession;
-	return m_tExpire < tNow;
+	switch ( m_tExpire )
+	{
+	case RuleTime::Forever:
+		return false;
+
+	case RuleTime::Session:
+		return bSession;
+
+	default:
+		return m_tExpire < tNow;
+	}
+}
+
+/**
+ * @brief Rule::setExpiryTime
+ * @param tExpire
+ */
+void Rule::setExpiryTime(const quint32 tExpire)
+{
+	m_tExpire = tExpire;
+}
+
+/**
+ * @brief Rule::addExpiryTime
+ * @param tAdd
+ */
+void Rule::addExpiryTime(const quint32 tAdd)
+{
+	if ( m_tExpire != RuleTime::Session && m_tExpire != RuleTime::Forever )
+	{
+		m_tExpire += tAdd;
+	}
 }
 
 /**
@@ -590,16 +564,56 @@ bool CSecureRule::isExpired(quint32 tNow, bool bSession) const
  * @return srIndefinite = 0, srSession = 1 or the time in seconds since 1.1.1970UTC when the rule
  * will/has expire(d)
  */
-quint32 CSecureRule::getExpiryTime() const
+quint32 Rule::getExpiryTime() const
 {
 	return m_tExpire;
+}
+
+/**
+ * @brief CSecureRule::mergeInto
+ * Requires Locking: RW
+ */
+void Rule::mergeInto(Rule* pDestination)
+{
+	Q_ASSERT( m_sContent == pDestination->m_sContent );
+	Q_ASSERT( m_nType    == pDestination->m_nType    );
+
+	if ( !m_bAutomatic )
+		pDestination->m_bAutomatic = false; // don't overwrite manual with automatic rules
+
+	if ( m_tExpire == RuleTime::Forever )
+	{
+		pDestination->m_tExpire = RuleTime::Forever; // don't overwrite indefinite expiry time
+	}
+	else if ( m_tExpire > pDestination->m_tExpire )
+	{
+		pDestination->m_tExpire = m_tExpire;
+	}
+
+	pDestination->m_nAction = m_nAction;
+
+
+#ifdef _DEBUG // allows to easily spot multiply merged rules in debug builds
+	if ( !pDestination->m_sComment.contains( " (AutoMerged Rule)" ) )
+		pDestination->m_sComment += " (AutoMerged Rule)";
+	else
+		pDestination->m_sComment += "+";
+#else
+	if ( !pDestination->m_sComment.endsWith( " (AutoMerged Rule)" ) )
+		pDestination->m_sComment += " (AutoMerged Rule)";
+#endif
+
+	pDestination->m_nToday.fetchAndAddRelaxed( m_nToday.load() );
+	pDestination->m_nTotal.fetchAndAddRelaxed( m_nTotal.load() );
+
+	securityManager.emitUpdate( pDestination->m_nGUIID );
 }
 
 /**
  * @brief CSecureRule::count increases the total and today hit counters by one each.
  * Requires Locking: /
  */
-void CSecureRule::count()
+void Rule::count()
 {
 	m_nToday.fetchAndAddOrdered( 1 );
 	m_nTotal.fetchAndAddOrdered( 1 );
@@ -609,7 +623,7 @@ void CSecureRule::count()
  * @brief CSecureRule::resetCount resets total and today hit counters to 0.
  * Requires Locking: /
  */
-void CSecureRule::resetCount()
+void Rule::resetCount()
 {
 	m_nToday.fetchAndStoreOrdered( 0 );
 	m_nTotal.fetchAndAddOrdered( 0 );
@@ -620,7 +634,7 @@ void CSecureRule::resetCount()
  * @return the value of the today hit counter.
  * Requires Locking: /
  */
-quint32 CSecureRule::getTodayCount() const
+quint32 Rule::getTodayCount() const
 {
 	return m_nToday.loadAcquire();
 }
@@ -630,7 +644,7 @@ quint32 CSecureRule::getTodayCount() const
  * @return the value of the total hit counter.
  * Requires Locking: /
  */
-quint32 CSecureRule::getTotalCount() const
+quint32 Rule::getTotalCount() const
 {
 	return m_nTotal.loadAcquire();
 }
@@ -640,7 +654,7 @@ quint32 CSecureRule::getTotalCount() const
  * @param nTotal the new value of the total hit counter.
  * Requires Locking: /
  */
-void CSecureRule::loadTotalCount( quint32 nTotal )
+void Rule::loadTotalCount( quint32 nTotal )
 {
 	m_nTotal.storeRelease(nTotal);
 }
@@ -650,9 +664,12 @@ void CSecureRule::loadTotalCount( quint32 nTotal )
  * @return the rule type.
  * Requires Locking: R
  */
-CSecureRule::TRuleType CSecureRule::type() const
+RuleType::Type Rule::type() const
 {
 	return m_nType;
 }
 
-void CSecureRule::toXML( QXmlStreamWriter& ) const {}
+void Rule::toXML( QXmlStreamWriter& ) const
+{
+
+}

@@ -28,32 +28,23 @@
 
 using namespace Security;
 
-CUserAgentRule::CUserAgentRule()
+UserAgentRule::UserAgentRule()
 {
-	m_nType = srContentUserAgent;
+	m_nType = RuleType::UserAgent;
 	m_bRegExp  = false;
 }
 
-bool CUserAgentRule::operator==(const CSecureRule& pRule) const
+Rule* UserAgentRule::getCopy() const
 {
-	return CSecureRule::operator==( pRule ) && m_bRegExp == ((CUserAgentRule*)&pRule)->m_bRegExp;
+	return new UserAgentRule( *this );
 }
 
-void CUserAgentRule::setRegExp(bool bRegExp)
+bool UserAgentRule::operator==(const Rule& pRule) const
 {
-	m_bRegExp = bRegExp;
-
-	if ( m_bRegExp )
-	{
-#if QT_VERSION >= 0x050000
-		m_regularExpressionContent = QRegularExpression( m_sContent );
-#else
-		m_regExpContent = QRegExp( m_sContent );
-#endif
-	}
+	return Rule::operator==( pRule ) && m_bRegExp == ((UserAgentRule*)&pRule)->m_bRegExp;
 }
 
-bool CUserAgentRule::parseContent(const QString& sContent)
+bool UserAgentRule::parseContent(const QString& sContent)
 {
 	m_sContent = sContent.trimmed();
 
@@ -69,11 +60,30 @@ bool CUserAgentRule::parseContent(const QString& sContent)
 	return true;
 }
 
-bool CUserAgentRule::match(const QString& sUserAgent) const
+void UserAgentRule::setRegExp(bool bRegExp)
 {
-	Q_ASSERT( m_nType == srContentUserAgent );
+	m_bRegExp = bRegExp;
 
 	if ( m_bRegExp )
+	{
+#if QT_VERSION >= 0x050000
+		m_regularExpressionContent = QRegularExpression( m_sContent );
+#else
+		m_regExpContent = QRegExp( m_sContent );
+#endif
+	}
+}
+
+bool UserAgentRule::getRegExp() const
+{
+	return m_bRegExp;
+}
+
+bool UserAgentRule::match(const QString& sUserAgent) const
+{
+	Q_ASSERT( m_nType == RuleType::UserAgent );
+
+	if( m_bRegExp )
 	{
 #if QT_VERSION >= 0x050000
 		return m_regularExpressionContent.match( sUserAgent ).hasMatch();
@@ -89,15 +99,14 @@ bool CUserAgentRule::match(const QString& sUserAgent) const
 	return false;
 }
 
-bool CUserAgentRule::partialMatch(const QString& sUserAgent) const
+/*bool UserAgentRule::partialMatch(const QString& sUserAgent) const
 {
-	Q_ASSERT( m_nType == srContentUserAgent );
-	return sUserAgent.contains( m_sContent, Qt::CaseInsensitive );
-}
+	return m_bRegExp ? false : sUserAgent.contains( m_sContent, Qt::CaseInsensitive );
+}*/
 
-void CUserAgentRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void UserAgentRule::toXML(QXmlStreamWriter& oXMLdocument) const
 {
-	Q_ASSERT( m_nType == srContentUserAgent );
+	Q_ASSERT( m_nType == RuleType::UserAgent );
 
 	oXMLdocument.writeStartElement( "rule" );
 
@@ -114,17 +123,7 @@ void CUserAgentRule::toXML(QXmlStreamWriter& oXMLdocument) const
 
 	oXMLdocument.writeAttribute( "content", getContentString() );
 
-	CSecureRule::toXML( *this, oXMLdocument );
+	Rule::toXML( *this, oXMLdocument );
 
 	oXMLdocument.writeEndElement();
-}
-
-CSecureRule* CUserAgentRule::getCopy() const
-{
-	return new CUserAgentRule( *this );
-}
-
-bool CUserAgentRule::getRegExp() const
-{
-	return m_bRegExp;
 }

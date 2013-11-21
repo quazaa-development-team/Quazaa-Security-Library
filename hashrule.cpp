@@ -28,132 +28,185 @@
 
 using namespace Security;
 
-CHashRule::CHashRule()
+HashRule::HashRule()
 {
-	m_nType = srContentHash;
+	m_nType = RuleType::Hash;
 }
 
-CSecureRule* CHashRule::getCopy() const
+HashVector HashRule::getHashes() const
 {
-	return new CHashRule( *this );
-}
+	HashVector result;
+	result.reserve( m_lmHashes.size() );
 
-bool CHashRule::parseContent(const QString& sContent)
-{
-	QString tmp, sHash;
-	int pos1, pos2;
-	QList< CHash > lHashes;
-
-	QString prefixes[5] = { "urn:sha1:", "urn:ed2k:", "urn:tree:tiger:", "urn:btih:", "urn:md5:" };
-	quint8 lengths[5] = { 32 + 9, 32 + 9, 39 + 15, 32 + 9, 32 + 8 };
-
-	for ( quint8 i = 0; i < 5; ++i )
+	std::map< CHash::Algorithm, CHash >::const_iterator it;
+	while ( it != m_lmHashes.end() )
 	{
-		sHash = "";
-
-		pos1 = sContent.indexOf( prefixes[i] );
-		if ( pos1 != -1 )
-		{
-			tmp  = sContent.mid( pos1 );
-			pos2 = tmp.indexOf( ' ' );
-
-			if ( pos2 == lengths[i] )
-			{
-				sHash = tmp.left( pos2 );
-			}
-			else if ( pos2 == -1 && tmp.length() == lengths[i] )
-			{
-				sHash = tmp;
-			}
-			else
-			{
-//				theApp.Message( MSG_ERROR, IDS_SECURITY_XML_HASH_RULE_IMPORT_ERROR );
-				continue;
-			}
-
-			lHashes.append( *CHash::FromURN( sHash ) );
-		}
-	}
-
-	if ( !lHashes.isEmpty() )
-	{
-		setHashes( lHashes );
-		return true;
-	}
-	else
-	{
-//		theApp.Message( MSG_ERROR, IDS_SECURITY_XML_HASH_RULE_IMPORT_FAIL );
-		return false;
-	}
-}
-
-QList< CHash > CHashRule::getHashes() const
-{
-	QList< CHash > result;
-	foreach ( CHash oHash, m_Hashes )
-	{
-		result.append( oHash );
+		result.push_back( (*it).second );
+		++it;
 	}
 
 	return result;
 }
 
-void CHashRule::setHashes(const QList< CHash >& hashes)
+void HashRule::setHashes(const HashVector& hashes)
 {
-	Q_ASSERT( m_nType == srContentHash );
+	Q_ASSERT( m_nType == RuleType::Hash );
 
 	m_sContent = "";
+	m_lmHashes.clear();
 
-	foreach ( CHash oHash, hashes )
+	for ( uint n = 0; n < hashes.size(); ++n )
 	{
-		m_Hashes.insert( oHash.getAlgorithm(), oHash );
-		m_sContent += oHash.ToURN();
-		m_sContent += " ";
+		m_lmHashes.insert( std::pair< CHash::Algorithm, CHash >( hashes[n].getAlgorithm(),
+																 hashes[n] ) );
+
+		m_sContent += hashes[n].toURN() + " ";
 	}
 
 	m_sContent = m_sContent.trimmed();
 }
 
-bool CHashRule::hashEquals(CHashRule& oRule) const
+Rule* HashRule::getCopy() const
 {
-	if ( oRule.m_Hashes.size() != m_Hashes.size() )
+	return new HashRule( *this );
+}
+
+bool HashRule::parseContent(const QString& sContent)
+{
+	QStringList prefixes;
+	prefixes << "urn:sha1:"
+			 << "urn:ed2k:"
+			 << "urn:ed2khash:"
+			 << "urn:tree:tiger:"
+			 << "urn:btih:"
+			 << "urn:bitprint:"
+			 << "urn:md5:";
+
+	HashVector hashes;
+	hashes.reserve( prefixes.size() );
+
+	for ( int i = 0; i < prefixes.size(); ++i )
+	{
+		QString tmp, sHash;
+		int pos1, pos2;
+
+		pos1 = sContent.indexOf( prefixes.at(i) );
+		if ( pos1 != -1 )
+		{
+			tmp  = sContent.mid( pos1 );
+			int length = CHash::lengthForUrn( prefixes.at(i) ) + prefixes.at(i).length();
+			pos2 = tmp.indexOf( "&" );
+
+			qDebug() << "Expected hash length:" << length;
+			qDebug() << "Actual hash length:" << pos2;
+
+			if ( pos2 == length )
+			{
+				qDebug() << "Hash:" << tmp.left( pos2 );
+				postLogMessage( LogSeverity::Information,
+								QObject::tr( "Hash found for hash rule: %1"
+											 ).arg( tmp.left( pos2 ) ), false );
+				sHash = tmp.left( pos2 );
+			}
+			else if ( pos2 == -1 && tmp.length() == length )
+			{
+				postLogMessage( LogSeverity::Information,
+								QObject::tr( "Hash found for hash rule at end of string: %1"
+											 ).arg( tmp ), false );
+				sHash = tmp;
+			}
+			else
+			{
+				postLogMessage( LogSeverity::Information,
+								QObject::tr( "Error extracting hash: %1"
+											 ).arg( tmp.left( pos2 ) ), false );
+				continue;
+			}
+
+			CHash* pHash = CHash::fromURN( sHash );
+			if ( pHash )
+			{
+				hashes.push_back( *pHash );
+				delete pHash;
+			}
+			else
+				qDebug() << "Hash type not recognised.";
+		}
+	}
+
+	if ( !hashes.empty() )
+	{
+		setHashes( hashes );
+		return true;
+	}
+	else
+	{
+		postLogMessage( LogSeverity::Error,
+						QObject::tr( "Error: Failed to import XML hash rule: %1"
+									 ).arg( sContent ), false );
+		return false;
+	}
+}
+
+void HashRule::reduceByHashPriority(uint nNumberOfHashes)
+{
+#ifdef _DEBUG
+	int n = -1;
+#endif
+
+	std::map< CHash::Algorithm, CHash >::iterator it = m_lmHashes.begin();
+
+	while ( it != m_lmHashes.end() && m_lmHashes.size() > nNumberOfHashes )
+	{
+#ifdef _DEBUG
+		Q_ASSERT( n < (*it).second.getAlgorithm() );
+		n = (*it).second.getAlgorithm();
+#endif
+
+		it = m_lmHashes.erase( it );
+	}
+}
+
+bool HashRule::hashEquals(const HashRule& oRule) const
+{
+	if ( oRule.m_lmHashes.size() != m_lmHashes.size() )
 		return false;
 
-	QMap< CHash::Algorithm, CHash >::const_iterator i, j;
+	std::map< CHash::Algorithm, CHash >::const_iterator it, itOther;
 
-	i = m_Hashes.begin();
-	j = oRule.m_Hashes.begin();
+	it  = m_lmHashes.begin();
+	itOther = oRule.m_lmHashes.begin();
 
-	while ( i != m_Hashes.end() )
+	while ( it != m_lmHashes.end() )
 	{
-		j = oRule.m_Hashes.find( (*i).getAlgorithm() );
-		if ( *i != *j )
+		itOther = oRule.m_lmHashes.find( (*it).second.getAlgorithm() );
+		if ( (*it).second != (*itOther).second )
 			return false;
 
-		++i;
+		++it;
 	}
 
 	return true;
 }
 
-bool CHashRule::match(const CQueryHit* const pHit) const
+bool HashRule::match(const CQueryHit* const pHit) const
 {
 	return match( pHit->m_lHashes );
 }
-bool CHashRule::match(const QList<CHash>& lHashes) const
+bool HashRule::match(const HashVector& lHashes) const
 {
-	QMap< CHash::Algorithm, CHash >::const_iterator i;
+	std::map< CHash::Algorithm, CHash >::const_iterator it;
 	quint8 nCount = 0;
 
 	foreach ( CHash oHash, lHashes )
 	{
-		i = m_Hashes.find( oHash.getAlgorithm() );
+		it = m_lmHashes.find( oHash.getAlgorithm() );
 
-		if ( i != m_Hashes.end() )
+		if ( it != m_lmHashes.end() )
 		{
 			++nCount;
 
-			if ( oHash != *i )
+			if ( oHash != (*it).second )
 				return false;
 		}
 	}
@@ -161,16 +214,17 @@ bool CHashRule::match(const QList<CHash>& lHashes) const
 	return nCount;
 }
 
-void CHashRule::toXML(QXmlStreamWriter& oXMLdocument) const
+// TODO: verify xml compatibility
+void HashRule::toXML(QXmlStreamWriter& oXMLdocument) const
 {
-	Q_ASSERT( m_nType == srContentHash );
+	Q_ASSERT( m_nType == RuleType::Hash );
 
 	oXMLdocument.writeStartElement( "rule" );
 
 	oXMLdocument.writeAttribute( "type", "hash" );
 	oXMLdocument.writeAttribute( "content", getContentString() );
 
-	CSecureRule::toXML( *this, oXMLdocument );
+	Rule::toXML( *this, oXMLdocument );
 
 	oXMLdocument.writeEndElement();
 }

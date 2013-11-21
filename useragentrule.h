@@ -25,24 +25,13 @@
 #ifndef USERAGENTRULE_H
 #define USERAGENTRULE_H
 
-#include <list>
-
-#include <QXmlStreamReader>
-#include <QXmlStreamWriter>
+#include "securerule.h"
 
 #if QT_VERSION >= 0x050000
 #  include <QRegularExpression>
 #else
 #  include <QRegExp>
 #endif
-
-#include <QString>
-#include <QUuid>
-#include <QAtomicInt>
-
-#include "NetworkCore/endpoint.h"
-#include "NetworkCore/Hashes/hash.h"
-#include "NetworkCore/queryhit.h"
 
 // Note: The locking information within the doxygen comments refers to the RW lock of the Security
 //       Manager.
@@ -52,7 +41,7 @@ namespace Security
 /* ============================================================================================== */
 /* ======================================= CUserAgentRule ======================================= */
 /* ============================================================================================== */
-class CUserAgentRule : public CSecureRule
+class UserAgentRule : public Rule
 {
 private:
 	bool                m_bRegExp;  // is the content of this rule is a regular expression?
@@ -64,23 +53,21 @@ private:
 #endif
 
 public:
-	CUserAgentRule();
+	UserAgentRule();
+	Rule*   getCopy() const;
 
-	bool                operator==(const CSecureRule& pRule) const;
+	bool    operator==(const Rule& pRule) const;
 
-	void                setRegExp(bool bRegExp);
-	inline bool         getRegExp() const;
+	bool    parseContent(const QString& sContent);
 
-	bool                parseContent(const QString& sContent);
-
-	inline CSecureRule* getCopy() const;
+	void    setRegExp(bool bRegExp);
+	bool    getRegExp() const;
 
 	// partial and complete string matching as well as regEx matching
-	bool                match(const QString& sUserAgent) const;
+	bool    match(const QString& sUserAgent) const;
+	//bool    partialMatch(const QString &sUserAgent) const; // only string matching
 
-	// only string matching
-	bool                partialMatch(const QString &sUserAgent) const;
-	void                toXML(QXmlStreamWriter& oXMLdocument) const;
+	void    toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
 }

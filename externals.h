@@ -1,5 +1,5 @@
 /*
-** countryrule.h
+** external.h
 **
 ** Copyright © Quazaa Development Team, 2009-2013.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
@@ -22,34 +22,40 @@
 ** Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef COUNTRYRULE_H
-#define COUNTRYRULE_H
-
-#include "securerule.h"
+// Enable/disable GeoIP support of the security library.
+#define SECURITY_ENABLE_GEOIP 1
 
 #if SECURITY_ENABLE_GEOIP
+#include "geoiplist.h"
+#endif
 
-// Note: The locking information within the doxygen comments refers to the RW lock of the Security
-//       Manager.
+#include "NetworkCore/Hashes/hash.h"
+#include "NetworkCore/queryhit.h"
+
+#include "commonfunctions.h"
+
+#include "quazaaglobals.h"
+#include "quazaasettings.h"
+
+#include "Misc/timedsignalqueue.h"
 
 namespace Security
 {
-/* ============================================================================================== */
-/* ======================================== CCountryRule ======================================== */
-/* ============================================================================================== */
 
-class CountryRule : public Rule
-{
-public:
-	CountryRule();
-	Rule*   getCopy() const;
+/**
+ * @brief postLogMessage writes a message to the system log or to the debug output.
+ * Requires locking: /
+ * @param eSeverity : the message severity
+ * @param sMessage : the message string
+ * @param bDebug : Defaults to false. If set to true, the message is send to qDebug() instead of
+ * to the system log.
+ */
+void postLogMessage(LogSeverity::Severity eSeverity, QString sMessage, bool bDebug);
 
-	bool    parseContent(const QString& sContent);
-
-	bool    match(const CEndPoint& oAddress) const;
-	void    toXML(QXmlStreamWriter& oXMLdocument) const;
-};
-
+/**
+ * @brief dataPath
+ * @return
+ */
+QString dataPath();
+// TODO: manage security settings updates see Manager::start()
 }
-#endif // SECURITY_ENABLE_GEOIP
-#endif // COUNTRYRULE_H

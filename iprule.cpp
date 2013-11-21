@@ -28,14 +28,19 @@
 
 using namespace Security;
 
-CIPRule::CIPRule()
+IPRule::IPRule()
 {
-	m_nType = srContentAddress;
+	m_nType = RuleType::IPAddress;
 }
 
-bool CIPRule::parseContent(const QString& sContent)
+Rule* IPRule::getCopy() const
 {
-	QHostAddress oAddress;
+	return new IPRule( *this );
+}
+
+bool IPRule::parseContent(const QString& sContent)
+{
+	CEndPoint oAddress;
 	if ( oAddress.setAddress( sContent ) )
 	{
 		m_oIP = oAddress;
@@ -45,9 +50,20 @@ bool CIPRule::parseContent(const QString& sContent)
 	return false;
 }
 
-bool CIPRule::match(const CEndPoint& oAddress) const
+CEndPoint IPRule::IP() const
 {
-	Q_ASSERT( !oAddress.isNull() && m_nType == srContentAddress );
+	return m_oIP;
+}
+
+void IPRule::setIP( const CEndPoint& oIP )
+{
+	m_oIP = oIP;
+	m_sContent = oIP.toString();
+}
+
+bool IPRule::match(const CEndPoint& oAddress) const
+{
+	Q_ASSERT( !oAddress.isNull() && m_nType == RuleType::IPAddress );
 
 	if ( !oAddress.isNull() && oAddress == m_oIP )
 	{
@@ -56,32 +72,16 @@ bool CIPRule::match(const CEndPoint& oAddress) const
 	return false;
 }
 
-void CIPRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void IPRule::toXML(QXmlStreamWriter& oXMLdocument) const
 {
-	Q_ASSERT( m_nType == srContentAddress );
+	Q_ASSERT( m_nType == RuleType::IPAddress );
 
 	oXMLdocument.writeStartElement( "rule" );
 
 	oXMLdocument.writeAttribute( "type", "address" );
 	oXMLdocument.writeAttribute( "address", getContentString() );
 
-	CSecureRule::toXML( *this, oXMLdocument );
+	Rule::toXML( *this, oXMLdocument );
 
 	oXMLdocument.writeEndElement();
-}
-
-QHostAddress CIPRule::IP() const
-{
-	return m_oIP;
-}
-
-void CIPRule::setIP( const QHostAddress& oIP )
-{
-	m_oIP = oIP;
-	m_sContent = oIP.toString();
-}
-
-CSecureRule* CIPRule::getCopy() const
-{
-	return new CIPRule( *this );
 }

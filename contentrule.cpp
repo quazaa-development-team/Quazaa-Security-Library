@@ -28,25 +28,25 @@
 
 using namespace Security;
 
-CContentRule::CContentRule()
+ContentRule::ContentRule()
 {
-	m_nType = srContentText;
+	m_nType = RuleType::Content;
 	m_bAll = true;
 }
 
-CSecureRule* CContentRule::getCopy() const
+Rule* ContentRule::getCopy() const
 {
-	return new CContentRule( *this );
+	return new ContentRule( *this );
 }
 
-bool CContentRule::operator==(const CSecureRule& pRule) const
+bool ContentRule::operator==(const Rule& pRule) const
 {
-	return CSecureRule::operator==( pRule ) && m_bAll == ((CContentRule*)&pRule)->m_bAll;
+	return Rule::operator==( pRule ) && m_bAll == ((ContentRule*)&pRule)->m_bAll;
 }
 
-bool CContentRule::parseContent(const QString& sContent)
+bool ContentRule::parseContent(const QString& sContent)
 {
-	Q_ASSERT( m_nType == srContentText );
+	Q_ASSERT( m_nType == RuleType::Content );
 
 	QString sWork = sContent;
 	sWork.replace( '\t', ' ' );
@@ -81,17 +81,17 @@ bool CContentRule::parseContent(const QString& sContent)
 	return false;
 }
 
-void CContentRule::setAll(bool all)
+void ContentRule::setAll(bool all)
 {
 	m_bAll = all;
 }
 
-bool CContentRule::getAll() const
+bool ContentRule::getAll() const
 {
 	return m_bAll;
 }
 
-bool CContentRule::match(const QString& sFileName) const
+bool ContentRule::match(const QString& sFileName) const
 {
 	for ( CListIterator i = m_lContent.begin() ; i != m_lContent.end() ; i++ )
 	{
@@ -113,7 +113,7 @@ bool CContentRule::match(const QString& sFileName) const
 	return false;
 }
 
-bool CContentRule::match(const CQueryHit* const pHit) const
+bool ContentRule::match(const CQueryHit* const pHit) const
 {
 	if ( !pHit )
 		return false;
@@ -132,9 +132,9 @@ bool CContentRule::match(const CQueryHit* const pHit) const
 	return match( sFileName );
 }
 
-void CContentRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void ContentRule::toXML(QXmlStreamWriter& oXMLdocument) const
 {
-	Q_ASSERT( m_nType == srContentText );
+	Q_ASSERT( m_nType == RuleType::Content );
 
 	oXMLdocument.writeStartElement( "rule" );
 
@@ -151,7 +151,7 @@ void CContentRule::toXML(QXmlStreamWriter& oXMLdocument) const
 
 	oXMLdocument.writeAttribute( "content", getContentString() );
 
-	CSecureRule::toXML( *this, oXMLdocument );
+	Rule::toXML( *this, oXMLdocument );
 
 	oXMLdocument.writeEndElement();
 }

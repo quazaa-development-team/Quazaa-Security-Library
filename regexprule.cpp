@@ -28,24 +28,24 @@
 
 using namespace Security;
 
-CRegExpRule::CRegExpRule()
+RegularExpressionRule::RegularExpressionRule()
 {
-	m_nType = srContentRegExp;
+	m_nType = RuleType::RegularExpression;
 	m_bSpecialElements = false;
 }
 
-bool CRegExpRule::operator==(const CSecureRule& pRule) const
+Rule* RegularExpressionRule::getCopy() const
 {
-	return CSecureRule::operator==( pRule ) &&
-		   m_bSpecialElements == ((CRegExpRule*)&pRule)->m_bSpecialElements;
+	return new RegularExpressionRule( *this );
 }
 
-CSecureRule* CRegExpRule::getCopy() const
+bool RegularExpressionRule::operator==(const Rule& pRule) const
 {
-	return new CRegExpRule( *this );
+	return Rule::operator==( pRule ) &&
+		   m_bSpecialElements == ((RegularExpressionRule*)&pRule)->m_bSpecialElements;
 }
 
-bool CRegExpRule::parseContent(const QString& sContent)
+bool RegularExpressionRule::parseContent(const QString& sContent)
 {
 	m_sContent = sContent.trimmed();
 
@@ -82,9 +82,9 @@ bool CRegExpRule::parseContent(const QString& sContent)
 	}
 }
 
-bool CRegExpRule::match(const QList<QString>& lQuery, const QString& sContent) const
+bool RegularExpressionRule::match(const QList<QString>& lQuery, const QString& sContent) const
 {
-	Q_ASSERT( m_nType == srContentRegExp );
+	Q_ASSERT( m_nType == RuleType::RegularExpression );
 
 	if ( m_sContent.isEmpty() )
 		return false;
@@ -157,21 +157,21 @@ bool CRegExpRule::match(const QList<QString>& lQuery, const QString& sContent) c
 	}
 }
 
-void CRegExpRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void RegularExpressionRule::toXML(QXmlStreamWriter& oXMLdocument) const
 {
-	Q_ASSERT( m_nType == srContentRegExp );
+	Q_ASSERT( m_nType == RuleType::RegularExpression );
 
 	oXMLdocument.writeStartElement( "rule" );
 
 	oXMLdocument.writeAttribute( "type", "regexp" );
 	oXMLdocument.writeAttribute( "content", getContentString() );
 
-	CSecureRule::toXML( *this, oXMLdocument );
+	Rule::toXML( *this, oXMLdocument );
 
 	oXMLdocument.writeEndElement();
 }
 
-bool CRegExpRule::replace(QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent)
+bool RegularExpressionRule::replace(QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent)
 {
 	if ( sReplace.at( 0 ) != '<' )
 		return false;
