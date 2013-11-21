@@ -1,5 +1,5 @@
 /*
-** $Id$
+** securitymanager.h
 **
 ** Copyright © Quazaa Development Team, 2009-2013.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
@@ -35,8 +35,15 @@
 // History:
 // 0 - Initial implementation
 
-#include "securerule.h"
 #include "commonfunctions.h"
+
+#include "securerule.h"
+#include "contentrule.h"
+#include "hashrule.h"
+#include "iprangerule.h"
+#include "iprule.h"
+#include "regexprule.h"
+#include "useragentrule.h"
 
 // TODO: handle m_bIsLoading and its locking more gracefully.
 // TODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
@@ -44,6 +51,7 @@
 // TODO: m_nMaxUnsavedRules >> Settings
 // TODO: add log calls + defines to enable/disable
 // TODO: user agent blocking case insensitive + partial matching
+// TODO: http://quazaa.sourceforge.net/index.php?option=com_jfusion&Itemid=4&jfile=viewtopic.php&f=8&t=201&view=unread#unread
 
 namespace Security
 {
@@ -289,45 +297,6 @@ private:
 
 	inline TSecurityRuleList::iterator getRWIterator(TConstIterator constIt);
 };
-
-quint32 CSecurity::getCount() const
-{
-	return (quint32)m_Rules.size();
-}
-
-bool CSecurity::denyPolicy() const
-{
-	return m_bDenyPolicy;
-}
-
-void CSecurity::remove(CSecureRule* pRule, bool bLockRequired)
-{
-	if ( !pRule )
-		return;
-
-	if ( bLockRequired )
-		m_pRWLock.lockForWrite();
-
-	remove( getUUID( pRule->m_oUUID ) );
-
-	if ( bLockRequired )
-		m_pRWLock.unlock();
-}
-
-void CSecurity::hit(CSecureRule* pRule)
-{
-	pRule->count();
-	emit securityHit();
-}
-
-CSecurity::TSecurityRuleList::iterator CSecurity::getRWIterator(TConstIterator constIt)
-{
-	TSecurityRuleList::iterator i = m_Rules.begin();
-	TConstIterator const_begin = m_Rules.begin();
-	int nDistance = std::distance< TConstIterator >( const_begin, constIt );
-	std::advance( i, nDistance );
-	return i;
-}
 
 }
 

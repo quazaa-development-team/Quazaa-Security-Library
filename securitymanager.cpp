@@ -1,5 +1,5 @@
 /*
-** $Id$
+** securitymanager.cpp
 **
 ** Copyright © Quazaa Development Team, 2009-2013.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
@@ -2272,4 +2272,43 @@ void CSecurity::postLog(LogSeverity::Severity severity, QString message, bool bD
 	{
 		systemLog.postLog( severity, Components::Security, sMessage );
 	}
+}
+
+quint32 CSecurity::getCount() const
+{
+	return (quint32)m_Rules.size();
+}
+
+bool CSecurity::denyPolicy() const
+{
+	return m_bDenyPolicy;
+}
+
+void CSecurity::remove(CSecureRule* pRule, bool bLockRequired)
+{
+	if ( !pRule )
+		return;
+
+	if ( bLockRequired )
+		m_pRWLock.lockForWrite();
+
+	remove( getUUID( pRule->m_oUUID ) );
+
+	if ( bLockRequired )
+		m_pRWLock.unlock();
+}
+
+void CSecurity::hit(CSecureRule* pRule)
+{
+	pRule->count();
+	emit securityHit();
+}
+
+CSecurity::TSecurityRuleList::iterator CSecurity::getRWIterator(TConstIterator constIt)
+{
+	TSecurityRuleList::iterator i = m_Rules.begin();
+	TConstIterator const_begin = m_Rules.begin();
+	int nDistance = std::distance< TConstIterator >( const_begin, constIt );
+	std::advance( i, nDistance );
+	return i;
 }
