@@ -22,6 +22,9 @@
 ** Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#ifndef EXTERNALS_H
+#define EXTERNALS_H
+
 // Enable/disable GeoIP support of the security library.
 #define SECURITY_ENABLE_GEOIP 1
 
@@ -57,5 +60,32 @@ void postLogMessage(LogSeverity::Severity eSeverity, QString sMessage, bool bDeb
  * @return
  */
 QString dataPath();
-// TODO: manage security settings updates see Manager::start()
+
+class Settings : public QObject
+{
+	Q_OBJECT
+
+public:
+	QMutex  m_oLock;
+
+	bool    m_bLogIPCheckHits;
+	bool    m_bIgnorePrivateIPs;
+	quint64 m_tRuleExpiryInterval;
+
+public slots:
+	/**
+	 * @brief Settings::settingsChanged needs to be triggered on setting changes.
+	 * Qt slot. Pulls all relevant settings from quazaaSettings.Security
+	 * and forwards them to the security manager.
+	 * Locking: YES
+	 */
+	void settingsChanged();
+
+signals:
+	void settingsUpdate();
+};
 }
+
+extern Security::Settings securitySettigs;
+
+#endif // EXTERNALS_H

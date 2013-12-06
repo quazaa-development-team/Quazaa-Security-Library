@@ -57,7 +57,7 @@ bool IPLessThan(const IPRule *rule1, const IPRule *rule2)
 Manager::Manager() :
 	m_bEnableCountries( false ),
 	m_bLogIPCheckHits( false ),
-	m_tRuleExpiryInterval( 0 ),
+	m_tRuleExpiryInterval( 600 * 1000 ),
 	m_bUnsaved( false ),
 	m_bExpiryRequested( false ),
 	m_bIgnorePrivateIPs( false ),
@@ -1110,9 +1110,11 @@ bool Manager::start()
 	qRegisterMetaType< SharedRulePtr >( "SharedRulePtr" );
 	qRegisterMetaType< ID >( "ID" );
 
-	// TODO: move to externals.h
-	connect( &quazaaSettings, SIGNAL( securitySettingsChanged() ), SLOT( settingsChanged() ),
-			 Qt::QueuedConnection );
+
+	connect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
+			 &securitySettigs, SLOT( settingsChanged() ), Qt::QueuedConnection );
+
+	connect( &securitySettigs, SIGNAL( settingsUpdate() ), SLOT( settingsChanged() ) );
 
 	// Pull settings from global database to local copy.
 	settingsChanged();
@@ -1694,22 +1696,25 @@ void Manager::expire()
 
 /**
  * @brief Manager::settingsChanged needs to be triggered on setting changes.
- * Qt slot. Pulls all relevant settings from quazaaSettings.Security
+ * Qt slot. Pulls all relevant settings from securitySettings
  * and refreshes all components depending on them.
  * Locking: RW
  */
 void Manager::settingsChanged()
 {
 	m_oRWLock.lockForWrite();
-	m_bLogIPCheckHits			= quazaaSettings.Security.LogIPCheckHits;
+	securitySettigs.m_oLock.lock();
 
-	if ( m_tRuleExpiryInterval != quazaaSettings.Security.RuleExpiryInterval * 1000 )
+	if ( m_tRuleExpiryInterval != securitySettigs.m_tRuleExpiryInterval )
 	{
-		m_tRuleExpiryInterval = quazaaSettings.Security.RuleExpiryInterval * 1000;
+		m_tRuleExpiryInterval = securitySettigs.m_tRuleExpiryInterval;
 		signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval );
 	}
 
-	m_bIgnorePrivateIPs = quazaaSettings.Security.IgnorePrivateIP;
+	m_bLogIPCheckHits   = securitySettigs.m_bLogIPCheckHits;
+	m_bIgnorePrivateIPs = securitySettigs.m_bIgnorePrivateIPs;
+
+	securitySettigs.m_oLock.unlock();
 	m_oRWLock.unlock();
 }
 

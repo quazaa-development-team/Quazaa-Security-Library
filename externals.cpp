@@ -61,3 +61,24 @@ QString Security::dataPath()
 {
 	return CQuazaaGlobals::DATA_PATH();
 }
+
+Security::Settings securitySettigs;
+
+/**
+ * @brief Settings::settingsChanged needs to be triggered on setting changes.
+ * Qt slot. Pulls all relevant settings from quazaaSettings.Security
+ * and forwards them to the security manager.
+ * Locking: YES
+ */
+void Security::Settings::settingsChanged()
+{
+	m_oLock.lock();
+
+	m_bLogIPCheckHits     = quazaaSettings.Security.LogIPCheckHits;
+	m_bIgnorePrivateIPs   = quazaaSettings.Security.IgnorePrivateIP;
+	m_tRuleExpiryInterval = quazaaSettings.Security.RuleExpiryInterval * 1000;
+
+	m_oLock.unlock();
+
+	emit settingsUpdate();
+}
