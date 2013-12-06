@@ -55,14 +55,9 @@
 
 #include "misscache.h"
 
-// TODO: verify SECURITY_CODE_VERSION usage
-// TODO: check usade of hit() vs count()
-// TODO: don't save to file for auto bans / only each 100
 // TODO: fix partial user agent matches
 // TODO: make sure the rule editing dialogue is protected when rules are removed.
 // TODO: use hashtable for single IPs
-// TODO: revert inefficient indefinite/session storage.
-// TODO: remove most endpoints
 // TODO: add defines for hit matching
 // TODO: improve doxygen
 // TODO: add header with all defines and external dependencies
@@ -347,6 +342,11 @@ public:
 	 * @return true for blocked vendors; false otherwise
 	 */
 	bool            isVendorBlocked(const QString& sVendor) const;
+
+	/**
+	 * @brief Manager::registerMetaTypes registers the necessary meta types for signals and slots.
+	 */
+	void            registerMetaTypes();
 
 	/**
 	 * @brief Manager::start starts the Security Manager.

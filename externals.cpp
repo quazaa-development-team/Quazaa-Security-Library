@@ -22,6 +22,10 @@
 ** Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+
+#include "quazaaglobals.h"
+#include "quazaasettings.h"
+
 #include "externals.h"
 
 using namespace Security;
@@ -63,6 +67,20 @@ QString Security::dataPath()
 }
 
 Security::Settings securitySettigs;
+
+void Security::Settings::start()
+{
+	connect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
+			 &securitySettigs, SLOT( settingsChanged() ), Qt::QueuedConnection );
+
+	settingsChanged();
+}
+
+void Security::Settings::stop()
+{
+	disconnect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
+				&securitySettigs, SLOT( settingsChanged() ) );
+}
 
 /**
  * @brief Settings::settingsChanged needs to be triggered on setting changes.

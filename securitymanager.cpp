@@ -334,6 +334,7 @@ void Manager::add(Rule*& pRule)
 #endif // SECURITY_ENABLE_GEOIP
 	}
 
+	// a rule has been added and we might require saving
 	m_bUnsaved = true;
 
 	if ( pRule )
@@ -450,6 +451,7 @@ void Manager::clear()
 	signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval );
 	m_oMissCache.clear();
 
+	// saving might be required :)
 	m_bUnsaved = true;
 
 	m_oRWLock.unlock();
@@ -669,6 +671,11 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
 
 		Rule* pAdd = pRule;
 		add( pAdd );
+
+		if ( pAdd )
+		{
+			pAdd->count();
+		}
 
 		postLogMessage( LogSeverity::Security,
 						tr( "Banned file: " ) + pHit->m_sDescriptiveName, false );
@@ -1099,6 +1106,19 @@ bool Manager::isVendorBlocked(const QString& sVendor) const
 }
 
 /**
+ * @brief Manager::registerMetaTypes registers the necessary meta types for signals and slots.
+ * Locking: /
+ */
+void Manager::registerMetaTypes()
+{
+	static int foo = qRegisterMetaType< ID >( "ID" );
+	static int bar = qRegisterMetaType< SharedRulePtr >( "SharedRulePtr" );
+
+	Q_UNUSED( foo );
+	Q_UNUSED( bar );
+}
+
+/**
  * @brief Manager::start starts the Security Manager.
  * Initializes signal/slot connections, pulls settings and sets up cleanup interval counters.
  * Locking: RW
@@ -1106,18 +1126,12 @@ bool Manager::isVendorBlocked(const QString& sVendor) const
  */
 bool Manager::start()
 {
-	// Register SharedRulePtr to allow using this type with queued signal/slot connections.
-	qRegisterMetaType< SharedRulePtr >( "SharedRulePtr" );
-	qRegisterMetaType< ID >( "ID" );
-
-
-	connect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
-			 &securitySettigs, SLOT( settingsChanged() ), Qt::QueuedConnection );
+	registerMetaTypes();
 
 	connect( &securitySettigs, SIGNAL( settingsUpdate() ), SLOT( settingsChanged() ) );
 
-	// Pull settings from global database to local copy.
-	settingsChanged();
+	// Make sure to initialize the external settings module.
+	securitySettigs.start();
 
 	// Set up interval timed cleanup operations.
 	m_idRuleExpiry      = signalQueue.push( this, "expire", m_tRuleExpiryInterval, true );
@@ -1138,8 +1152,9 @@ bool Manager::stop()
 {
 	signalQueue.pop( this );    // Remove all cleanup intervall timers from the queue.
 
-	disconnect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
-				this, SLOT( settingsChanged() ) );
+	disconnect( &securitySettigs, SIGNAL( settingsUpdate() ), this, SLOT( settingsChanged() ) );
+
+	securitySettigs.stop();
 
 	bool bSaved = save( true ); // Save security rules to disk.
 	clear();                    // Release memory and free containers.
@@ -1154,7 +1169,6 @@ bool Manager::stop()
  */
 bool Manager::load()
 {
-	// TODO: move this to externals.h
 	QString sPath = dataPath();
 
 	if ( load( sPath + "security.dat" ) )
@@ -1902,8 +1916,6 @@ bool Manager::load( QString sPath )
 
 	Rule* pRule = NULL;
 
-	// TODO : handle changes in storage format
-
 	try
 	{
 		clear();
@@ -1929,7 +1941,7 @@ bool Manager::load( QString sPath )
 
 		int nSuccessCount = 0;
 
-		if ( nVersion >= 2 )
+		if ( nVersion >= 1 )
 		{
 			while ( nCount > 0 )
 			{
@@ -2471,6 +2483,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
 #endif // SECURITY_ENABLE_GEOIP
 	}
 
+	// a rule has been removed, so we might want to save...
 	m_bUnsaved = true;
 
 	// Remove rule entry from list of all rules

@@ -37,9 +37,6 @@
 
 #include "commonfunctions.h"
 
-#include "quazaaglobals.h"
-#include "quazaasettings.h"
-
 #include "Misc/timedsignalqueue.h"
 
 namespace Security
@@ -71,6 +68,9 @@ public:
 	bool    m_bLogIPCheckHits;
 	bool    m_bIgnorePrivateIPs;
 	quint64 m_tRuleExpiryInterval;
+
+	void start();
+	void stop();
 
 public slots:
 	/**

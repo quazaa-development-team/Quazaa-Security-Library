@@ -175,7 +175,6 @@ void Rule::save(const Rule* const pRule, QDataStream &oStream)
 	oStream << pRule->m_tExpire;
 	oStream << pRule->m_nTotal.loadAcquire();
 	oStream << pRule->m_bAutomatic;
-
 	oStream << pRule->getContentString();
 
 	if ( pRule->m_nType == RuleType::UserAgent )
