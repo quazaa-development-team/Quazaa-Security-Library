@@ -44,7 +44,7 @@
 
 using namespace Security;
 
-ID           Rule::m_nNextID = 0;
+ID           Rule::m_nLastID = 0;
 QMutex       Rule::m_oIDLock;
 std::set<ID> Rule::m_idCheck;
 
@@ -65,19 +65,19 @@ Rule::Rule() :
 
 	m_oIDLock.lock();
 	static bool bNeedVerify = false;
-	bNeedVerify = m_nNextID++ == std::numeric_limits<ID>::max();
+	bNeedVerify = m_nLastID++ == std::numeric_limits<ID>::max();
 
 	// We only need to start checking the ID after the first overflow of m_nNextID.
 	if ( bNeedVerify )
 	{
-		while ( m_idCheck.find( m_nNextID ) != m_idCheck.end() )
+		while ( m_idCheck.find( m_nLastID ) != m_idCheck.end() )
 		{
-			++m_nNextID;
+			++m_nLastID;
 		}
 	}
 
-	m_idCheck.insert( m_nNextID );
-	m_nGUIID = m_nNextID;
+	m_idCheck.insert( m_nLastID );
+	m_nGUIID = m_nLastID;
 
 	m_oIDLock.unlock();
 }
@@ -87,15 +87,16 @@ Rule::Rule(const Rule& pRule)
 	// The usage of a custom copy constructor makes sure the list of registered
 	// pointers is NOT forwarded to a copy of this rule.
 
-	m_nType     = pRule.m_nType;
-	m_sContent  = pRule.m_sContent;
-	m_nToday    = pRule.m_nToday;
-	m_nTotal    = pRule.m_nTotal;
-	m_nAction   = pRule.m_nAction;
-	m_idUUID    = pRule.m_idUUID;
-	m_nGUIID    = pRule.m_nGUIID;
-	m_tExpire   = pRule.m_tExpire;
-	m_sComment  = pRule.m_sComment;
+	m_nType      = pRule.m_nType;
+	m_sContent   = pRule.m_sContent;
+	m_nToday     = pRule.m_nToday;
+	m_nTotal     = pRule.m_nTotal;
+	m_nAction    = pRule.m_nAction;
+	m_idUUID     = pRule.m_idUUID;
+	m_nGUIID     = pRule.m_nGUIID;
+	m_tExpire    = pRule.m_tExpire;
+	m_sComment   = pRule.m_sComment;
+	m_bAutomatic = pRule.m_bAutomatic;
 }
 
 Rule::~Rule()
@@ -150,10 +151,10 @@ bool Rule::match(const CEndPoint&) const
 {
 	return false;
 }
-bool Rule::match(const QString&) const
+/*bool Rule::match(const QString&) const
 {
 	return false;
-}
+}*/
 bool Rule::match(const CQueryHit* const) const
 {
 	return false;
@@ -168,6 +169,7 @@ bool Rule::match(const QList<QString>&, const QString&) const
 
 void Rule::save(const Rule* const pRule, QDataStream &oStream)
 {
+	// we don't store GUI IDs and session hit counter
 	oStream << (quint8)(pRule->m_nType);
 	oStream << (quint8)(pRule->m_nAction);
 	oStream << pRule->m_sComment;

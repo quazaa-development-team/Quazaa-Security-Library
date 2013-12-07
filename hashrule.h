@@ -55,7 +55,7 @@ public:
 	bool    hashEquals(const HashRule& oRule) const;
 
 	bool    match(const CQueryHit* const pHit) const;
-	bool    match(const HashVector& lHashes) const;
+	bool    match(const HashVector& lHashes) const;  // called by match(CQueryHit*)
 
 	void    toXML(QXmlStreamWriter& oXMLdocument) const;
 };

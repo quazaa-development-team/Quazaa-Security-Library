@@ -83,7 +83,7 @@ private:
 	quint32     m_tExpire;
 
 	// mechanism for allocating GUI IDs
-	static ID           m_nNextID;
+	static ID           m_nLastID;
 	static QMutex       m_oIDLock;
 	static std::set<ID> m_idCheck;
 
@@ -130,7 +130,7 @@ public:
 
 	// Check content for hits
 	virtual bool    match(const CEndPoint& oAddress) const;
-	virtual bool    match(const QString& sContent) const;
+	//virtual bool    match(const QString& sContent) const;
 	virtual bool    match(const CQueryHit* const pHit) const;
 	virtual bool    match(const QList<QString>& lQuery, const QString& sContent) const;
 

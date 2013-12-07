@@ -62,8 +62,6 @@ Manager::Manager() :
 	m_bExpiryRequested( false ),
 	m_bIgnorePrivateIPs( false ),
 	m_bIsLoading( false ),
-	m_bNewRulesLoaded( false ),
-	m_nPendingOperations( 0 ),
 	m_bDenyPolicy( false )
 {
 }
@@ -130,11 +128,16 @@ bool Manager::check(const Rule* const pRule) const
  * Locking: RW
  * @param pRule: the rule to be added.
  */
-void Manager::add(Rule*& pRule)
+bool Manager::add(Rule* pRule)
 {
-	if ( !pRule ) return;
+	if ( !pRule ) return false;
 
 	QWriteLocker writeLock( &m_oRWLock );
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+		Q_ASSERT( m_vRules[i] );
+#endif
 
 	RuleType::Type     nType   = pRule->type();
 	RuleAction::Action nAction = pRule->m_nAction;
@@ -150,6 +153,11 @@ void Manager::add(Rule*& pRule)
 		// we do not allow 2 rules by the same UUID
 		remove( nExRule );
 	}
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+		Q_ASSERT( m_vRules[i] );
+#endif
 
 	bool bNewAddress = false;
 	bool bNewHit	 = false;
@@ -320,8 +328,6 @@ void Manager::add(Rule*& pRule)
 		if ( pRule )
 		{
 			m_vUserAgents.push_back( (UserAgentRule*)pRule );
-
-			bNewHit	= true;
 		}
 	}
 	break;
@@ -333,6 +339,11 @@ void Manager::add(Rule*& pRule)
 		Q_ASSERT( type == RuleType::Country );
 #endif // SECURITY_ENABLE_GEOIP
 	}
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+		Q_ASSERT( m_vRules[i] );
+#endif
 
 	// a rule has been added and we might require saving
 	m_bUnsaved = true;
@@ -352,11 +363,11 @@ void Manager::add(Rule*& pRule)
 
 			m_oMissCache.evaluateUsage();
 
-			m_lqNewAddressRules.push( pRule->getCopy() );
+			m_oSanity.push( pRule );
 		}
-		else if ( bNewHit )		// only add rules related to hit filtering to the queue
+		else if ( bNewHit )
 		{
-			m_lqNewHitRules.push( pRule->getCopy() );
+			m_oSanity.push( pRule );
 		}
 
 		// add rule to vector containing all rules sorted by GUID
@@ -374,7 +385,7 @@ void Manager::add(Rule*& pRule)
 
 			// In case we are currently loading rules from file,
 			// this is done uppon completion of the entire process.
-			sanityCheck();
+			m_oSanity.sanityCheck();
 
 			if ( bSave )
 				save();
@@ -385,6 +396,13 @@ void Manager::add(Rule*& pRule)
 		postLogMessage( LogSeverity::Security,
 						tr( "A new security rule has been merged into an existing one." ), false );
 	}
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+		Q_ASSERT( m_vRules[i] );
+#endif
+
+	return pRule; // Evaluates to false if pRule has been set to NULL.
 }
 
 /**
@@ -426,27 +444,6 @@ void Manager::clear()
 
 	qDeleteAll( m_vRules );
 	m_vRules.clear();
-
-	qDeleteAll( m_vLoadedAddressRules );
-	m_vLoadedAddressRules.clear();
-
-	qDeleteAll( m_vLoadedHitRules );
-	m_vLoadedHitRules.clear();
-
-	Rule* pRule = NULL;
-	while( m_lqNewAddressRules.size() )
-	{
-		pRule = m_lqNewAddressRules.front();
-		m_lqNewAddressRules.pop();
-		delete pRule;
-	}
-
-	while ( m_lqNewHitRules.size() )
-	{
-		pRule = m_lqNewHitRules.front();
-		m_lqNewHitRules.pop();
-		delete pRule;
-	}
 
 	signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval );
 	m_oMissCache.clear();
@@ -554,9 +551,7 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 	Rule* pRule = pIPRule;
 
 	// This also merges any existing rules in case the same IP is added twice.
-	add( pRule );
-
-	if ( pRule )
+	if ( add( pRule ) )
 	{
 		pRule->count();
 
@@ -569,6 +564,10 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 			postLogMessage( LogSeverity::Security,
 							tr( "Banned %1 %2." ).arg( oAddress.toString(), sUntil ), false );
 		}
+	}
+	else
+	{
+		qDebug() << "No rule not added.";
 	}
 }
 
@@ -669,108 +668,14 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
 		pRule->setHashes( hashes );
 		pRule->reduceByHashPriority( nMaxHashes );
 
-		Rule* pAdd = pRule;
-		add( pAdd );
-
-		if ( pAdd )
+		if ( add( pRule ) )
 		{
-			pAdd->count();
+			pRule->count();
 		}
 
 		postLogMessage( LogSeverity::Security,
 						tr( "Banned file: " ) + pHit->m_sDescriptiveName, false );
 	}
-}
-
-/**
- * @brief Manager::isNewlyDenied checks an IP against the list of loaded new security rules.
- * Locking: R
- * @param oAddress : the IP to be checked
- * @return true if the IP is newly banned; false otherwise
- */
-bool Manager::isNewlyDenied(const CEndPoint& oAddress)
-{
-	if ( oAddress.isNull() )
-		return false;
-
-	QReadLocker l( &m_oRWLock );
-
-	// This should only be called if new rules have been loaded previously.
-	Q_ASSERT( m_bNewRulesLoaded );
-
-	RuleVectorPos n = 0;
-	const RuleVectorPos nMax = m_vLoadedAddressRules.size();
-
-	if ( nMax )
-	{
-		Rule** pRules = &m_vLoadedAddressRules[0];
-
-		while ( n < nMax )
-		{
-			if ( pRules[n]->match( oAddress ) )
-			{
-				// the rules are new, so we don't need to check whether they are expired or not
-				hit( pRules[n] );
-
-				if ( pRules[n]->m_nAction == RuleAction::Deny )
-					return true;
-				else if ( pRules[n]->m_nAction == RuleAction::Accept )
-					return false;
-			}
-
-			++n;
-		}
-	}
-
-	return false;
-}
-
-/**
- * @brief Manager::isNewlyDenied checks a hit against the list of loaded new security rules.
- * Locking: R
- * @param pHit : the QueryHit
- * @param lQuery : the query string
- * @return true if the hit is newly banned; false otherwise
- */
-bool Manager::isNewlyDenied(const CQueryHit* const pHit, const QList<QString>& lQuery)
-{
-	if ( !pHit )
-		return false;
-
-	QReadLocker l( &m_oRWLock );
-
-	// This should only be called if new rules have been loaded previously.
-	Q_ASSERT( m_bNewRulesLoaded );
-
-	if ( m_vLoadedHitRules.empty() )
-		return false;
-
-	RuleVectorPos n = 0;
-	const RuleVectorPos nMax = m_vLoadedHitRules.size();
-
-	if ( nMax )
-	{
-		Rule** pRules = &m_vLoadedHitRules[0];
-
-		while ( n < nMax )
-		{
-			if ( pRules[n]->match( pHit ) || pRules[n]->match( pHit->m_sDescriptiveName ) ||
-				 pRules[n]->match( lQuery, pHit->m_sDescriptiveName ) )
-			{
-				// the rules are new, so we don't need to check whether they are expired or not
-				hit( pRules[n] );
-
-				if ( pRules[n]->m_nAction == RuleAction::Deny )
-					return true;
-				else if ( pRules[n]->m_nAction == RuleAction::Accept )
-					return false;
-			}
-
-			++n;
-		}
-	}
-
-	return false;
 }
 
 /**
@@ -1256,15 +1161,7 @@ quint32 Manager::writeToFile(const void * const pManager, QFile& oFile)
  */
 bool Manager::import(const QString& sPath)
 {
-	if ( fromXML( sPath ) || fromP2P( sPath ) )
-	{
-		sanityCheck();
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	return fromXML( sPath ) || fromP2P( sPath );
 }
 
 /**
@@ -1322,9 +1219,7 @@ bool Manager::fromP2P(const QString& sPath)
 			pRule->setExpiryTime( RuleTime::Forever );
 			pRule->m_bAutomatic = false;
 
-			add( pRule );
-
-			nCount += pRule ? 1 : 0;
+			nCount += add( pRule );
 		}
 
 		++nGuiThrottle;
@@ -1340,7 +1235,7 @@ bool Manager::fromP2P(const QString& sPath)
 	m_bIsLoading = false;
 	m_oRWLock.unlock();
 
-	sanityCheck();
+	m_oSanity.sanityCheck();
 	save();
 
 	return nCount;
@@ -1418,14 +1313,13 @@ bool Manager::fromXML(const QString& sPath)
 			{
 				if ( !pRule->isExpired( tNow ) )
 				{
-					add( pRule );
+					nRuleCount += add( pRule );
 				}
 				else
 				{
 					delete pRule;
 				}
 				pRule = NULL;
-				++nRuleCount;
 			}
 			else
 			{
@@ -1450,7 +1344,7 @@ bool Manager::fromXML(const QString& sPath)
 	m_bIsLoading = false;
 	m_oRWLock.unlock();
 
-	sanityCheck();
+	m_oSanity.sanityCheck();
 	save();
 
 	postLogMessage( LogSeverity::Information,
@@ -1554,121 +1448,6 @@ void Manager::requestRuleInfo()
 }
 
 /**
- * @brief Manager::sanityCheck initializes a system wide sanity check.
- * Qt slot. Triggers a system wide sanity check.
- * The sanity check is delayed by 5s, if a write lock couldn't be aquired after 200ms.
- * The sanity check is aborted if it takes longer than 2min to finish.
- * Locking: RW
- */
-void Manager::sanityCheck()
-{
-	if ( m_oRWLock.tryLockForWrite( 200 ) )
-	{
-		// This indicates that an error happend previously.
-		Q_ASSERT( m_bNewRulesLoaded || m_vLoadedAddressRules.empty() && m_vLoadedHitRules.empty() );
-
-		// Check whether there are new rules to deal with.
-		bool bNewRules = m_lqNewAddressRules.size() || m_lqNewHitRules.size();
-
-		if ( bNewRules )
-		{
-			if ( !m_bNewRulesLoaded )
-			{
-				loadNewRules();
-
-				// Count how many "OK"s we need to get back.
-				m_nPendingOperations = receivers( SIGNAL( performSanityCheck() ) );
-
-				// if there is anyone listening, start the sanity check
-				if ( m_nPendingOperations )
-				{
-#ifdef _DEBUG
-					// Failsafe mechanism in case there are massive problems somewhere else.
-					m_idForceEoSC = signalQueue.push( this, "forceEndOfSanityCheck", 120 );
-#endif
-
-					// Inform all other modules aber the necessity of a sanity check.
-					emit performSanityCheck();
-				}
-				else
-				{
-					clearNewRules();
-				}
-			}
-			else // other sanity check still in progress
-			{
-				// try again later
-				signalQueue.push( this, "sanityCheck", 5 );
-			}
-		}
-
-		m_oRWLock.unlock();
-	}
-	else // We didn't get a write lock in a timely manner.
-	{
-		// try again later
-		signalQueue.push( this, "sanityCheck", 5 );
-	}
-}
-
-/**
- * @brief Manager::sanityCheckPerformed
- * Qt slot. Must be notified by all listeners to the signal performSanityCheck() once they have
- * completed their work.
- * Locking: RW
- */
-void Manager::sanityCheckPerformed()
-{
-	m_oRWLock.lockForWrite();
-
-	Q_ASSERT( m_bNewRulesLoaded );        // TODO: remove after testing
-	Q_ASSERT( m_nPendingOperations > 0 );
-
-	if ( --m_nPendingOperations == 0 )
-	{
-		postLogMessage( LogSeverity::Debug, QObject::tr( "Sanity Check finished successfully. " ) +
-				 QObject::tr( "Starting cleanup now." ), true );
-
-		clearNewRules();
-	}
-	else
-	{
-		postLogMessage( LogSeverity::Debug, QObject::tr( "A component finished with sanity checking. " ) +
-				 QObject::tr( "Still waiting for %s other components to finish."
-							  ).arg( m_nPendingOperations ), true );
-	}
-
-	m_oRWLock.unlock();
-}
-
-#ifdef _DEBUG
-/**
- * @brief CSecurity::forceEndOfSanityCheck
- * Qt slot. Aborts the currently running sanity check by clearing its rule lists.
- * For use in debug version only.
- * Locking: RW
- */
-void Manager::forceEndOfSanityCheck()
-{
-	m_oRWLock.lockForWrite();
-#ifdef _DEBUG
-	if ( m_nPendingOperations )
-	{
-		QString sTmp = QObject::tr( "Sanity check aborted. Most probable reason: It took some " ) +
-					   QObject::tr( "component longer than 2min to call sanityCheckPerformed() " ) +
-					   QObject::tr( "after having recieved the signal performSanityCheck()." );
-		postLogMessage( LogSeverity::Error, sTmp, true );
-		Q_ASSERT( false );
-	}
-#endif //_DEBUG
-
-	clearNewRules();
-	m_nPendingOperations = 0;
-	m_oRWLock.unlock();
-}
-#endif //_DEBUG
-
-/**
  * @brief Manager::expire removes rules that have reached their expiration date.
  * Qt slot. Checks the security database for expired rules.
  * Locking: RW
@@ -1744,101 +1523,6 @@ void Manager::hit(Rule* pRule)
 }
 
 /**
- * @brief Manager::loadNewRules loads waiting rules into the containers used for sanity
- * checking.
- * Locking: REQUIRES RW
- */
-void Manager::loadNewRules()
-{
-	Q_ASSERT( !m_bNewRulesLoaded );
-
-	// should both be empty
-	Q_ASSERT( !( m_vLoadedAddressRules.size() || m_vLoadedHitRules.size() ) );
-
-	// there should be at least 1 new rule
-	Q_ASSERT( m_lqNewAddressRules.size() || m_lqNewHitRules.size() );
-
-	Rule* pRule = NULL;
-
-	while ( m_lqNewAddressRules.size() )
-	{
-		pRule = m_lqNewAddressRules.front();
-		m_lqNewAddressRules.pop();
-
-		// Only IP, IP range and coutry rules are allowed.
-		Q_ASSERT( pRule->type() && pRule->type() < 4 );
-
-		m_vLoadedAddressRules.push_back( pRule );
-
-		pRule = NULL;
-	}
-
-	while ( m_lqNewHitRules.size() )
-	{
-		pRule = m_lqNewHitRules.front();
-		m_lqNewHitRules.pop();
-
-		// Only hit related rules are allowed.
-		Q_ASSERT( pRule->type() > 3 );
-
-		m_vLoadedHitRules.push_back( pRule );
-
-		pRule = NULL;
-	}
-
-	m_bNewRulesLoaded = true;
-}
-
-/**
- * @brief Manager::clearNewRules unloads new rules from sanity check containers.
- * Locking: REQUIRES RW
- */
-void Manager::clearNewRules()
-{
-	Q_ASSERT( m_bNewRulesLoaded );
-
-	// There should at least be one rule.
-	Q_ASSERT( m_vLoadedAddressRules.size() || m_vLoadedHitRules.size() );
-
-	RuleVectorPos n = 0, nSize = m_vLoadedAddressRules.size();
-
-	if ( nSize )
-	{
-		Rule** pLoadedAddressRules = &m_vLoadedAddressRules[0];
-		while ( n < nSize )
-		{
-			delete pLoadedAddressRules[n];
-		}
-	}
-
-	m_vLoadedAddressRules.clear();
-
-	n = 0;
-	nSize = m_vLoadedHitRules.size();
-
-	if ( nSize )
-	{
-		Rule** pLoadedHitRules = &m_vLoadedHitRules[0];
-		while ( n < nSize )
-		{
-			delete pLoadedHitRules[n];
-		}
-	}
-
-	m_vLoadedHitRules.clear();
-
-#ifdef _DEBUG // use failsafe to abort sanity check only in debug version
-	if ( !m_idForceEoSC.isNull() )
-	{
-		Q_ASSERT( signalQueue.pop( m_idForceEoSC ) );
-		m_idForceEoSC = QUuid();
-	}
-#endif
-
-	m_bNewRulesLoaded = false;
-}
-
-/**
  * @brief Manager::loadPrivates loads the private IP renges into the appropriate container.
  * Locking RW
  */
@@ -1890,9 +1574,7 @@ void Manager::clearPrivates()
 	if ( nSize )
 	{
 		IPRangeRule** pRule = &m_vPrivateRanges[0];
-		IPRangeVectorPos n = 0;
-
-		while ( n < nSize )
+		for ( IPRangeVectorPos n = 0; n < nSize; ++n )
 		{
 			delete pRule[n];
 		}
@@ -1953,11 +1635,15 @@ bool Manager::load( QString sPath )
 				}
 				else
 				{
-					add( pRule );
-					nSuccessCount += pRule ? 1 : 0;
+					nSuccessCount += add( pRule );
 				}
 
 				pRule = NULL;
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+		Q_ASSERT( m_vRules[i] );
+#endif
 
 				nCount--;
 			}
@@ -1975,8 +1661,8 @@ bool Manager::load( QString sPath )
 															 ).arg( nSuccessCount ), false );
 		}
 
-		// If necessary perform sanity check after loading.
-		sanityCheck();
+		// perform sanity check after loading.
+		m_oSanity.sanityCheck();
 
 		// Saving not required here. No rules have been changed
 	}
@@ -2010,12 +1696,24 @@ void Manager::insert(Rule* pRule)
 
 	Rule** pArray = &m_vRules[0]; // access internal array
 
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < nPos; ++i )
+		Q_ASSERT( pArray[i] );
+#endif
+
 	while ( nPos > 0 && pRule->m_idUUID < pArray[nPos - 1]->m_idUUID )
 	{
-		pArray[nPos] = pArray[--nPos];
+		pArray[nPos] = pArray[nPos - 1];
+		--nPos;
 	}
 
 	pArray[nPos] = pRule;
+
+#ifdef _DEBUG
+	const RuleVectorPos nSize = m_vRules.size();
+	for ( RuleVectorPos i = 0; i < nSize; ++i )
+		Q_ASSERT( pArray[i] );
+#endif
 }
 
 /**
@@ -2030,6 +1728,7 @@ void Manager::erase(RuleVectorPos nPos)
 	const RuleVectorPos nMax = m_vRules.size() - 1;
 
 	Rule** pArray = &m_vRules[0]; // access internal array
+
 	delete pArray[nPos];          // delete rule
 
 	RuleVectorPos i = nPos;
@@ -2039,6 +1738,11 @@ void Manager::erase(RuleVectorPos nPos)
 	}
 
 	m_vRules.pop_back();          // remove last element
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < nMax; ++i )
+		Q_ASSERT( pArray[i] );
+#endif
 }                                 // (either the deleted one or a copy of the one next to it)
 
 /**
@@ -2093,6 +1797,8 @@ void Manager::insertRange(Rule*& pNew)
 			Q_ASSERT( pRules[ n ]->startIP() < pRules[ n ]->endIP()   );
 			Q_ASSERT( pRules[ n ]->endIP()   < pRules[n+1]->startIP() );
 			Q_ASSERT( pRules[n+1]->startIP() < pRules[n+1]->endIP()   );
+
+			++n;
 		}
 	}
 #endif
@@ -2109,6 +1815,11 @@ void Manager::insertRangeHelper(IPRangeRule* pNewRange)
 	m_vIPRanges.push_back( NULL );
 
 	IPRangeRule** pArray = &m_vIPRanges[0]; // access internal array
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < nPos; ++i )
+		Q_ASSERT( pArray[i] );
+#endif
 
 	while ( nPos > 0 && pNewRange->m_idUUID < pArray[nPos - 1]->m_idUUID )
 	{
@@ -2204,6 +1915,7 @@ void Manager::eraseRange(Manager::RuleVectorPos nPos)
 	const RuleVectorPos nMax = m_vIPRanges.size() - 1;
 
 	Rule** pArray = &m_vRules[0]; // access internal array
+
 	delete pArray[nPos];          // delete rule
 
 	RuleVectorPos i = nPos;
@@ -2213,6 +1925,11 @@ void Manager::eraseRange(Manager::RuleVectorPos nPos)
 	}
 
 	m_vRules.pop_back();          // remove last element
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < nMax; ++i )
+		Q_ASSERT( pArray[i] );
+#endif
 }                                 // (either the deleted one or a copy of the one next to it)
 
 /**
@@ -2232,6 +1949,11 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
 	}
 
 	Rule* const * pRules = &m_vRules[0];
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < nSize; ++i )
+		Q_ASSERT( pRules[i] );
+#endif
 
 	RuleVectorPos nMiddle, nHalf, nBegin = 0;
 	RuleVectorPos n = nSize - nBegin;
@@ -2409,7 +2131,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 			while ( nPos < nSize )
 			{
-				if ( pArray[nPos]->m_idUUID == pRule->m_idUUID )
+				if ( pArray[nPos++]->m_idUUID == pRule->m_idUUID )
 					break;
 			}
 
@@ -2435,7 +2157,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 			while ( nPos < nSize )
 			{
-				if ( pArray[nPos]->m_idUUID == pRule->m_idUUID )
+				if ( pArray[nPos++]->m_idUUID == pRule->m_idUUID )
 					break;
 			}
 
@@ -2461,7 +2183,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 			while ( nPos < nSize )
 			{
-				if ( pArray[nPos]->m_idUUID == pRule->m_idUUID )
+				if ( pArray[nPos++]->m_idUUID == pRule->m_idUUID )
 					break;
 			}
 
@@ -2489,6 +2211,11 @@ void Manager::remove(RuleVectorPos nVectorPos)
 	// Remove rule entry from list of all rules
 	erase( nVectorPos );
 
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+		Q_ASSERT( m_vRules[i] );
+#endif
+
 	emit ruleRemoved( SharedRulePtr( pRule ) );
 }
 
@@ -2507,11 +2234,10 @@ bool Manager::isAgentDenied(const QString& sUserAgent)
 
 	if ( nSize )
 	{
-		UserAgentVectorPos n   = 0;
 		UserAgentRule** pArray = &m_vUserAgents[0];
 		const quint32 tNow     = common::getTNowUTC();
 
-		while ( n < nSize )
+		for ( UserAgentVectorPos n = 0; n < nSize; ++n )
 		{
 			if ( !pArray[n]->isExpired( tNow ) )
 			{
@@ -2533,8 +2259,6 @@ bool Manager::isAgentDenied(const QString& sUserAgent)
 			{
 				expireLater();
 			}
-
-			++n;
 		}
 	}
 
@@ -2556,11 +2280,10 @@ bool Manager::isAgentDenied(const QString& sUserAgent)
 	const ContentVectorPos nSize = m_vContents.size();
 	if ( nSize )
 	{
-	ContentVectorPos n = 0;
 	ContentRule** pArray = &m_vContents[0];
 	const quint32 tNow = common::getTNowUTC();
 
-	while ( n < nSize )
+	for ( ContentVectorPos n = 0; n < nSize; ++n )
 	{
 		if ( !pArray[n]->isExpired( tNow ) )
 		{
@@ -2582,8 +2305,6 @@ bool Manager::isAgentDenied(const QString& sUserAgent)
 		{
 			expireLater();
 		}
-
-		++n;
 	}
 	}
 
@@ -2634,15 +2355,13 @@ bool Manager::isDenied(const CQueryHit* const pHit)
 		}
 	}
 
-
 	const ContentVectorPos nSize = m_vContents.size();
 
 	if ( nSize )
 	{
-		ContentVectorPos n   = 0;
 		ContentRule** pArray = &m_vContents[0];
 
-		while ( n < nSize )
+		for ( ContentVectorPos n = 0; n < nSize; ++n )
 		{
 			if ( !pArray[n]->isExpired( tNow ) )
 			{
@@ -2664,8 +2383,6 @@ bool Manager::isDenied(const CQueryHit* const pHit)
 			{
 				expireLater();
 			}
-
-			++n;
 		}
 	}
 
@@ -2691,11 +2408,10 @@ bool Manager::isDenied(const QList<QString>& lQuery, const QString& sContent)
 
 	if ( nSize )
 	{
-		RegExpVectorPos         n      = 0;
 		const quint32           tNow   = common::getTNowUTC();
 		RegularExpressionRule** pArray = &m_vRegularExpressions[0];
 
-		while ( n < nSize )
+		for ( RegExpVectorPos n = 0; n < nSize; ++n )
 		{
 			if ( !pArray[n]->isExpired( tNow ) )
 			{
@@ -2717,8 +2433,6 @@ bool Manager::isDenied(const QList<QString>& lQuery, const QString& sContent)
 			{
 				expireLater();
 			}
-
-			++n;
 		}
 	}
 
@@ -2869,6 +2583,11 @@ Manager::IPRangeVectorPos Manager::findRange(const CEndPoint oAddress)
 	}
 
 	IPRangeRule** pRules = &m_vIPRanges[0];
+
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < nSize; ++i )
+		Q_ASSERT( pRules[i] );
+#endif
 
 	IPRangeVectorPos nRemaining = nSize;
 	IPRangeVectorPos nRangeStart = 0;

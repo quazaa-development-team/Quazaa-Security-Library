@@ -37,6 +37,7 @@ HEADERS += \
 		$$PWD/iprule.h \
 		$$PWD/misscache.h \
 		$$PWD/regexprule.h \
+		$$PWD/sanitychecker.h \
 		$$PWD/securerule.h \
 		$$PWD/securitymanager.h \
 		$$PWD/useragentrule.h
@@ -51,6 +52,7 @@ SOURCES += \
 		$$PWD/iprule.cpp \
 		$$PWD/misscache.cpp \
 		$$PWD/regexprule.cpp \
+		$$PWD/sanitychecker.cpp \
 		$$PWD/securerule.cpp \
 		$$PWD/securitymanager.cpp \
 		$$PWD/useragentrule.cpp

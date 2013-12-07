@@ -54,6 +54,7 @@
 #include "useragentrule.h"
 
 #include "misscache.h"
+#include "sanitychecker.h"
 
 // TODO: fix partial user agent matches
 // TODO: make sure the rule editing dialogue is protected when rules are removed.
@@ -85,7 +86,6 @@ class Manager : public QObject
 	/* ====================================== Definitions  ====================================== */
 	/* ========================================================================================== */
 private:
-	// contains a list of all rules sorted by their UUID
 	typedef std::vector< Rule*  > RuleVector;
 
 	// use this if you don't want to care about signed/unsigned...
@@ -113,26 +113,18 @@ private:
 	typedef std::multimap< uint, HashRule*      > HashRuleMap;
 	typedef HashRuleMap::const_iterator HashIterator;
 
-	// a queue for new rules to wait in
-	typedef std::queue< Rule* > NewRulesQueue;
-
 	/* ========================================================================================== */
 	/* ======================================= Attributes ======================================= */
 	/* ========================================================================================== */
 public:
 	//static const char* ruleInfoSignal;
 
-	mutable QReadWriteLock m_oRWLock;
+	mutable QReadWriteLock  m_oRWLock;
+	SanityCecker            m_oSanity; // has its own locking
 
 private:
 	// contains all rules
 	RuleVector      m_vRules;
-
-	// Used to manage newly added rules during sanity check
-	RuleVector      m_vLoadedAddressRules;
-	NewRulesQueue   m_lqNewAddressRules;
-	RuleVector      m_vLoadedHitRules;
-	NewRulesQueue   m_lqNewHitRules;
 
 	// single IP blocking rules
 	IPMap           m_lmIPs;
@@ -169,17 +161,11 @@ private:
 	// Timer IDs
 	QUuid           m_idRuleExpiry;       // The ID of the signalQueue object.
 
-#ifdef _DEBUG // use failsafe to abort sanity check only in debug version
-	QUuid           m_idForceEoSC;        // The signalQueue ID (force end of sanity check)
-#endif
-
 	// Other
 	mutable bool    m_bUnsaved;           // true if there are unsaved rules
 	bool            m_bExpiryRequested;
 	bool            m_bIgnorePrivateIPs;
 	bool            m_bIsLoading;         // true during import operations. Used to avoid unnecessary GUI updates.
-	bool            m_bNewRulesLoaded;    // true if new rules for sanity check have been loaded.
-	unsigned short  m_nPendingOperations; // Counts the number of program modules that still need to call back after having finished a requested sanity check operation.
 
 	bool            m_bDenyPolicy;
 	// m_bDenyPolicy == false : everything but specifically blocked IPs is allowed (default)
@@ -233,7 +219,7 @@ public:
 	 * Locking: RW
 	 * @param pRule: the rule to be added. Will be set to NULL if redundant.
 	 */
-	void            add(Rule*& pRule);
+	bool            add(Rule* pRule);
 
 	/**
 	 * @brief Manager::remove removes a rule from the manager.
@@ -279,23 +265,6 @@ public:
 	 */
 	void            ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint nMaxHashes = 3,
 						const QString& sComment = "");
-
-	/**
-	 * @brief Manager::isNewlyDenied checks an IP against the list of loaded new security rules.
-	 * Locking: R
-	 * @param oAddress : the IP to be checked
-	 * @return true if the IP is newly banned; false otherwise
-	 */
-	bool            isNewlyDenied(const CEndPoint& oAddress);
-
-	/**
-	 * @brief Manager::isNewlyDenied checks a hit against the list of loaded new security rules.
-	 * Locking: R
-	 * @param pHit : the QueryHit
-	 * @param lQuery : the query string
-	 * @return true if the hit is newly banned; false otherwise
-	 */
-	bool            isNewlyDenied(const CQueryHit* const pHit, const QList<QString>& lQuery);
 
 	/**
 	 * @brief Manager::isDenied checks an IP against the security database.
@@ -482,11 +451,6 @@ signals:
 	void            ruleUpdated(ID nID);
 
 	/**
-	 * @brief performSanityCheck informs all other application components about a sanity check.
-	 */
-	void            performSanityCheck();
-
-	/**
 	 * @brief updateLoadMax informs about a change in the max value of the loading progress bar.
 	 * @param max : the new max value
 	 */
@@ -508,33 +472,6 @@ public slots:
 	 * Locking: R
 	 */
 	void            requestRuleInfo();
-
-	/**
-	 * @brief Manager::sanityCheck initializes a system wide sanity check.
-	 * Qt slot. Triggers a system wide sanity check.
-	 * The sanity check is delayed by 5s, if a write lock couldn't be aquired after 200ms.
-	 * The sanity check is aborted if it takes longer than 2min to finish.
-	 * Locking: RW
-	 */
-	void            sanityCheck();
-
-	/**
-	 * @brief Manager::sanityCheckPerformed
-	 * Qt slot. Must be notified by all listeners to the signal performSanityCheck() once they have
-	 * completed their work.
-	 * Locking: RW
-	 */
-	void            sanityCheckPerformed();
-
-#ifdef _DEBUG // use failsafe to abort sanity check only in debug version
-	/**
-	 * @brief CSecurity::forceEndOfSanityCheck
-	 * Qt slot. Aborts the currently running sanity check by clearing its rule lists.
-	 * For use in debug version only.
-	 * Locking: RW
-	 */
-	void            forceEndOfSanityCheck();
-#endif
 
 	/**
 	 * @brief Manager::expire removes rules that have reached their expiration date.
@@ -561,19 +498,6 @@ private:
 	 * @param pRule : the rule that has been hit
 	 */
 	void            hit(Rule *pRule);
-
-	/**
-	 * @brief Manager::loadNewRules loads waiting rules into the containers used for sanity
-	 * checking.
-	 * Locking: REQUIRES RW
-	 */
-	void            loadNewRules();
-
-	/**
-	 * @brief Manager::clearNewRules unloads new rules from sanity check containers.
-	 * Locking: REQUIRES RW
-	 */
-	void            clearNewRules();
 
 	/**
 	 * @brief Manager::loadPrivates loads the private IP renges into the appropriate container.
