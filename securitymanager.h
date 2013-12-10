@@ -571,10 +571,12 @@ private:
 	void            expireLater();
 
 	/**
-	 * @brief Manager::remove removes the rule on nPos in the vector from the manager.
+	 * @brief Manager::remove removes the rule at nPos in the vector from the manager.
 	 * Note: Only rule vector locations after and equal to nPos are invalidited by calling this.
-	 * Locking: REQUIRES R
-	 * @param nVectorPos : the position
+	 * Note: Caller needs to make sure the rule is not accessed anymore aftor calling this, as it is
+	 * given over to a QSharedPointer which will expire as soon as the GUI has removed the rule.
+	 * Locking: REQUIRES RW
+	 * @param nPos : the position
 	 */
 	void            remove(RuleVectorPos nVectorPos);
 

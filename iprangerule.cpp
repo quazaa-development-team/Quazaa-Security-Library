@@ -40,17 +40,21 @@ Rule* IPRangeRule::getCopy() const
 
 bool IPRangeRule::parseContent(const QString& sContent)
 {
-	QStringList addresses = sContent.split("-");
+	QStringList lAddresses = sContent.split("-");
 
-	CEndPoint oStartAddress;
-	CEndPoint oEndAddress;
-	if ( oStartAddress.setAddress( addresses.at(0) ) && oEndAddress.setAddress( addresses.at(1) ) )
+	CEndPoint oStartAddress, oEndAddress;
+	if ( lAddresses.size() == 2 &&
+		 oStartAddress.setAddress( lAddresses.at( 0 ) ) &&
+		 oEndAddress.setAddress( lAddresses.at( 1 ) ) )
 	{
 		m_oStartIP = oStartAddress;
-		m_oEndIP = oEndAddress;
+		m_oEndIP   = oEndAddress;
 		m_sContent = sContent;
 		return true;
 	}
+
+	qDebug() << "[Security Error] Could not parse the following as IP range rule: "
+			 << sContent;
 	return false;
 }
 
@@ -83,6 +87,7 @@ IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 			}
 			else
 			{
+				// Split this rule into two parts: this before pOther, pNewRule after pOther
 				IPRangeRule* pNewRule = (IPRangeRule*)getCopy();
 				pNewRule->m_oStartIP = pOther->m_oEndIP;
 				++pNewRule->m_oStartIP;

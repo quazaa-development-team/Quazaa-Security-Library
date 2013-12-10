@@ -36,7 +36,7 @@
 Security::Manager securityManager;
 using namespace Security;
 
-bool IPRangeLessThan(const IPRangeRule *rule1, const IPRangeRule *rule2)
+/*bool IPRangeLessThan(const IPRangeRule *rule1, const IPRangeRule *rule2)
 {
 	return rule1->startIP() < rule2->startIP();
 }
@@ -44,7 +44,7 @@ bool IPRangeLessThan(const IPRangeRule *rule1, const IPRangeRule *rule2)
 bool IPLessThan(const IPRule *rule1, const IPRule *rule2)
 {
 	return rule1->IP() < rule2->IP();
-}
+}*/
 
 /**
  * @brief Manager::ruleInfoSignal
@@ -57,7 +57,7 @@ bool IPLessThan(const IPRule *rule1, const IPRule *rule2)
 Manager::Manager() :
 	m_bEnableCountries( false ),
 	m_bLogIPCheckHits( false ),
-	m_tRuleExpiryInterval( 600 * 1000 ),
+	m_tRuleExpiryInterval( 0 ),
 	m_bUnsaved( false ),
 	m_bExpiryRequested( false ),
 	m_bIgnorePrivateIPs( false ),
@@ -445,13 +445,15 @@ void Manager::clear()
 	qDeleteAll( m_vRules );
 	m_vRules.clear();
 
-	signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval );
 	m_oMissCache.clear();
 
 	// saving might be required :)
 	m_bUnsaved = true;
 
 	m_oRWLock.unlock();
+
+	// refresh settings
+	settingsChanged(); // refresh settings from securitySettigs
 }
 
 /**
@@ -1038,9 +1040,6 @@ bool Manager::start()
 	// Make sure to initialize the external settings module.
 	securitySettigs.start();
 
-	// Set up interval timed cleanup operations.
-	m_idRuleExpiry      = signalQueue.push( this, "expire", m_tRuleExpiryInterval, true );
-
 	loadPrivates();
 
 	return load(); // Load security rules from HDD.
@@ -1475,6 +1474,11 @@ void Manager::expire()
 
 	m_bExpiryRequested = false;
 
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+		Q_ASSERT( m_vRules[i] );
+#endif
+
 	m_oRWLock.unlock();
 
 	postLogMessage( LogSeverity::Debug, QString::number( nCount ) + " Rules expired.", true );
@@ -1494,7 +1498,23 @@ void Manager::settingsChanged()
 	if ( m_tRuleExpiryInterval != securitySettigs.m_tRuleExpiryInterval )
 	{
 		m_tRuleExpiryInterval = securitySettigs.m_tRuleExpiryInterval;
-		signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval );
+		if ( m_tRuleExpiryInterval )
+		{
+			if ( m_idRuleExpiry.isNull() )
+			{
+				// Set up interval timed cleanup operations.
+				m_idRuleExpiry = signalQueue.push( this, "expire", m_tRuleExpiryInterval, true );
+			}
+			else
+			{
+				// TODO: remove assert after testing
+				Q_ASSERT( signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval ) );
+			}
+		} // m_tRuleExpiryInterval == 0 disables interval rule expiry
+		else if ( !m_idRuleExpiry.isNull() )
+		{
+			signalQueue.pop( m_idRuleExpiry );
+		}
 	}
 
 	m_bLogIPCheckHits   = securitySettigs.m_bLogIPCheckHits;
@@ -1711,6 +1731,8 @@ void Manager::insert(Rule* pRule)
 
 /**
  * @brief Manager::erase removes the rule at the position nPos from the vector.
+ * Note: this does not free the memory. See the QSharedPointer emitted at the end of
+ * Manager::remove(RuleVectorPos) for that.
  * Locking: REQUIRES RW
  * @param nPos : the position
  */
@@ -1721,8 +1743,6 @@ void Manager::erase(RuleVectorPos nPos)
 	const RuleVectorPos nMax = m_vRules.size() - 1;
 
 	Rule** pArray = &m_vRules[0]; // access internal array
-
-	delete pArray[nPos];          // delete rule
 
 	RuleVectorPos i = nPos;
 	while ( i < nMax )            // move all other elements 1 pos up the latter
@@ -2020,6 +2040,7 @@ void Manager::expireLater()
 {
 	if ( !m_bExpiryRequested )
 	{
+		// We don't care for simultuneous access here as a double access cannot do any harm.
 		m_bExpiryRequested = true;
 
 		signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval );
@@ -2030,11 +2051,15 @@ void Manager::expireLater()
 /**
  * @brief Manager::remove removes the rule at nPos in the vector from the manager.
  * Note: Only rule vector locations after and equal to nPos are invalidited by calling this.
- * Locking: REQUIRES R
+ * Note: Caller needs to make sure the rule is not accessed anymore aftor calling this, as it is
+ * given over to a QSharedPointer which will expire as soon as the GUI has removed the rule.
+ * Locking: REQUIRES RW
  * @param nPos : the position
  */
 void Manager::remove(RuleVectorPos nVectorPos)
 {
+	//qDebug() << "[Security] Starting to remove rule at position: " << QString::number(nVectorPos);
+
 	Q_ASSERT( nVectorPos >= 0 && nVectorPos < m_vRules.size() );
 
 	if ( nVectorPos == m_vRules.size() )
@@ -2209,7 +2234,13 @@ void Manager::remove(RuleVectorPos nVectorPos)
 		Q_ASSERT( m_vRules[i] );
 #endif
 
-	emit ruleRemoved( SharedRulePtr( pRule ) );
+	//qDebug() << "[Security] Finished removing rule. Emitting signal now.";
+
+	SharedRulePtr pReturn = SharedRulePtr( pRule );
+
+	Q_ASSERT( pReturn );
+
+	emit ruleRemoved( pReturn );
 }
 
 /**

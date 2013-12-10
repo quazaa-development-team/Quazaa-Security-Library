@@ -133,6 +133,8 @@ bool SanityCecker::isNewlyDenied(const CQueryHit* const pHit, const QList<QStrin
  */
 void SanityCecker::sanityCheck()
 {
+	qDebug() << "call to sanityCheck()";
+
 	if ( m_oRWLock.tryLockForWrite( 200 ) )
 	{
 		// This indicates that an error happend previously.
@@ -201,6 +203,8 @@ void SanityCecker::sanityCheckPerformed()
 						tr( "Starting cleanup now." ), true );
 
 		clearBatch();
+
+		qDebug() << "Cleanup finished.";
 	}
 	else
 	{

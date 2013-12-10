@@ -50,12 +50,12 @@ bool IPRule::parseContent(const QString& sContent)
 	return false;
 }
 
-CEndPoint IPRule::IP() const
+QHostAddress IPRule::IP() const
 {
 	return m_oIP;
 }
 
-void IPRule::setIP( const CEndPoint& oIP )
+void IPRule::setIP(const QHostAddress& oIP )
 {
 	m_oIP = oIP;
 	m_sContent = oIP.toString();
