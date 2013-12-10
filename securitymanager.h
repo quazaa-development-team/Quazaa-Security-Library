@@ -408,13 +408,6 @@ public:
 	//int             receivers(const char* signal) const;
 
 	/**
-	 * @brief ruleInfoRunning allows to know whether anyone is listening to the ruleInfo signal.
-	 * Locking: /
-	 * @return true if somebody is listening to the ruleInfo signal; false otherwise.
-	 */
-	bool            ruleInfoRunning();
-
-	/**
 	 * @brief Manager::emitUpdate emits a ruleUpdated signal for a given RuleGUIID nID.
 	 * Locking: /
 	 * @param nID : the ID
@@ -467,11 +460,12 @@ signals:
 	/* ========================================================================================== */
 public slots:
 	/**
-	 * @brief Manager::requestRuleList allows to request ruleInfo() signals for all rules.
+	 * @brief Manager::requestRuleInfo allows to request ruleInfo() signals for all rules.
 	 * Qt slot. Triggers the Security Manager to emit all rules using the ruleInfo() signal.
 	 * Locking: R
+	 * @return the number of rule info signals to expect
 	 */
-	void            requestRuleInfo();
+	quint32         requestRuleInfo();
 
 	/**
 	 * @brief Manager::expire removes rules that have reached their expiration date.

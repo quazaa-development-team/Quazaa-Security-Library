@@ -1405,16 +1405,6 @@ bool Manager::toXML(const QString& sPath) const
 }*/
 
 /**
- * @brief ruleInfoRunning allows to know whether anyone is listening to the ruleInfo signal.
- * Locking: /
- * @return true if somebody is listening to the ruleInfo signal; false otherwise.
- */
-bool Manager::ruleInfoRunning()
-{
-	return QObject::receivers( SIGNAL( ruleInfo( Rule* ) ) );
-}
-
-/**
  * @brief Manager::emitUpdate emits a ruleUpdated signal for a given RuleGUIID nID.
  * Locking: /
  * @param nID : the ID
@@ -1425,26 +1415,29 @@ void Manager::emitUpdate(ID nID)
 }
 
 /**
- * @brief Manager::requestRuleList allows to request ruleInfo() signals for all rules.
+ * @brief Manager::requestRuleInfo allows to request ruleInfo() signals for all rules.
  * Qt slot. Triggers the Security Manager to emit all rules using the ruleInfo() signal.
  * Locking: R
+ * @return the number of rule info signals to expect
  */
-void Manager::requestRuleInfo()
+quint32 Manager::requestRuleInfo()
 {
 	m_oRWLock.lockForRead();
 
-	const RuleVectorPos nSize = m_vRules.size();
+	const quint32 nSize = (quint32)m_vRules.size();
 
 	if ( nSize )
 	{
 		Rule** pRules = &m_vRules[0];
-		for ( RuleVectorPos n = 0; n < nSize ; ++n )
+		for ( quint32 n = 0; n < nSize ; ++n )
 		{
 			emit ruleInfo( pRules[n] );
 		}
 	}
 
 	m_oRWLock.unlock();
+
+	return nSize;
 }
 
 /**
