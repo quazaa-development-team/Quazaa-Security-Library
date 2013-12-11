@@ -65,9 +65,9 @@ Rule::Rule() :
 
 	m_oIDLock.lock();
 	static bool bNeedVerify = false;
-	bNeedVerify = m_nLastID++ == std::numeric_limits<ID>::max();
+	bNeedVerify = !(++m_nLastID); // e.g. we got an overflow
 
-	// We only need to start checking the ID after the first overflow of m_nNextID.
+	// We only need to start checking the ID after the first overflow of m_nLastID.
 	if ( bNeedVerify )
 	{
 		while ( m_idCheck.find( m_nLastID ) != m_idCheck.end() )
