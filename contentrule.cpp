@@ -72,7 +72,7 @@ bool ContentRule::parseContent(const QString& sContent)
 		m_lContent = lWork;
 
 		m_sContent.clear();
-		for ( CListIterator i = m_lContent.begin() ; i != m_lContent.end() ; i++ )
+		for ( ListIterator i = m_lContent.begin() ; i != m_lContent.end() ; ++i )
 		{
 			m_sContent += *i;
 		}
@@ -93,7 +93,7 @@ bool ContentRule::getAll() const
 
 bool ContentRule::match(const QString& sFileName) const
 {
-	for ( CListIterator i = m_lContent.begin() ; i != m_lContent.end() ; i++ )
+	for ( ListIterator i = m_lContent.begin() ; i != m_lContent.end() ; ++i )
 	{
 		bool bFound = sFileName.indexOf( *i ) != -1;
 

@@ -36,7 +36,7 @@ private:
 	bool                m_bAll;
 	QList< QString >    m_lContent;
 
-	typedef QList< QString >::const_iterator CListIterator;
+	typedef QList< QString >::const_iterator ListIterator;
 
 public:
 	ContentRule();
