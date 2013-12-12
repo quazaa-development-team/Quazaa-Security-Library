@@ -50,11 +50,11 @@ bool RegularExpressionRule::parseContent(const QString& sContent)
 	m_sContent = sContent.trimmed();
 
 	quint8 nCount = 0;
-	for ( quint8 i = 1; i < 10; i++ )
+	for ( quint8 i = 1; i < 10; ++i )
 	{
 		if ( m_sContent.contains( "<" + QString::number( i ) + ">" ) )
 		{
-			nCount++;
+			++nCount;
 		}
 	}
 
@@ -183,7 +183,7 @@ bool RegularExpressionRule::replace(QString& sReplace, const QList<QString>& lQu
 		{
 			sReplace = lQuery.at( nCurrent ) + "\\s*" + sReplace;
 		}
-		nCurrent++;
+		++nCurrent;
 		return true;
 	}
 
@@ -192,7 +192,7 @@ bool RegularExpressionRule::replace(QString& sReplace, const QList<QString>& lQu
 		if ( sReplace.at( 1 ) == '_' )
 		{
 			QString sMess;
-			for ( quint8 i = 0; i < lQuery.size(); i++ )
+			for ( quint8 i = 0; i < lQuery.size(); ++i )
 			{
 				sMess += lQuery.at( i );
 				sMess += "\\s*";

@@ -133,7 +133,7 @@ bool SanityCecker::isNewlyDenied(const CQueryHit* const pHit, const QList<QStrin
  */
 void SanityCecker::sanityCheck()
 {
-	qDebug() << "call to sanityCheck()";
+	//qDebug() << "call to sanityCheck()";
 
 	if ( m_oRWLock.tryLockForWrite( 200 ) )
 	{
@@ -180,6 +180,7 @@ void SanityCecker::sanityCheck()
 	else // We didn't get a write lock in a timely manner.
 	{
 		// try again later
+		qDebug() << "[Security] Failed to obtain lock for sanity checking. Trying again in 5 sec.";
 		signalQueue.push( this, "sanityCheck", 5 );
 	}
 }
@@ -199,18 +200,18 @@ void SanityCecker::sanityCheckPerformed()
 
 	if ( --m_nPendingOperations == 0 )
 	{
-		postLogMessage( LogSeverity::Debug, tr( "Sanity Check finished successfully. " ) +
-						tr( "Starting cleanup now." ), true );
+//		postLogMessage( LogSeverity::Debug, tr( "Sanity Check finished successfully. " ) +
+//						tr( "Starting cleanup now." ), true );
 
 		clearBatch();
 
-		qDebug() << "Cleanup finished.";
+		//qDebug() << "Cleanup finished.";
 	}
 	else
 	{
-		postLogMessage( LogSeverity::Debug, tr( "A component finished with sanity checking. " ) +
-						tr( "Still waiting for %s other components to finish."
-							).arg( m_nPendingOperations ), true );
+//		postLogMessage( LogSeverity::Debug, tr( "A component finished with sanity checking. " ) +
+//						tr( "Still waiting for %s other components to finish."
+//							).arg( m_nPendingOperations ), true );
 	}
 
 	m_oRWLock.unlock();
