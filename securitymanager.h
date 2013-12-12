@@ -41,6 +41,8 @@
 // the minimal amount of IP related rules before enabling the miss cache
 #define SECURITY_MIN_RULES_TO_ENABLE_CACHE 30
 
+#define SECURITY_LOG_BAN_SOURCES 0
+
 #include "externals.h"
 
 #include "securerule.h"
@@ -250,7 +252,7 @@ public:
 	// TODO: verify all ban calls
 	void            ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 						bool bMessage = true, const QString& sComment = "", bool bAutomatic = true
-#ifdef _DEBUG
+#if SECURITY_LOG_BAN_SOURCES
 						, const QString& sSender = ""
 #endif
 						);

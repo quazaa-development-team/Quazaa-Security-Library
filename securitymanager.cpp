@@ -134,11 +134,6 @@ bool Manager::add(Rule* pRule)
 
 	QWriteLocker writeLock( &m_oRWLock );
 
-#ifdef _DEBUG
-	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
-		Q_ASSERT( m_vRules[i] );
-#endif
-
 	RuleType::Type     nType   = pRule->type();
 	RuleAction::Action nAction = pRule->m_nAction;
 
@@ -156,7 +151,18 @@ bool Manager::add(Rule* pRule)
 
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+	{
 		Q_ASSERT( m_vRules[i] );
+		Rule* pTestRule = m_vRules[i];
+
+		if ( pTestRule->type() <= 0 ||
+			 pTestRule->type() >= RuleType::NoOfTypes ||
+			 pTestRule->getTotalCount() < 0 )
+		{
+			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
+			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
+		}
+	}
 #endif
 
 	bool bNewAddress = false;
@@ -340,11 +346,6 @@ bool Manager::add(Rule* pRule)
 #endif // SECURITY_ENABLE_GEOIP
 	}
 
-#ifdef _DEBUG
-	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
-		Q_ASSERT( m_vRules[i] );
-#endif
-
 	// a rule has been added and we might require saving
 	m_bUnsaved = true;
 
@@ -375,6 +376,13 @@ bool Manager::add(Rule* pRule)
 
 		bool bSave = !pRule->m_bAutomatic;
 
+#ifdef _DEBUG
+		writeLock.unlock();
+		if ( !check( pRule ) )
+			Q_ASSERT( false );
+		writeLock.relock();
+#endif // _DEBUG
+
 		// Inform SecurityTableModel about new rule.
 		emit ruleAdded( pRule );
 
@@ -399,7 +407,18 @@ bool Manager::add(Rule* pRule)
 
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+	{
 		Q_ASSERT( m_vRules[i] );
+		Rule* pTestRule = m_vRules[i];
+
+		if ( pTestRule->type() <= 0 ||
+			 pTestRule->type() >= RuleType::NoOfTypes ||
+			 pTestRule->getTotalCount() < 0 )
+		{
+			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
+			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
+		}
+	}
 #endif
 
 	return pRule; // Evaluates to false if pRule has been set to NULL.
@@ -468,9 +487,9 @@ void Manager::clear()
  */
 void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 				  bool bMessage, const QString& sComment, bool bAutomatic
-#ifdef _DEBUG
+#if SECURITY_LOG_BAN_SOURCES
 				  , const QString& sSender
-#endif
+#endif // SECURITY_LOG_BAN_SOURCES
 				  )
 {
 #ifdef _DEBUG
@@ -479,9 +498,11 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 		Q_ASSERT( false ); // if this happens, make sure to fix the caller... :)
 		return;
 	}
+#endif // _DEBUG
 
-	qDebug() << "[Security] CSecurity::ban() invoked by: " << sSender.toLocal8Bit().data();
-#endif
+#if SECURITY_LOG_BAN_SOURCES
+	qDebug() << "[Security] Manager::ban() invoked by: " << sSender.toLocal8Bit().data();
+#endif // SECURITY_LOG_BAN_SOURCES
 
 	const quint32 tNow = common::getTNowUTC();
 	IPRule* pIPRule = new IPRule();
@@ -1476,7 +1497,18 @@ void Manager::expire()
 
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+	{
 		Q_ASSERT( m_vRules[i] );
+		Rule* pTestRule = m_vRules[i];
+
+		if ( pTestRule->type() <= 0 ||
+			 pTestRule->type() >= RuleType::NoOfTypes ||
+			 pTestRule->getTotalCount() < 0 )
+		{
+			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
+			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
+		}
+	}
 #endif
 
 	m_oRWLock.unlock();
@@ -1652,13 +1684,7 @@ bool Manager::load( QString sPath )
 				}
 
 				pRule = NULL;
-
-#ifdef _DEBUG
-	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
-		Q_ASSERT( m_vRules[i] );
-#endif
-
-				nCount--;
+				--nCount;
 			}
 		}
 
@@ -1694,6 +1720,22 @@ bool Manager::load( QString sPath )
 	}
 	oFile.close();
 
+#ifdef _DEBUG
+	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+	{
+		Q_ASSERT( m_vRules[i] );
+		Rule* pTestRule = m_vRules[i];
+
+		if ( pTestRule->type() <= 0 ||
+			 pTestRule->type() >= RuleType::NoOfTypes ||
+			 pTestRule->getTotalCount() < 0 )
+		{
+			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
+			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
+		}
+	}
+#endif
+
 	return true;
 }
 
@@ -1709,11 +1751,6 @@ void Manager::insert(Rule* pRule)
 
 	Rule** pArray = &m_vRules[0]; // access internal array
 
-#ifdef _DEBUG
-	for ( RuleVectorPos i = 0; i < nPos; ++i )
-		Q_ASSERT( pArray[i] );
-#endif
-
 	while ( nPos > 0 && pRule->m_idUUID < pArray[nPos - 1]->m_idUUID )
 	{
 		pArray[nPos] = pArray[nPos - 1];
@@ -1723,9 +1760,19 @@ void Manager::insert(Rule* pRule)
 	pArray[nPos] = pRule;
 
 #ifdef _DEBUG
-	const RuleVectorPos nSize = m_vRules.size();
-	for ( RuleVectorPos i = 0; i < nSize; ++i )
-		Q_ASSERT( pArray[i] );
+	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+	{
+		Q_ASSERT( m_vRules[i] );
+		Rule* pTestRule = m_vRules[i];
+
+		if ( pTestRule->type() <= 0 ||
+			 pTestRule->type() >= RuleType::NoOfTypes ||
+			 pTestRule->getTotalCount() < 0 )
+		{
+			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
+			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
+		}
+	}
 #endif
 }
 
@@ -1747,15 +1794,11 @@ void Manager::erase(RuleVectorPos nPos)
 	RuleVectorPos i = nPos;
 	while ( i < nMax )            // move all other elements 1 pos up the latter
 	{
-		pArray[i] = pArray[++i];
+		pArray[i] = pArray[i + 1];
+		++i;
 	}
 
 	m_vRules.pop_back();          // remove last element
-
-#ifdef _DEBUG
-	for ( RuleVectorPos i = 0; i < nMax; ++i )
-		Q_ASSERT( pArray[i] );
-#endif
 }                                 // (either the deleted one or a copy of the one next to it)
 
 /**
@@ -1801,11 +1844,11 @@ void Manager::insertRange(Rule*& pNew)
 	pNew = pNewRange; // Make sure that pNewRange being set to NULL is reported back.
 
 #ifdef _DEBUG
-	int n = 0, nSize = (int)m_vIPRanges.size() - 1;
-	if ( nSize >= 0 )
+	IPRangeVectorPos n = 0, nSize = m_vIPRanges.size() ;
+	if ( nSize > 1 )
 	{
 		IPRangeRule** pRules = &m_vIPRanges[0];
-		while ( n < nSize )
+		while ( n < nSize - 1 )
 		{
 			Q_ASSERT( pRules[ n ]->startIP() < pRules[ n ]->endIP()   );
 			Q_ASSERT( pRules[ n ]->endIP()   < pRules[n+1]->startIP() );
@@ -1963,16 +2006,33 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
 
 	Rule* const * pRules = &m_vRules[0];
 
-#ifdef _DEBUG
+/*#ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < nSize; ++i )
 		Q_ASSERT( pRules[i] );
-#endif
+#endif*/
 
 	RuleVectorPos nMiddle, nHalf, nBegin = 0;
-	RuleVectorPos n = nSize - nBegin;
+	RuleVectorPos n = nSize;
+	RuleVectorPos nReturn = nSize;
+
+#ifdef _DEBUG
+	RuleVectorPos i;
+	for ( i = 0; i < nSize; ++i )
+	{
+		if ( idUUID == pRules[i]->m_idUUID )
+			break;
+	}
+#endif // _DEBUG
 
 	while ( n > 0 )
 	{
+#ifdef _DEBUG
+		if ( i != nSize && ( i < nBegin || i > nBegin + n - 1 ) )
+		{
+			Q_ASSERT( false );
+		}
+#endif // _DEBUG
+
 		nHalf = n >> 1;
 
 		nMiddle = nBegin + nHalf;
@@ -1985,15 +2045,32 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
 		{
 			if ( idUUID == pRules[nMiddle]->m_idUUID )
 			{
-				return nMiddle;
+				nReturn = nMiddle;
+				break;
 			}
 
 			nBegin = nMiddle + 1;
 			n -= nHalf + 1;
 		}
+
+
 	}
 
-	return nSize;
+#ifdef _DEBUG
+	RuleVectorPos j;
+	for ( j = 0; j < nSize; ++j )
+	{
+		if ( idUUID == pRules[j]->m_idUUID )
+			break;
+	}
+
+	if ( j != nReturn )
+	{
+		Q_ASSERT( false );
+	}
+#endif
+
+	return nReturn;
 }
 
 /**
@@ -2058,7 +2135,7 @@ void Manager::expireLater()
  */
 void Manager::remove(RuleVectorPos nVectorPos)
 {
-	//qDebug() << "[Security] Starting to remove rule at position: " << QString::number(nVectorPos);
+	qDebug() << "[Security] Starting to remove rule at position: " << QString::number(nVectorPos);
 
 	Q_ASSERT( nVectorPos >= 0 && nVectorPos < m_vRules.size() );
 
@@ -2149,16 +2226,18 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 			while ( nPos < nSize )
 			{
-				if ( pArray[nPos++]->m_idUUID == pRule->m_idUUID )
+				if ( pArray[nPos]->m_idUUID == pRule->m_idUUID )
 					break;
+				++nPos;
 			}
 
 			while ( nPos < nMax )            // move all other elements 1 pos up the latter
 			{
-				pArray[nPos] = pArray[++nPos];
+				pArray[nPos] = pArray[nPos + 1];
+				++nPos;
 			}
 
-			m_vRules.pop_back();          // remove last element
+			m_vRegularExpressions.pop_back();          // remove last element
 		}
 	}
 	break;
@@ -2175,16 +2254,18 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 			while ( nPos < nSize )
 			{
-				if ( pArray[nPos++]->m_idUUID == pRule->m_idUUID )
+				if ( pArray[nPos]->m_idUUID == pRule->m_idUUID )
 					break;
+				++nPos;
 			}
 
 			while ( nPos < nMax )            // move all other elements 1 pos up the latter
 			{
-				pArray[nPos] = pArray[++nPos];
+				pArray[nPos] = pArray[nPos + 1];
+				++nPos;
 			}
 
-			m_vRules.pop_back();          // remove last element
+			m_vContents.pop_back();          // remove last element
 		}
 	}
 	break;
@@ -2201,22 +2282,25 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 			while ( nPos < nSize )
 			{
-				if ( pArray[nPos++]->m_idUUID == pRule->m_idUUID )
+				if ( pArray[nPos]->m_idUUID == pRule->m_idUUID )
 					break;
+				++nPos;
 			}
 
 			while ( nPos < nMax )            // move all other elements 1 pos up the latter
 			{
-				pArray[nPos] = pArray[++nPos];
+				pArray[nPos] = pArray[nPos + 1];
+				++nPos;
 			}
 
-			m_vRules.pop_back();          // remove last element
+			m_vUserAgents.pop_back();          // remove last element
 		}
 	}
 	break;
 
 	default:
 #if SECURITY_ENABLE_GEOIP
+		qDebug() << QString::number( pRule->type() );
 		Q_ASSERT( false );
 #else
 		Q_ASSERT( pRule->type() == RuleType::Country );
@@ -2231,10 +2315,19 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
+	{
 		Q_ASSERT( m_vRules[i] );
+		Rule* pTestRule = m_vRules[i];
+
+		if ( pTestRule->type() <= 0 || pTestRule->type() >= RuleType::NoOfTypes || pTestRule->getTotalCount() < 0 )
+		{
+			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
+			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
+		}
+	}
 #endif
 
-	//qDebug() << "[Security] Finished removing rule. Emitting signal now.";
+	qDebug() << "[Security] Finished removing rule. Emitting signal now.";
 
 	SharedRulePtr pReturn = SharedRulePtr( pRule );
 
