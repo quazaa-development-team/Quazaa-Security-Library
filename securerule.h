@@ -85,7 +85,7 @@ private:
 	// mechanism for allocating GUI IDs
 	static ID           m_nLastID;
 	static QMutex       m_oIDLock;
-	static std::set<ID> m_idCheck;
+	static std::set<ID> m_lsIDCheck;
 
 public:
 	RuleAction::Action  m_nAction;
@@ -145,6 +145,9 @@ public:
 protected:
 	// Contains default code for XML generation.
 	static void     toXML(const Rule& oRule, QXmlStreamWriter& oXMLdocument);
+
+	static ID generateID();
+	static void releaseID(ID nID);
 };
 
 }

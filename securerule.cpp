@@ -46,12 +46,8 @@ using namespace Security;
 
 ID           Rule::m_nLastID = 0;
 QMutex       Rule::m_oIDLock;
-std::set<ID> Rule::m_idCheck;
+std::set<ID> Rule::m_lsIDCheck;
 
-/**
- * @brief CSecureRule::CSecureRule Constructor.
- * @param bCreate
- */
 Rule::Rule() :
 	m_nToday( 0 ),
 	m_nTotal( 0 ),
@@ -63,47 +59,28 @@ Rule::Rule() :
 	m_nAction = RuleAction::Deny;
 	m_idUUID  = QUuid::createUuid();
 
-	m_oIDLock.lock();
-	static bool bNeedVerify = false;
-	bNeedVerify = !(++m_nLastID); // e.g. we got an overflow
-
-	// We only need to start checking the ID after the first overflow of m_nLastID.
-	if ( bNeedVerify )
-	{
-		while ( m_idCheck.find( m_nLastID ) != m_idCheck.end() )
-		{
-			++m_nLastID;
-		}
-	}
-
-	m_idCheck.insert( m_nLastID );
-	m_nGUIID = m_nLastID;
-
-	m_oIDLock.unlock();
+	m_nGUIID  = generateID();
 }
 
 Rule::Rule(const Rule& pRule)
 {
-	// The usage of a custom copy constructor makes sure the list of registered
-	// pointers is NOT forwarded to a copy of this rule.
-
+	// The usage of a custom copy constructor makes sure each rule gets a distinct GUI ID.
 	m_nType      = pRule.m_nType;
 	m_sContent   = pRule.m_sContent;
 	m_nToday     = pRule.m_nToday;
 	m_nTotal     = pRule.m_nTotal;
 	m_nAction    = pRule.m_nAction;
 	m_idUUID     = pRule.m_idUUID;
-	m_nGUIID     = pRule.m_nGUIID;
 	m_tExpire    = pRule.m_tExpire;
 	m_sComment   = pRule.m_sComment;
 	m_bAutomatic = pRule.m_bAutomatic;
+
+	m_nGUIID     = generateID();
 }
 
 Rule::~Rule()
 {
-	m_oIDLock.lock();
-	m_idCheck.erase( m_nGUIID );
-	m_oIDLock.unlock();
+	releaseID( m_nGUIID );
 }
 
 Rule* Rule::getCopy() const
@@ -278,8 +255,158 @@ void Rule::load(Rule*& pRule, QDataStream &fsFile, int)
 	pRule->parseContent( sContent );
 }
 
-//////////////////////////////////////////////////////////////////////
-// CSecureRule XML
+/**
+ * @brief CSecureRule::isExpired allows to check whether a rule has expired.
+ * @param tNow indicates the current time in seconds since 1.1.1970UTC
+ * @param bSession indicates whether this is the end of the session/start of a new session. In both
+ * cases, set this to true and the return value for session ban rules will be true.
+ * @return true if the rule has expired, false otherwise
+ */
+bool Rule::isExpired(quint32 tNow, bool bSession) const
+{
+	switch ( m_tExpire )
+	{
+	case RuleTime::Forever:
+		return false;
+
+	case RuleTime::Session:
+		return bSession;
+
+	default:
+		return m_tExpire < tNow;
+	}
+}
+
+/**
+ * @brief Rule::setExpiryTime
+ * @param tExpire
+ */
+void Rule::setExpiryTime(const quint32 tExpire)
+{
+	m_tExpire = tExpire;
+}
+
+/**
+ * @brief Rule::addExpiryTime
+ * @param tAdd
+ */
+void Rule::addExpiryTime(const quint32 tAdd)
+{
+	if ( m_tExpire != RuleTime::Session && m_tExpire != RuleTime::Forever )
+	{
+		m_tExpire += tAdd;
+	}
+}
+
+/**
+ * @brief CSecureRule::getExpiryTime allows to access the expiry time of a rule.
+ * @return srIndefinite = 0, srSession = 1 or the time in seconds since 1.1.1970UTC when the rule
+ * will/has expire(d)
+ */
+quint32 Rule::getExpiryTime() const
+{
+	return m_tExpire;
+}
+
+/**
+ * @brief CSecureRule::mergeInto
+ * Requires Locking: RW
+ */
+void Rule::mergeInto(Rule* pDestination)
+{
+	Q_ASSERT( m_sContent == pDestination->m_sContent );
+	Q_ASSERT( m_nType    == pDestination->m_nType    );
+
+	if ( !m_bAutomatic )
+		pDestination->m_bAutomatic = false; // don't overwrite manual with automatic rules
+
+	if ( m_tExpire == RuleTime::Forever )
+	{
+		pDestination->m_tExpire = RuleTime::Forever; // don't overwrite indefinite expiry time
+	}
+	else if ( m_tExpire > pDestination->m_tExpire )
+	{
+		pDestination->m_tExpire = m_tExpire;
+	}
+
+	pDestination->m_nAction = m_nAction;
+
+
+#ifdef _DEBUG // allows to easily spot multiply merged rules in debug builds
+	if ( !pDestination->m_sComment.contains( " (AutoMerged Rule)" ) )
+		pDestination->m_sComment += " (AutoMerged Rule)";
+	else
+		pDestination->m_sComment += "+";
+#else
+	if ( !pDestination->m_sComment.endsWith( " (AutoMerged Rule)" ) )
+		pDestination->m_sComment += " (AutoMerged Rule)";
+#endif
+
+	pDestination->m_nToday.fetchAndAddRelaxed( m_nToday.load() );
+	pDestination->m_nTotal.fetchAndAddRelaxed( m_nTotal.load() );
+
+	securityManager.emitUpdate( pDestination->m_nGUIID );
+}
+
+/**
+ * @brief CSecureRule::count increases the total and today hit counters by one each.
+ * Requires Locking: /
+ */
+void Rule::count()
+{
+	m_nToday.fetchAndAddOrdered( 1 );
+	m_nTotal.fetchAndAddOrdered( 1 );
+}
+
+/**
+ * @brief CSecureRule::resetCount resets total and today hit counters to 0.
+ * Requires Locking: /
+ */
+void Rule::resetCount()
+{
+	m_nToday.fetchAndStoreOrdered( 0 );
+	m_nTotal.fetchAndAddOrdered( 0 );
+}
+
+/**
+ * @brief CSecureRule::getTodayCount allows to access the today hit counter.
+ * @return the value of the today hit counter.
+ * Requires Locking: /
+ */
+quint32 Rule::getTodayCount() const
+{
+	return m_nToday.loadAcquire();
+}
+
+/**
+ * @brief CSecureRule::getTotalCount allows to access the total hit counter.
+ * @return the value of the total hit counter.
+ * Requires Locking: /
+ */
+quint32 Rule::getTotalCount() const
+{
+	return m_nTotal.loadAcquire();
+}
+
+/**
+ * @brief CSecureRule::loadTotalCount allows to access the total hit counter.
+ * @param nTotal the new value of the total hit counter.
+ * Requires Locking: /
+ */
+void Rule::loadTotalCount( quint32 nTotal )
+{
+	m_nTotal.storeRelease(nTotal);
+}
+
+/**
+ * @brief CSecureRule::type allows to access the type of this rule.
+ * @return the rule type.
+ * Requires Locking: R
+ */
+RuleType::Type Rule::type() const
+{
+	return m_nType;
+}
 
 Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 {
@@ -517,160 +644,40 @@ void Rule::toXML(const Rule& oRule, QXmlStreamWriter& oXMLdocument)
 	}
 }
 
-/**
- * @brief CSecureRule::isExpired allows to check whether a rule has expired.
- * @param tNow indicates the current time in seconds since 1.1.1970UTC
- * @param bSession indicates whether this is the end of the session/start of a new session. In both
- * cases, set this to true and the return value for session ban rules will be true.
- * @return true if the rule has expired, false otherwise
- */
-bool Rule::isExpired(quint32 tNow, bool bSession) const
-{
-	switch ( m_tExpire )
-	{
-	case RuleTime::Forever:
-		return false;
-
-	case RuleTime::Session:
-		return bSession;
-
-	default:
-		return m_tExpire < tNow;
-	}
-}
-
-/**
- * @brief Rule::setExpiryTime
- * @param tExpire
- */
-void Rule::setExpiryTime(const quint32 tExpire)
-{
-	m_tExpire = tExpire;
-}
-
-/**
- * @brief Rule::addExpiryTime
- * @param tAdd
- */
-void Rule::addExpiryTime(const quint32 tAdd)
-{
-	if ( m_tExpire != RuleTime::Session && m_tExpire != RuleTime::Forever )
-	{
-		m_tExpire += tAdd;
-	}
-}
-
-/**
- * @brief CSecureRule::getExpiryTime allows to access the expiry time of a rule.
- * @return srIndefinite = 0, srSession = 1 or the time in seconds since 1.1.1970UTC when the rule
- * will/has expire(d)
- */
-quint32 Rule::getExpiryTime() const
-{
-	return m_tExpire;
-}
-
-/**
- * @brief CSecureRule::mergeInto
- * Requires Locking: RW
- */
-void Rule::mergeInto(Rule* pDestination)
-{
-	Q_ASSERT( m_sContent == pDestination->m_sContent );
-	Q_ASSERT( m_nType    == pDestination->m_nType    );
-
-	if ( !m_bAutomatic )
-		pDestination->m_bAutomatic = false; // don't overwrite manual with automatic rules
-
-	if ( m_tExpire == RuleTime::Forever )
-	{
-		pDestination->m_tExpire = RuleTime::Forever; // don't overwrite indefinite expiry time
-	}
-	else if ( m_tExpire > pDestination->m_tExpire )
-	{
-		pDestination->m_tExpire = m_tExpire;
-	}
-
-	pDestination->m_nAction = m_nAction;
-
-
-#ifdef _DEBUG // allows to easily spot multiply merged rules in debug builds
-	if ( !pDestination->m_sComment.contains( " (AutoMerged Rule)" ) )
-		pDestination->m_sComment += " (AutoMerged Rule)";
-	else
-		pDestination->m_sComment += "+";
-#else
-	if ( !pDestination->m_sComment.endsWith( " (AutoMerged Rule)" ) )
-		pDestination->m_sComment += " (AutoMerged Rule)";
-#endif
-
-	pDestination->m_nToday.fetchAndAddRelaxed( m_nToday.load() );
-	pDestination->m_nTotal.fetchAndAddRelaxed( m_nTotal.load() );
-
-	securityManager.emitUpdate( pDestination->m_nGUIID );
-}
-
-/**
- * @brief CSecureRule::count increases the total and today hit counters by one each.
- * Requires Locking: /
- */
-void Rule::count()
-{
-	m_nToday.fetchAndAddOrdered( 1 );
-	m_nTotal.fetchAndAddOrdered( 1 );
-}
-
-/**
- * @brief CSecureRule::resetCount resets total and today hit counters to 0.
- * Requires Locking: /
- */
-void Rule::resetCount()
-{
-	m_nToday.fetchAndStoreOrdered( 0 );
-	m_nTotal.fetchAndAddOrdered( 0 );
-}
-
-/**
- * @brief CSecureRule::getTodayCount allows to access the today hit counter.
- * @return the value of the today hit counter.
- * Requires Locking: /
- */
-quint32 Rule::getTodayCount() const
-{
-	return m_nToday.loadAcquire();
-}
-
-/**
- * @brief CSecureRule::getTotalCount allows to access the total hit counter.
- * @return the value of the total hit counter.
- * Requires Locking: /
- */
-quint32 Rule::getTotalCount() const
-{
-	return m_nTotal.loadAcquire();
-}
-
-/**
- * @brief CSecureRule::loadTotalCount allows to access the total hit counter.
- * @param nTotal the new value of the total hit counter.
- * Requires Locking: /
- */
-void Rule::loadTotalCount( quint32 nTotal )
-{
-	m_nTotal.storeRelease(nTotal);
-}
-
-/**
- * @brief CSecureRule::type allows to access the type of this rule.
- * @return the rule type.
- * Requires Locking: R
- */
-RuleType::Type Rule::type() const
-{
-	return m_nType;
-}
-
 void Rule::toXML( QXmlStreamWriter& ) const
 {
+	Q_ASSERT( false );
+}
 
+ID Rule::generateID()
+{
+	m_oIDLock.lock();
+	static bool bNeedVerify = false;
+	bNeedVerify = !(++m_nLastID); // e.g. we got an overflow
+
+	// We only need to start checking the ID after the first overflow of m_nLastID.
+	if ( bNeedVerify )
+	{
+		while ( m_lsIDCheck.find( m_nLastID ) != m_lsIDCheck.end() )
+		{
+			++m_nLastID;
+		}
+	}
+
+	m_lsIDCheck.insert( m_nLastID );
+	ID nReturn = m_nLastID;
+
+	Q_ASSERT( m_lsIDCheck.find( m_nLastID ) != m_lsIDCheck.end() );
+
+	m_oIDLock.unlock();
+
+	return nReturn;
+}
+
+void Rule::releaseID(ID nID)
+{
+	m_oIDLock.lock();
+	if ( !m_lsIDCheck.erase( nID ) )
+		Q_ASSERT( false );
+	m_oIDLock.unlock();
 }
