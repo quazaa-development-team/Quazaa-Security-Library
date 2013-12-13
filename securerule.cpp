@@ -314,8 +314,11 @@ quint32 Rule::getExpiryTime() const
  */
 void Rule::mergeInto(Rule* pDestination)
 {
-	Q_ASSERT( m_sContent == pDestination->m_sContent );
-	Q_ASSERT( m_nType    == pDestination->m_nType    );
+	if ( m_sContent != pDestination->m_sContent || m_nType != pDestination->m_nType )
+	{
+		Q_ASSERT( m_sContent == pDestination->m_sContent );
+		Q_ASSERT( m_nType    == pDestination->m_nType    );
+	}
 
 	if ( !m_bAutomatic )
 		pDestination->m_bAutomatic = false; // don't overwrite manual with automatic rules

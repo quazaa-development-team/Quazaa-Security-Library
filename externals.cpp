@@ -27,6 +27,7 @@
 #include "quazaasettings.h"
 
 #include "externals.h"
+#include "winmain.h"
 
 using namespace Security;
 
@@ -72,6 +73,9 @@ void Security::Settings::start()
 {
 	connect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
 			 &securitySettigs, SLOT( settingsChanged() ), Qt::QueuedConnection );
+
+	// Make sure securityManager is informed about application shutdown.
+	connect( MainWindow, SIGNAL( shutDown() ), &securityManager, SLOT( shutDown() ) );
 
 	settingsChanged();
 }

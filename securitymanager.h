@@ -165,6 +165,7 @@ private:
 
 	// Other
 	mutable bool    m_bUnsaved;           // true if there are unsaved rules
+	bool            m_bShutDown;
 	bool            m_bExpiryRequested;
 	bool            m_bIgnorePrivateIPs;
 	bool            m_bIsLoading;         // true during import operations. Used to avoid unnecessary GUI updates.
@@ -421,6 +422,11 @@ public:
 	/* ========================================================================================== */
 signals:
 	/**
+	 * @brief startUpFinished informs about the Security Manager startup having been finished.
+	 */
+	void            startUpFinished();
+
+	/**
 	 * @brief ruleAdded informs about a new rule having been added.
 	 * @param pRule : the rule
 	 */
@@ -444,6 +450,11 @@ signals:
 	 * @param nID : the GUI ID of the updated rule
 	 */
 	void            ruleUpdated(ID nID);
+
+	/**
+	 * @brief cleared informs about the manager having been cleared.
+	 */
+	void            cleared();
 
 	/**
 	 * @brief updateLoadMax informs about a change in the max value of the loading progress bar.
@@ -483,6 +494,12 @@ public slots:
 	 * Locking: RW
 	 */
 	void            settingsChanged();
+
+	/**
+	 * @brief shutDown is to be triggered on application shutdown.
+	 * Locking: RW
+	 */
+	void            shutDown();
 
 	/* ========================================================================================== */
 	/* ======================================== Privates ======================================== */

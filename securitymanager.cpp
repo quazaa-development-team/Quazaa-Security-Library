@@ -59,6 +59,7 @@ Manager::Manager() :
 	m_bLogIPCheckHits( false ),
 	m_tRuleExpiryInterval( 0 ),
 	m_bUnsaved( false ),
+	m_bShutDown( false ),
 	m_bExpiryRequested( false ),
 	m_bIgnorePrivateIPs( false ),
 	m_bIsLoading( false ),
@@ -451,28 +452,39 @@ void Manager::clear()
 {
 	m_oRWLock.lockForWrite();
 
-	m_lmIPs.clear();
-	m_vIPRanges.clear();
-#if SECURITY_ENABLE_GEOIP
-	m_lmCountries.clear();
-#endif // SECURITY_ENABLE_GEOIP
-	m_lmmHashes.clear();
-	m_vRegularExpressions.clear();
-	m_vContents.clear();
-	m_vUserAgents.clear();
-
 	qDeleteAll( m_vRules );
 	m_vRules.clear();
 
-	m_oMissCache.clear();
+	if ( !m_bShutDown )
+	{
+		m_lmIPs.clear();
+		m_vIPRanges.clear();
+#if SECURITY_ENABLE_GEOIP
+		m_lmCountries.clear();
+#endif // SECURITY_ENABLE_GEOIP
+		m_lmmHashes.clear();
+		m_vRegularExpressions.clear();
+		m_vContents.clear();
+		m_vUserAgents.clear();
 
-	// saving might be required :)
-	m_bUnsaved = true;
+		m_oMissCache.clear();
 
-	m_oRWLock.unlock();
+		// saving might be required :)
+		m_bUnsaved = true;
 
-	// refresh settings
-	settingsChanged(); // refresh settings from securitySettigs
+		m_oRWLock.unlock();
+
+		emit cleared();
+
+		// refresh settings
+		settingsChanged(); // refresh settings from securitySettigs
+	}
+	else
+	{
+		// Note: On shutdown, the containers are cleared anyway. No need to do that twice.
+
+		m_oRWLock.unlock();
+	}
 }
 
 /**
@@ -707,6 +719,9 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
  * @param oAddress : the IP
  * @return true if the IP is denied; false otherwise
  */
+
+// TODO: test miss cache!
+
 bool Manager::isDenied(const CEndPoint& oAddress)
 {
 	if ( oAddress.isNull() || !oAddress.isValid() )
@@ -1063,7 +1078,10 @@ bool Manager::start()
 
 	loadPrivates();
 
-	return load(); // Load security rules from HDD.
+	bool bReturn = load(); // Load security rules from HDD.
+
+	emit startUpFinished();
+	return bReturn;
 }
 
 /**
@@ -1553,6 +1571,17 @@ void Manager::settingsChanged()
 	m_bIgnorePrivateIPs = securitySettigs.m_bIgnorePrivateIPs;
 
 	securitySettigs.m_oLock.unlock();
+	m_oRWLock.unlock();
+}
+
+/**
+ * @brief shutDown is to be triggered on application shutdown.
+ * Locking: RW
+ */
+void Manager::shutDown()
+{
+	m_oRWLock.lockForWrite();
+	m_bShutDown = true;
 	m_oRWLock.unlock();
 }
 
@@ -2572,7 +2601,7 @@ bool Manager::isPrivate(const CEndPoint& oAddress)
 	bool bNew = isPrivateNew( oAddress );
 
 #ifdef _DEBUG
-	Q_ASSERT( bOld == bNew );
+//	Q_ASSERT( bOld == bNew );
 #endif
 
 	return bNew;
