@@ -74,8 +74,10 @@ void Security::Settings::start()
 	connect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
 			 &securitySettigs, SLOT( settingsChanged() ), Qt::QueuedConnection );
 
+#ifndef QUAZAA_SETUP_UNIT_TESTS
 	// Make sure securityManager is informed about application shutdown.
 	connect( MainWindow, SIGNAL( shutDown() ), &securityManager, SLOT( shutDown() ) );
+#endif
 
 	settingsChanged();
 }

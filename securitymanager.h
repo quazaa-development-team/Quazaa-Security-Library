@@ -503,7 +503,11 @@ public slots:
 	/* ========================================================================================== */
 	/* ======================================== Privates ======================================== */
 	/* ========================================================================================== */
+#ifndef QUAZAA_SETUP_UNIT_TESTS
 private:
+#else
+public:
+#endif
 	/**
 	 * @brief Manager::hit increases the rule counters and emits an updating signal to the GUI.
 	 * Locking: /
