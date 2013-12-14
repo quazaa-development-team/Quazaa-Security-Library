@@ -67,7 +67,6 @@
 // TODO: handle m_bIsLoading and its locking more gracefully.
 // TODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
 // TODO: Enable/disable this according to the visibility within the GUI
-// TODO: m_nMaxUnsavedRules >> Settings
 // TODO: user agent blocking case insensitive + partial matching
 // TODO: http://quazaa.sourceforge.net/index.php?option=com_jfusion&Itemid=4&jfile=viewtopic.php&f=8&t=201&view=unread#unread
 

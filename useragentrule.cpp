@@ -99,11 +99,6 @@ bool UserAgentRule::match(const QString& sUserAgent) const
 	return false;
 }
 
-/*bool UserAgentRule::partialMatch(const QString& sUserAgent) const
-{
-	return m_bRegExp ? false : sUserAgent.contains( m_sContent, Qt::CaseInsensitive );
-}*/
-
 void UserAgentRule::toXML(QXmlStreamWriter& oXMLdocument) const
 {
 	Q_ASSERT( m_nType == RuleType::UserAgent );

@@ -65,7 +65,6 @@ public:
 
 	// partial and complete string matching as well as regEx matching
 	bool    match(const QString& sUserAgent) const;
-	//bool    partialMatch(const QString &sUserAgent) const; // only string matching
 
 	void    toXML(QXmlStreamWriter& oXMLdocument) const;
 };

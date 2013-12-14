@@ -140,6 +140,8 @@ void SanityCecker::sanityCheck()
 		// This indicates that an error happend previously.
 		Q_ASSERT( m_bNewRulesLoaded || m_vLoadedRules.empty() );
 
+		bool bEmit = false;
+
 		m_oQueueLock.lock();
 		// If there are new rules to deal with.
 		if ( m_lqNewRules.size() )
@@ -158,9 +160,7 @@ void SanityCecker::sanityCheck()
 					// Failsafe mechanism in case there are massive problems somewhere else.
 					m_idForceEoSC = signalQueue.push( this, "forceEndOfSanityCheck", 120 );
 #endif
-
-					// Inform all other modules aber the necessity of a sanity check.
-					emit beginSanityCheck();
+					bEmit = true;
 				}
 				else
 				{
@@ -176,6 +176,10 @@ void SanityCecker::sanityCheck()
 
 		m_oQueueLock.unlock();
 		m_oRWLock.unlock();
+
+		if ( bEmit )
+			// Inform all other modules aber the necessity of a sanity check.
+			emit beginSanityCheck();
 	}
 	else // We didn't get a write lock in a timely manner.
 	{
@@ -227,6 +231,7 @@ void SanityCecker::sanityCheckPerformed()
 void SanityCecker::forceEndOfSanityCheck()
 {
 	m_oRWLock.lockForWrite();
+
 	if ( m_nPendingOperations )
 	{
 		QString sTmp = QObject::tr( "Sanity check aborted. Most probable reason: It took some " ) +

@@ -1016,12 +1016,12 @@ bool Manager::isAgentBlocked(const QString& sUserAgent)
 	// We don't like those.
 	if ( sUserAgent.isEmpty() )                                         return true;
 
-	// i2hub - leecher client. (Tested, does not upload)
-	if ( sUserAgent.startsWith( "i2hub 2.0", Qt::CaseInsensitive ) )    return true;
-
 	// foxy - leecher client. (Tested, does not upload)
 	// having something like Authentication which is not defined on specification
 	if ( sUserAgent.startsWith( "foxy", Qt::CaseInsensitive ) )         return true;
+
+	// i2hub - leecher client. (Tested, does not upload)
+	if ( sUserAgent.startsWith( "i2hub 2.0", Qt::CaseInsensitive ) )    return true;
 
 	// Check by content filter
 	m_oRWLock.lockForRead();
@@ -2316,13 +2316,13 @@ void Manager::remove(RuleVectorPos nVectorPos)
 				++nPos;
 			}
 
-			while ( nPos < nMax )            // move all other elements 1 pos up the latter
+			while ( nPos < nMax )           // move all other elements 1 pos up the latter
 			{
 				pArray[nPos] = pArray[nPos + 1];
 				++nPos;
 			}
 
-			m_vUserAgents.pop_back();          // remove last element
+			m_vUserAgents.pop_back();       // remove last element
 		}
 	}
 	break;
@@ -2348,7 +2348,9 @@ void Manager::remove(RuleVectorPos nVectorPos)
 		Q_ASSERT( m_vRules[i] );
 		Rule* pTestRule = m_vRules[i];
 
-		if ( pTestRule->type() <= 0 || pTestRule->type() >= RuleType::NoOfTypes || pTestRule->getTotalCount() < 0 )
+		if ( pTestRule->type() <= 0 ||
+			 pTestRule->type() >= RuleType::NoOfTypes ||
+			 pTestRule->getTotalCount() < 0 )
 		{
 			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
 			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
@@ -2387,7 +2389,7 @@ bool Manager::isAgentDenied(const QString& sUserAgent)
 		{
 			if ( !pArray[n]->isExpired( tNow ) )
 			{
-				if ( pArray[n]->match( sUserAgent ) /*|| pArray[n]->partialMatch( sUserAgent )*/ )
+				if ( pArray[n]->match( sUserAgent ) )
 				{
 					hit( pArray[n] );
 
@@ -2601,7 +2603,8 @@ bool Manager::isPrivate(const CEndPoint& oAddress)
 	bool bNew = isPrivateNew( oAddress );
 
 #ifdef _DEBUG
-//	Q_ASSERT( bOld == bNew );
+	if ( bOld != bNew )
+		throw "Hey!";
 #endif
 
 	return bNew;
