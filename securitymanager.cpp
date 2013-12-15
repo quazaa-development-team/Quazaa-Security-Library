@@ -507,6 +507,7 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 #ifdef _DEBUG
 	if ( oAddress.isNull() )
 	{
+		qDebug() << "You've just tried to ban a Null IP: " << oAddress.toString();
 		Q_ASSERT( false ); // if this happens, make sure to fix the caller... :)
 		return;
 	}
@@ -567,13 +568,13 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 	case RuleTime::Session:
 		pIPRule->setExpiryTime( RuleTime::Session );
 		pIPRule->m_sComment = tr( "Session Ban" );
-		sUntil = tr( "until the end of the current session." );
+		sUntil = tr( "until the end of the current session" );
 		break;
 
 	case RuleTime::Forever:
 		pIPRule->setExpiryTime( RuleTime::Forever );
 		pIPRule->m_sComment = tr( "Indefinite Ban" );
-		sUntil = tr( "for an indefinite time." );
+		sUntil = tr( "for an indefinite time" );
 		break;
 
 	default: // allows for ban lengths not defined in RuleTime::Time
@@ -602,7 +603,7 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 	}
 	else
 	{
-		qDebug() << "No rule not added.";
+		qDebug() << "No rule added for: " << oAddress.toString();
 	}
 }
 
@@ -677,13 +678,13 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
 		case RuleTime::Session:
 			pRule->setExpiryTime( RuleTime::Session );
 			pRule->m_sComment = tr( "Session Ban" );
-			sUntil = tr( "until the end of the current session." );
+			sUntil = tr( "until the end of the current session" );
 			break;
 
 		case RuleTime::Forever:
 			pRule->setExpiryTime( RuleTime::Forever );
 			pRule->m_sComment = tr( "Indefinite Ban" );
-			sUntil = tr( "for an indefinite time." );
+			sUntil = tr( "for an indefinite time" );
 			break;
 
 		default: // allows for ban lengths not defined in RuleTime::Time
@@ -724,7 +725,7 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
 
 bool Manager::isDenied(const CEndPoint& oAddress)
 {
-	if ( oAddress.isNull() || !oAddress.isValid() )
+	if ( oAddress.isNull() )
 		return false;
 
 	QReadLocker readLock( &m_oRWLock );
@@ -1143,6 +1144,7 @@ bool Manager::load()
  */
 bool Manager::save(bool bForceSaving) const
 {
+#ifndef QUAZAA_SETUP_UNIT_TESTS
 	if ( !m_bUnsaved && !bForceSaving )
 	{
 		return true;		// Saving not required ATM.
@@ -1157,6 +1159,10 @@ bool Manager::save(bool bForceSaving) const
 	m_oRWLock.unlock();
 
 	return bReturn;
+#else
+	Q_UNUSED( bForceSaving );
+	return true;
+#endif
 }
 
 /**
