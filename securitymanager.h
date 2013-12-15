@@ -124,7 +124,11 @@ public:
 	mutable QReadWriteLock  m_oRWLock;
 	SanityCecker            m_oSanity; // has its own locking
 
+#ifndef QUAZAA_SETUP_UNIT_TESTS
 private:
+#else
+public:
+#endif
 	// contains all rules
 	RuleVector      m_vRules;
 
