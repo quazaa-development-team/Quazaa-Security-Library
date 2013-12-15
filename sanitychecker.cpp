@@ -28,7 +28,8 @@ using namespace Security;
 
 SanityCecker::SanityCecker() :
 	m_bNewRulesLoaded( false ),
-	m_nPendingOperations( 0 )
+	m_nPendingOperations( 0 ),
+	m_bVerboose( false )
 {
 }
 
@@ -133,7 +134,8 @@ bool SanityCecker::isNewlyDenied(const CQueryHit* const pHit, const QList<QStrin
  */
 void SanityCecker::sanityCheck()
 {
-	//qDebug() << "call to sanityCheck()";
+	if ( m_bVerboose )
+		postLogMessage( LogSeverity::Debug, tr( "Initializing Sanity. " ), true );
 
 	if ( m_oRWLock.tryLockForWrite( 200 ) )
 	{
@@ -170,6 +172,10 @@ void SanityCecker::sanityCheck()
 			else // other sanity check still in progress
 			{
 				// try again later
+				if ( m_bVerboose )
+					postLogMessage( LogSeverity::Debug,
+									tr( "Other check still running. Trying again in 5 sec." ),
+									true );
 				signalQueue.push( this, "sanityCheck", 5 );
 			}
 		}
@@ -184,7 +190,12 @@ void SanityCecker::sanityCheck()
 	else // We didn't get a write lock in a timely manner.
 	{
 		// try again later
-		qDebug() << "[Security] Failed to obtain lock for sanity checking. Trying again in 5 sec.";
+		if ( m_bVerboose )
+			postLogMessage( LogSeverity::Debug,
+							tr( "Failed to obtain lock. Trying again in 5 sec." ),
+							true );
+		else
+			qDebug() << "[Security] Failed to obtain Sanity check lock. Trying again in 5 sec.";
 		signalQueue.push( this, "sanityCheck", 5 );
 	}
 }
@@ -204,18 +215,18 @@ void SanityCecker::sanityCheckPerformed()
 
 	if ( --m_nPendingOperations == 0 )
 	{
-//		postLogMessage( LogSeverity::Debug, tr( "Sanity Check finished successfully. " ) +
-//						tr( "Starting cleanup now." ), true );
+		if ( m_bVerboose )
+			postLogMessage( LogSeverity::Debug, tr( "Sanity Check finished successfully. " ) +
+							tr( "Starting cleanup now." ), true );
 
 		clearBatch();
-
-		//qDebug() << "Cleanup finished.";
 	}
 	else
 	{
-//		postLogMessage( LogSeverity::Debug, tr( "A component finished with sanity checking. " ) +
-//						tr( "Still waiting for %s other components to finish."
-//							).arg( m_nPendingOperations ), true );
+		if ( m_bVerboose )
+			postLogMessage( LogSeverity::Debug, tr( "A component finished with sanity checking. " )
+							+ tr( "Still waiting for %s other components to finish."
+								  ).arg( m_nPendingOperations ), true );
 	}
 
 	m_oRWLock.unlock();

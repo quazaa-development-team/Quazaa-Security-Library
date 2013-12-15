@@ -65,6 +65,8 @@ private:
 	// requested sanity check operation.
 	unsigned short  m_nPendingOperations;
 
+	bool            m_bVerboose;
+
 public:
 	SanityCecker();
 	~SanityCecker();

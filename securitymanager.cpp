@@ -403,7 +403,7 @@ bool Manager::add(Rule* pRule)
 	else
 	{
 		postLogMessage( LogSeverity::Security,
-						tr( "A new security rule has been merged into an existing one." ), false );
+						tr( "A new security rule has been merged into an existing one." ) );
 	}
 
 #ifdef _DEBUG
@@ -598,7 +598,7 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 						 QDateTime::fromTime_t( pIPRule->getExpiryTime() ).toString();
 
 			postLogMessage( LogSeverity::Security,
-							tr( "Banned %1 %2." ).arg( oAddress.toString(), sUntil ), false );
+							tr( "Banned %1 %2." ).arg( oAddress.toString(), sUntil ) );
 		}
 	}
 	else
@@ -620,7 +620,7 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
 {
 	if ( !pHit || !pHit->isValid() || pHit->m_lHashes.empty() )
 	{
-		postLogMessage( LogSeverity::Security, tr( "Error: Could not ban invalid file." ), false );
+		postLogMessage( LogSeverity::Security, tr( "Error: Could not ban invalid file." ) );
 		return;
 	}
 
@@ -631,7 +631,7 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
 	if ( bAlreadyBlocked )
 	{
 		postLogMessage( LogSeverity::Security,
-						tr( "Error: Could not ban already banned file." ), false );
+						tr( "Error: Could not ban already banned file." ) );
 	}
 	else
 	{
@@ -710,7 +710,7 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
 		}
 
 		postLogMessage( LogSeverity::Security,
-						tr( "Banned file: " ) + pHit->m_sDescriptiveName, false );
+						tr( "Banned file: " ) + pHit->m_sDescriptiveName );
 	}
 }
 
@@ -739,8 +739,9 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 		if ( m_bLogIPCheckHits )
 		{
 			postLogMessage( LogSeverity::Security,
-							tr( "Skipped repeat IP security check for %s (%i IPs cached)."
-								).arg( oAddress.toString(), m_oMissCache.size(), false ), false );
+							tr( "Skipped repeat IP security check for %1 (%2 IPs cached)."
+								).arg( oAddress.toString(),
+									   QString::number( m_oMissCache.size() ) ) );
 		}
 
 		return m_bDenyPolicy;
@@ -749,8 +750,8 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 	if ( m_bLogIPCheckHits )
 	{
 		postLogMessage( LogSeverity::Security,
-						tr( "Called first-time IP security check for %s."
-							).arg( oAddress.toString() ), false );
+						tr( "Called first-time IP security check for %1."
+							).arg( oAddress.toString() ) );
 	}
 
 	// Second, if quazaa local/private blocking is turned on, check if the IP is local/private
@@ -759,8 +760,7 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 		if ( isPrivate( oAddress ) )
 		{
 			postLogMessage( LogSeverity::Security,
-							tr( "Local/Private IP denied: %s"
-								).arg( oAddress.toString() ), false );
+							tr( "Local/Private IP denied: %1" ).arg( oAddress.toString() ) );
 			return true;
 		}
 	}
@@ -1310,7 +1310,7 @@ bool Manager::fromXML(const QString& sPath)
 		return false;
 
 	postLogMessage( LogSeverity::Information,
-					tr( "Importing security rules from file: " ) + sPath, false );
+					tr( "Importing security rules from file: " ) + sPath );
 
 	float nVersion;
 
@@ -1326,8 +1326,7 @@ bool Manager::fromXML(const QString& sPath)
 		if ( !bOK )
 		{
 			postLogMessage( LogSeverity::Error,
-							tr( "Failed to read the Security XML version number from file." ),
-							false );
+							tr( "Failed to read the Security XML version number from file." ) );
 			nVersion = 1.0;
 		}
 	}
@@ -1368,16 +1367,14 @@ bool Manager::fromXML(const QString& sPath)
 			else
 			{
 				postLogMessage( LogSeverity::Error,
-								tr( "Failed to read a Security Rule from XML." ),
-								false );
+								tr( "Failed to read a Security Rule from XML." ) );
 			}
 		}
 		else
 		{
 			postLogMessage( LogSeverity::Error,
 							tr( "Unrecognized entry in XML file with name: " ) +
-							xmlDocument.name().toString(),
-							false );
+							xmlDocument.name().toString() );
 		}
 
 		// prevent GUI from becoming unresponsive
@@ -1392,8 +1389,7 @@ bool Manager::fromXML(const QString& sPath)
 	save();
 
 	postLogMessage( LogSeverity::Information,
-					QString::number( nRuleCount ) + tr( " Rules imported." ),
-					false );
+					QString::number( nRuleCount ) + tr( " Rules imported." ) );
 
 	return nRuleCount;
 }
@@ -1730,9 +1726,9 @@ bool Manager::load( QString sPath )
 		if ( nSuccessCount )
 		{
 			postLogMessage( LogSeverity::Debug, QObject::tr( "Loaded security rules from file: %1"
-															 ).arg( sPath ), false );
+															 ).arg( sPath ) );
 			postLogMessage( LogSeverity::Debug, QObject::tr( "Loaded %1 rules."
-															 ).arg( nSuccessCount ), false );
+															 ).arg( nSuccessCount ) );
 		}
 
 		// perform sanity check after loading.
@@ -1858,7 +1854,7 @@ void Manager::insertRange(Rule*& pNew)
 				postLogMessage( LogSeverity::Security,
 								QString( "Merging. Removing overlapping IP range %1-%2."
 										 ).arg( m_vIPRanges[nPos]->startIP().toString(),
-												m_vIPRanges[nPos]->endIP().toString() ), false );
+												m_vIPRanges[nPos]->endIP().toString() ) );
 				remove( getUUID( m_vIPRanges[nPos]->m_idUUID ) );
 
 			}
@@ -1900,6 +1896,7 @@ void Manager::insertRange(Rule*& pNew)
  * Locking: REQUIRES RW
  * @param pNewRange : the range rule
  */
+// TODO: test range merging
 void Manager::insertRangeHelper(IPRangeRule* pNewRange)
 {
 	IPRangeVectorPos nPos = m_vIPRanges.size();

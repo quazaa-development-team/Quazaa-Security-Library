@@ -105,21 +105,21 @@ bool HashRule::parseContent(const QString& sContent)
 				qDebug() << "Hash:" << tmp.left( pos2 );
 				postLogMessage( LogSeverity::Information,
 								QObject::tr( "Hash found for hash rule: %1"
-											 ).arg( tmp.left( pos2 ) ), false );
+											 ).arg( tmp.left( pos2 ) ) );
 				sHash = tmp.left( pos2 );
 			}
 			else if ( pos2 == -1 && tmp.length() == length )
 			{
 				postLogMessage( LogSeverity::Information,
 								QObject::tr( "Hash found for hash rule at end of string: %1"
-											 ).arg( tmp ), false );
+											 ).arg( tmp ) );
 				sHash = tmp;
 			}
 			else
 			{
 				postLogMessage( LogSeverity::Information,
 								QObject::tr( "Error extracting hash: %1"
-											 ).arg( tmp.left( pos2 ) ), false );
+											 ).arg( tmp.left( pos2 ) ) );
 				continue;
 			}
 
@@ -143,7 +143,7 @@ bool HashRule::parseContent(const QString& sContent)
 	{
 		postLogMessage( LogSeverity::Error,
 						QObject::tr( "Error: Failed to import XML hash rule: %1"
-									 ).arg( sContent ), false );
+									 ).arg( sContent ) );
 		return false;
 	}
 }
