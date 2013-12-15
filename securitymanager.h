@@ -42,6 +42,7 @@
 #define SECURITY_MIN_RULES_TO_ENABLE_CACHE 30
 
 #define SECURITY_LOG_BAN_SOURCES 0
+#define SECURITY_DISABLE_IS_PRIVATE_OLD 0
 
 #include "externals.h"
 
@@ -645,6 +646,7 @@ public:
 	 */
 	bool            isPrivate(const CEndPoint& oAddress);
 
+#if SECURITY_DISABLE_IS_PRIVATE_OLD
 	/**
 	 * @brief Manager::isPrivateOld checks an IP the old way for whether it's private.
 	 * @param oAddress : the IP
@@ -658,6 +660,7 @@ public:
 	 * @return true if the IP is within a private range; false otherwise
 	 */
 	bool            isPrivateNew(const CEndPoint& oAddress);
+#endif // SECURITY_DISABLE_IS_PRIVATE_OLD
 
 	/**
 	 * @brief Manager::findRange allows to find the range rule containing or next to the given IP.

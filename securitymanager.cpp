@@ -2596,16 +2596,13 @@ bool Manager::isDenied(const QList<QString>& lQuery, const QString& sContent)
  */
 bool Manager::isPrivate(const CEndPoint& oAddress)
 {
-	// TODO: measure time and test
+#if SECURITY_DISABLE_IS_PRIVATE_OLD
 #ifdef _DEBUG
 	bool bOld = isPrivateOld( oAddress );
 #endif
 	bool bNew = isPrivateNew( oAddress );
 
-#ifdef _DEBUG
-	if ( bOld != bNew )
-		throw "Hey!";
-#endif
+	Q_ASSERT( bOld == bNew );
 
 	return bNew;
 }
@@ -2675,9 +2672,9 @@ bool Manager::isPrivateOld(const CEndPoint& oAddress)
  * @param oAddress : the IP
  * @return true if the IP is within a private range; false otherwise
  */
-// TODO: test
 bool Manager::isPrivateNew(const CEndPoint& oAddress)
 {
+#endif // SECURITY_DISABLE_IS_PRIVATE_OLD
 	if ( oAddress.protocol() == QAbstractSocket::IPv6Protocol )
 		return false;
 
