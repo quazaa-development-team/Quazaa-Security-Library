@@ -51,7 +51,7 @@ std::set<ID> Rule::m_lsIDCheck;
 Rule::Rule() :
 	m_nToday( 0 ),
 	m_nTotal( 0 ),
-	m_tExpire( 0 )
+	m_tExpire( RuleTime::Forever )
 {
 	// This invalidates the rule as long as it does not contain any useful content.
 	m_nType   = RuleType::Undefined;
@@ -121,9 +121,6 @@ QString Rule::getContentString() const
 	return m_sContent;
 }
 
-//////////////////////////////////////////////////////////////////////
-// CSecureRule match
-
 bool Rule::match(const CEndPoint&) const
 {
 	return false;
@@ -140,9 +137,6 @@ bool Rule::match(const QList<QString>&, const QString&) const
 {
 	return false;
 }
-
-//////////////////////////////////////////////////////////////////////
-// CSecureRule serialize
 
 void Rule::save(const Rule* const pRule, QDataStream &oStream)
 {
