@@ -1940,7 +1940,8 @@ void Manager::insertRangeHelper(IPRangeRule* pNewRange)
 
 	while ( nPos > 0 && pNewRange->m_idUUID < pArray[nPos - 1]->m_idUUID )
 	{
-		pArray[nPos] = pArray[--nPos];
+		pArray[nPos] = pArray[nPos - 1];
+		--nPos;
 	}
 
 	pArray[nPos] = pNewRange;
