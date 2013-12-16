@@ -725,8 +725,13 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
 
 bool Manager::isDenied(const CEndPoint& oAddress)
 {
+	//qDebug() << "isDenied() call for: " << oAddress.toString();
+
 	if ( oAddress.isNull() )
+	{
+		//qDebug() << "Return: false (invalid)";
 		return false;
+	}
 
 	QReadLocker readLock( &m_oRWLock );
 
@@ -744,6 +749,7 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 									   QString::number( m_oMissCache.size() ) ) );
 		}
 
+		//qDebug() << "Return: m_bDenyPolicy (MissCache)";
 		return m_bDenyPolicy;
 	}
 
@@ -761,6 +767,7 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 		{
 			postLogMessage( LogSeverity::Security,
 							tr( "Local/Private IP denied: %1" ).arg( oAddress.toString() ) );
+			//qDebug() << "Return: true (private)";
 			return true;
 		}
 	}
@@ -785,11 +792,16 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 				hit( pCountryRule );
 
 				if ( pCountryRule->m_nAction == RuleAction::Deny )
+				{
+					//qDebug() << "Return: true (country)";
 					return true;
+				}
 				else if ( pCountryRule->m_nAction == RuleAction::Accept )
+				{
+					//qDebug() << "Return: false (country)";
 					return false;
-				else
-					Q_ASSERT( pCountryRule->m_nAction == RuleAction::None );
+				}
+				Q_ASSERT( pCountryRule->m_nAction == RuleAction::None );
 			}
 		}
 	}
@@ -811,11 +823,16 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 				hit( pRangeRule );
 
 				if ( pRangeRule->m_nAction == RuleAction::Deny )
+				{
+					//qDebug() << "Return: true (range)";
 					return true;
+				}
 				else if ( pRangeRule->m_nAction == RuleAction::Accept )
+				{
+					//qDebug() << "Return: false (range)";
 					return false;
-				else
-					Q_ASSERT( pRangeRule->m_nAction == RuleAction::None );
+				}
+				Q_ASSERT( pRangeRule->m_nAction == RuleAction::None );
 			}
 		}
 	}
@@ -844,11 +861,16 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 				hit( pIPRule );
 
 				if ( pIPRule->m_nAction == RuleAction::Deny )
+				{
+					//qDebug() << "Return: true (IP)";
 					return true;
+				}
 				else if ( pIPRule->m_nAction == RuleAction::Accept )
+				{
+					//qDebug() << "Return: false (IP)";
 					return false;
-				else
-					Q_ASSERT( pIPRule->m_nAction == RuleAction::None );
+				}
+				Q_ASSERT( pIPRule->m_nAction == RuleAction::None );
 			}
 		}
 	}
@@ -858,6 +880,7 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 	m_oMissCache.insert( oAddress, tNow );
 
 	// In this case, return our default policy
+	//qDebug() << "Return: m_bDenyPolicy (no rule hit)";
 	return m_bDenyPolicy;
 }
 
@@ -1843,23 +1866,29 @@ void Manager::insertRange(Rule*& pNew)
 	IPRangeRule* pNewRange = (IPRangeRule*)pNew;
 	IPRangeVectorPos  nPos = findRange( pNewRange->startIP() );
 
-	if ( nPos != m_vIPRanges.size() )
+	if ( nPos != m_vIPRanges.size() && m_vIPRanges[nPos]->startIP() <= pNewRange->endIP() )
 	{
-		pRule = m_vIPRanges[nPos++]->merge( pNewRange );
-
-		if ( pNewRange )
+		// if something will remain of m_vIPRanges[nPos] after the merging, merge
+		if ( m_vIPRanges[nPos]->endIP() > pNewRange->endIP() )
 		{
-			while ( nPos < m_vIPRanges.size() && m_vIPRanges[nPos]->endIP() < pNewRange->endIP() )
+			// merge pNewRange into m_vIPRanges[nPos]
+			pRule = m_vIPRanges[nPos++]->merge( pNewRange );
+		}
+
+		if ( pNewRange ) // if it hasn't been set to NULL/merged completely into the existing rule
+		{
+			// remove all rules contained completely within pNewRange
+			while ( nPos < m_vIPRanges.size() && m_vIPRanges[nPos]->endIP() <= pNewRange->endIP() )
 			{
-				postLogMessage( LogSeverity::Security,
+				/*postLogMessage( LogSeverity::Security,
 								QString( "Merging. Removing overlapping IP range %1-%2."
 										 ).arg( m_vIPRanges[nPos]->startIP().toString(),
-												m_vIPRanges[nPos]->endIP().toString() ) );
+												m_vIPRanges[nPos]->endIP().toString() ) );*/
 				remove( getUUID( m_vIPRanges[nPos]->m_idUUID ) );
-
 			}
 
-			if ( nPos < m_vIPRanges.size() && m_vIPRanges[nPos]->startIP() < pNewRange->endIP() )
+			// merge pNewRange into eventually overlapped rule
+			if ( nPos < m_vIPRanges.size() && m_vIPRanges[nPos]->startIP() <= pNewRange->endIP() )
 			{
 				m_vIPRanges[nPos]->merge( pNewRange );
 			}

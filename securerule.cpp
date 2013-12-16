@@ -309,7 +309,10 @@ quint32 Rule::getExpiryTime() const
 }
 
 /**
- * @brief CSecureRule::mergeInto
+ * @brief mergeInto merges this Rule into pDestination.
+ * Takes the higher expiration time, m_bAutomatic if it is false, adds the today and total
+ * counters and modifies the comment string to indicate the merge. Overwrites the RuleAction of
+ * pDestination.
  * Requires Locking: RW
  */
 void Rule::mergeInto(Rule* pDestination)

@@ -68,20 +68,30 @@ CEndPoint IPRangeRule::endIP() const
 	return m_oEndIP;
 }
 
+/**
+ * @brief merge merges pOther into this rule.
+ * Note that this changes only the ranges of this rule.
+ * Note also that it is required for something of this rule to remain after merging.
+ * In case this rule is split into two, the second half is returned as a new rule.
+ * @param pOther : the rule to merge into this one; Set to NULL if superfluous after merging.
+ * @return NULL except if pOther is contained within this rule in which case a Rule is returned
+ * which represents the part of this rules range after the range of pOther.
+ */
 IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 {
 	Q_ASSERT( pOther->m_oEndIP >= pOther->m_oStartIP );
 	Q_ASSERT(         m_oEndIP >=         m_oStartIP );
 
-	bool bContainsOtherStartIP = contains( pOther->startIP() );
-	bool bContainsOtherEndIP   = contains( pOther->endIP() );
+	bool bThisContainsOtherStartIP = contains( pOther->startIP() );
+	bool bThisContainsOtherEndIP   = contains( pOther->endIP() );
 
-	if ( bContainsOtherStartIP && bContainsOtherEndIP )
+	if ( bThisContainsOtherStartIP && bThisContainsOtherEndIP )
 	{
 		if ( m_nAction != pOther->m_nAction )
 		{
 			if ( pOther->m_nAction == RuleAction::None )
 			{
+				// if the other rule has no defined action, the action of the existing rule prevails
 				delete pOther;
 				pOther = NULL;
 			}
@@ -92,12 +102,14 @@ IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 				pNewRule->m_oStartIP = pOther->m_oEndIP;
 				++pNewRule->m_oStartIP;
 
+				// adjust our own end IP
 				m_oEndIP = pOther->m_oStartIP;
 				--m_oEndIP;
 
 				Q_ASSERT( pNewRule->m_oEndIP >= pNewRule->m_oStartIP );
 				Q_ASSERT(           m_oEndIP >=           m_oStartIP );
 
+				// return remaining second part of this rule
 				return pNewRule;
 			}
 		}
@@ -109,14 +121,14 @@ IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 			pOther = NULL;
 		}
 	}
-	else if ( bContainsOtherStartIP )
+	else if ( bThisContainsOtherStartIP )
 	{
 		m_oEndIP = pOther->m_oStartIP;
 		--m_oEndIP;
 
 		Q_ASSERT( m_oEndIP >= m_oStartIP );
 	}
-	else if ( bContainsOtherEndIP )
+	else if ( bThisContainsOtherEndIP )
 	{
 		m_oStartIP = pOther->m_oEndIP;
 		++m_oStartIP;
