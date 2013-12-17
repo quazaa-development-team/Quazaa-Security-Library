@@ -571,7 +571,7 @@ public:
 	 * Locking: REQUIRES RW
 	 * @param nPos : the position
 	 */
-	void            eraseRange(RuleVectorPos nPos);
+	void            eraseRange(const IPRangeVectorPos nPos);
 
 	/**
 	 * @brief Manager::getUUID returns the rule position for the given UUID.
@@ -667,11 +667,20 @@ public:
 #endif // SECURITY_DISABLE_IS_PRIVATE_OLD
 
 	/**
-	 * @brief Manager::findRange allows to find the range rule containing or next to the given IP.
+	 * @brief findRangeForMerge allows to find the range rule containing or next to a given IP.
 	 * @param oIp : the IP
-	 * @return m_vIPRanges.size() or the respective rule position
+	 * @return first range with a oAddress >= startIP(), (e.g. the only range that might be
+	 * containing the given IP); m_vIPRanges.size() if no such range exists.
 	 */
-	IPRangeVectorPos findRange(const CEndPoint oAddress);
+	IPRangeVectorPos findRangeForMerging(const CEndPoint& oAddress);
+
+	/**
+	 * @brief findRangeMatch allows to find the range rule containing a given IP.
+	 * @param oIp : the IP
+	 * @param nPos : a value by reference that will be set to the rule pos within the vector
+	 * @return the range rule matching oAddress; NULL if no such range rule exists.
+	 */
+	IPRangeRule* findRangeMatch(const CEndPoint& oAddress, IPRangeVectorPos& nPos);
 
 	/**
 	 * @brief getRWIterator converts a const_iterator to an iterator
