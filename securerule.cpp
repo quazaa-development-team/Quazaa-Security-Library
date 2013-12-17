@@ -313,7 +313,6 @@ void Rule::mergeInto(Rule* pDestination)
 {
 	if ( m_sContent != pDestination->m_sContent || m_nType != pDestination->m_nType )
 	{
-		Q_ASSERT( m_sContent == pDestination->m_sContent );
 		Q_ASSERT( m_nType    == pDestination->m_nType    );
 	}
 
