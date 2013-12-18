@@ -36,16 +36,6 @@
 Security::Manager securityManager;
 using namespace Security;
 
-/*bool IPRangeLessThan(const IPRangeRule *rule1, const IPRangeRule *rule2)
-{
-	return rule1->startIP() < rule2->startIP();
-}
-
-bool IPLessThan(const IPRule *rule1, const IPRule *rule2)
-{
-	return rule1->IP() < rule2->IP();
-}*/
-
 /**
  * @brief Manager::ruleInfoSignal
  */
@@ -127,7 +117,8 @@ bool Manager::check(const Rule* const pRule) const
  * @brief Manager::add adds a rule to the security database.
  * Note: This makes no copy of the rule, so don't delete it after adding.
  * Locking: RW
- * @param pRule: the rule to be added.
+ * @param pRule: the rule to be added. Will be set to NULL if redundant.
+ * @return true if the rule has been added; false otherwise
  */
 bool Manager::add(Rule* pRule)
 {
@@ -150,6 +141,7 @@ bool Manager::add(Rule* pRule)
 		remove( nExRule );
 	}
 
+	// TODO: remove for alpha1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -167,7 +159,7 @@ bool Manager::add(Rule* pRule)
 #endif
 
 	bool bNewAddress = false;
-	bool bNewHit	 = false;
+	bool bNewHit     = false;
 
 	// Special treatment for the different types of rules
 	switch ( nType )
@@ -195,8 +187,9 @@ bool Manager::add(Rule* pRule)
 
 	case RuleType::IPAddressRange:
 	{
-		insertRange( pRule );
-
+		IPRangeRule* pRange = (IPRangeRule*)pRule;
+		insertRange( pRange );
+		pRule = pRange; // set pRule to NULL if pRange has been set to NULL
 		bNewAddress = pRule; // evaluates to false if the previous method sets pRule to NULL
 	}
 	break;
@@ -377,13 +370,6 @@ bool Manager::add(Rule* pRule)
 
 		bool bSave = !pRule->m_bAutomatic;
 
-#ifdef _DEBUG
-		writeLock.unlock();
-		if ( !check( pRule ) )
-			Q_ASSERT( false );
-		writeLock.relock();
-#endif // _DEBUG
-
 		// Inform SecurityTableModel about new rule.
 		emit ruleAdded( pRule );
 
@@ -406,6 +392,7 @@ bool Manager::add(Rule* pRule)
 						tr( "A new security rule has been merged into an existing one." ) );
 	}
 
+	// TODO: remove for alpha1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -720,16 +707,10 @@ void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint n
  * @param oAddress : the IP
  * @return true if the IP is denied; false otherwise
  */
-
-// TODO: test miss cache!
-
 bool Manager::isDenied(const CEndPoint& oAddress)
 {
-	//qDebug() << "isDenied() call for: " << oAddress.toString();
-
 	if ( oAddress.isNull() )
 	{
-		//qDebug() << "Return: false (invalid)";
 		return false;
 	}
 
@@ -749,7 +730,6 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 									   QString::number( m_oMissCache.size() ) ) );
 		}
 
-		//qDebug() << "Return: m_bDenyPolicy (MissCache)";
 		return m_bDenyPolicy;
 	}
 
@@ -767,7 +747,6 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 		{
 			postLogMessage( LogSeverity::Security,
 							tr( "Local/Private IP denied: %1" ).arg( oAddress.toString() ) );
-			//qDebug() << "Return: true (private)";
 			return true;
 		}
 	}
@@ -793,15 +772,12 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 
 				if ( pCountryRule->m_nAction == RuleAction::Deny )
 				{
-					//qDebug() << "Return: true (country)";
 					return true;
 				}
 				else if ( pCountryRule->m_nAction == RuleAction::Accept )
 				{
-					//qDebug() << "Return: false (country)";
 					return false;
 				}
-				Q_ASSERT( pCountryRule->m_nAction == RuleAction::None );
 			}
 		}
 	}
@@ -825,15 +801,12 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 
 				if ( pRangeRule->m_nAction == RuleAction::Deny )
 				{
-					//qDebug() << "Return: true (range)";
 					return true;
 				}
 				else if ( pRangeRule->m_nAction == RuleAction::Accept )
 				{
-					//qDebug() << "Return: false (range)";
 					return false;
 				}
-				Q_ASSERT( pRangeRule->m_nAction == RuleAction::None );
 			}
 		}
 	}
@@ -863,15 +836,12 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 
 				if ( pIPRule->m_nAction == RuleAction::Deny )
 				{
-					//qDebug() << "Return: true (IP)";
 					return true;
 				}
 				else if ( pIPRule->m_nAction == RuleAction::Accept )
 				{
-					//qDebug() << "Return: false (IP)";
 					return false;
 				}
-				Q_ASSERT( pIPRule->m_nAction == RuleAction::None );
 			}
 		}
 	}
@@ -881,7 +851,6 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 	m_oMissCache.insert( oAddress, tNow );
 
 	// In this case, return our default policy
-	//qDebug() << "Return: m_bDenyPolicy (no rule hit)";
 	return m_bDenyPolicy;
 }
 
@@ -1539,6 +1508,7 @@ void Manager::expire()
 
 	m_bExpiryRequested = false;
 
+	// TODO: remove for alpha1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -1775,6 +1745,7 @@ bool Manager::load( QString sPath )
 	}
 	oFile.close();
 
+	// TODO: remove for alpha1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -1813,22 +1784,6 @@ void Manager::insert(Rule* pRule)
 	}
 
 	pArray[nPos] = pRule;
-
-#ifdef _DEBUG
-	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
-	{
-		Q_ASSERT( m_vRules[i] );
-		Rule* pTestRule = m_vRules[i];
-
-		if ( pTestRule->type() <= 0 ||
-			 pTestRule->type() >= RuleType::NoOfTypes ||
-			 pTestRule->getTotalCount() < 0 )
-		{
-			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
-			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
-		}
-	}
-#endif
 }
 
 /**
@@ -1859,114 +1814,60 @@ void Manager::erase(RuleVectorPos nPos)
 /**
  * @brief Manager::insertRange inserts a range rule into the respective container.
  * Locking: REQUIRES RW
- * @param pNewRange : the range rule
+ * @param pNew : the range rule
  */
-void Manager::insertRange(Rule*& pNew)
+void Manager::insertRange(IPRangeRule*& pNew)
 {
-	qDebug() << "*** Starting range insertion for "
-			 << ((IPRangeRule*)pNew)->getContentString() << " ***";
-
-	Rule* pSecondRangePart = NULL;
-	IPRangeRule* pNewRange = (IPRangeRule*)pNew;
-	IPRangeVectorPos  nPos = findRangeForMerging( pNewRange->startIP() );
-
-	if ( ((IPRangeRule*)pNew)->getContentString().contains( "12.0.1.0", Qt::CaseInsensitive ) )
-	{
-		qDebug() << "*** ping ***";
-	}
-
-	if ( pNewRange->startIP().toString().contains( "12.0.1.0", Qt::CaseInsensitive ) )
-	{
-		qDebug() << "*** ping ***";
-	}
-
-
-
-
-	//qDebug() << "Vector size: " << QString::number( m_vIPRanges.size() ).toLocal8Bit().data();
-	//qDebug() << "Found at position: " << QString::number( nPos ).toLocal8Bit().data() << " - "
-	//		 << ( nPos != m_vIPRanges.size() ? m_vIPRanges[nPos]->getContentString() : QString() );
+	IPRangeRule* pSecondHalf = NULL;
+	IPRangeVectorPos    nPos = findRangeForMerging( pNew->startIP() );
 
 	if ( nPos != m_vIPRanges.size() )
 	{
 		// if something will remain of m_vIPRanges[nPos] after the merging, merge
-		if ( m_vIPRanges[nPos]->startIP() < pNewRange->startIP() ||
-			 m_vIPRanges[nPos]->endIP()   > pNewRange->endIP() )
+		if ( m_vIPRanges[nPos]->startIP() < pNew->startIP() ||
+			 m_vIPRanges[nPos]->endIP()   > pNew->endIP() )
 		{
 			// merge pNewRange into m_vIPRanges[nPos]
-			pSecondRangePart = m_vIPRanges[nPos++]->merge( pNewRange );
+			pSecondHalf = m_vIPRanges[nPos++]->merge( pNew );
 		}
 
-		Q_ASSERT( m_vIPRanges[nPos - 1]->type() > 0 && m_vIPRanges[nPos - 1]->type() < RuleType::NoOfTypes );
-
-		if ( pNewRange ) // if it hasn't been set to NULL/merged completely into the existing rule
+		if ( pNew ) // if it hasn't been set to NULL/merged completely into the existing rule
 		{
 			// remove all rules contained completely within pNewRange
 			IPRangeVectorPos nSize;
-			while ( nPos < ( nSize = m_vIPRanges.size() ) && m_vIPRanges[nPos]->endIP() <= pNewRange->endIP() )
+			while ( nPos < ( nSize = m_vIPRanges.size() ) && m_vIPRanges[nPos]->endIP() <= pNew->endIP() )
 			{
-				Q_ASSERT( m_vIPRanges[nPos]->type() > 0 && m_vIPRanges[nPos]->type() < RuleType::NoOfTypes );
+				postLogMessage( LogSeverity::Security,
+								tr( "Merging IP range rules. Removing overlapped IP range %1."
+									).arg( m_vIPRanges[nPos]->getContentString() ) );
 
-				/*postLogMessage( LogSeverity::Security,
-								QString( "Merging. Removing overlapping IP range %1-%2."
-										 ).arg( m_vIPRanges[nPos]->startIP().toString(),
-												m_vIPRanges[nPos]->endIP().toString() ) );*/
 				// this moves a new rule to position nPos, so we don't need to do sth like ++nPos
-				qDebug() << "Removing range rule at position: "
-						 << QString::number( nPos ) << " - "
-						 << m_vIPRanges[nPos]->getContentString();
 				remove( getUUID( m_vIPRanges[nPos]->m_idUUID ) );
+
+				// TODO: remove for alpha1
 				Q_ASSERT( nSize != m_vIPRanges.size() );
 			}
 
 			// merge pNewRange into eventually overlapped rule
-			if ( nPos < m_vIPRanges.size() && m_vIPRanges[nPos]->startIP() <= pNewRange->endIP() )
+			if ( nPos < m_vIPRanges.size() && m_vIPRanges[nPos]->startIP() <= pNew->endIP() )
 			{
-				Q_ASSERT( m_vIPRanges[nPos]->type()> 0 && m_vIPRanges[nPos]->type() < RuleType::NoOfTypes );
-
-				m_vIPRanges[nPos]->merge( pNewRange );
+				m_vIPRanges[nPos]->merge( pNew );
 			}
 		}
 	}
 
-	if ( pNewRange )
+	if ( pSecondHalf )
 	{
-		Q_ASSERT( pNewRange->type()> 0 && pNewRange->type() < RuleType::NoOfTypes );
-		insertRangeHelper( pNewRange );
+		// no need for sanity checking and most of the other stuff dealt with in add()
+		insertRangeHelper( pSecondHalf );
+		insert( pSecondHalf );
+		emit ruleAdded( pSecondHalf );
 	}
 
-	if ( pSecondRangePart )
+	if ( pNew )
 	{
-		Q_ASSERT( pSecondRangePart->type()> 0 && pSecondRangePart->type() < RuleType::NoOfTypes );
-		insertRange( pSecondRangePart );
+		insertRangeHelper( pNew );
 	}
-
-	pNew = pNewRange; // Make sure that pNewRange being set to NULL is reported back.
-
-#ifdef _DEBUG
-	IPRangeVectorPos n = 0, nSize = m_vIPRanges.size() ;
-	if ( nSize > 1 )
-	{
-		IPRangeRule** pRules = &m_vIPRanges[0];
-		while ( n < nSize - 1 )
-		{
-			/*qDebug() << "test";
-			qDebug() << "test" << ( QString::number( n ) + " : " +
-									pRules[ n ]->startIP().toString() + "-" +
-									pRules[ n ]->endIP().toString() ).toLocal8Bit().data();
-
-			qDebug() << "test" << ( QString::number( n + 1 ) + " : " +
-									pRules[ n + 1 ]->startIP().toString() + "-" +
-									pRules[ n + 1 ]->endIP().toString() ).toLocal8Bit().data();*/
-
-			Q_ASSERT( pRules[ n ]->startIP() < pRules[ n ]->endIP()   );
-			Q_ASSERT( pRules[ n ]->endIP()   < pRules[n+1]->startIP() );
-			Q_ASSERT( pRules[n+1]->startIP() < pRules[n+1]->endIP()   );
-
-			++n;
-		}
-	}
-#endif
 }
 
 /**
@@ -1988,31 +1889,6 @@ void Manager::insertRangeHelper(IPRangeRule* pNewRange)
 	}
 
 	pArray[nPos] = pNewRange;
-
-#ifdef _DEBUG
-	IPRangeVectorPos n = 0, nSize = m_vIPRanges.size() ;
-	if ( nSize > 1 )
-	{
-		IPRangeRule** pRules = &m_vIPRanges[0];
-		while ( n < nSize - 1 )
-		{
-			/*qDebug() << "test";
-			qDebug() << "test" << ( QString::number( n ) + " : " +
-									pRules[ n ]->startIP().toString() + "-" +
-									pRules[ n ]->endIP().toString() ).toLocal8Bit().data();
-
-			qDebug() << "test" << ( QString::number( n + 1 ) + " : " +
-									pRules[ n + 1 ]->startIP().toString() + "-" +
-									pRules[ n + 1 ]->endIP().toString() ).toLocal8Bit().data();*/
-
-			Q_ASSERT( pRules[ n ]->startIP() < pRules[ n ]->endIP()   );
-			Q_ASSERT( pRules[ n ]->endIP()   < pRules[n+1]->startIP() );
-			Q_ASSERT( pRules[n+1]->startIP() < pRules[n+1]->endIP()   );
-
-			++n;
-		}
-	}
-#endif
 }
 
 /**
@@ -2039,9 +1915,7 @@ void Manager::eraseRange(const IPRangeVectorPos nPos)
 		++i;
 	}
 
-	m_vIPRanges.pop_back();                 // remove last element
-
-	Q_ASSERT( nSize != m_vIPRanges.size() );
+	m_vIPRanges.pop_back();
 
 #ifdef _DEBUG
 	for ( IPRangeVectorPos i = 0; i < m_vIPRanges.size(); ++i )
@@ -2058,7 +1932,7 @@ void Manager::eraseRange(const IPRangeVectorPos nPos)
 		}
 	}
 #endif
-}                                 // (either the deleted one or a copy of the one next to it)
+}
 
 /**
  * @brief Manager::getUUID returns the rule position for the given UUID.
@@ -2082,6 +1956,7 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
 	RuleVectorPos n = nSize;
 	RuleVectorPos nReturn = nSize;
 
+	// TODO: remove for alpha1
 #ifdef _DEBUG
 	RuleVectorPos i;
 	for ( i = 0; i < nSize; ++i )
@@ -2093,6 +1968,7 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
 
 	while ( n > 0 )
 	{
+		// TODO: remove for alpha1
 #ifdef _DEBUG
 		if ( i != nSize && ( i < nBegin || i > nBegin + n - 1 ) )
 		{
@@ -2123,6 +1999,7 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
 
 	}
 
+	// TODO: remove for alpha1
 #ifdef _DEBUG
 	RuleVectorPos j;
 	for ( j = 0; j < nSize; ++j )
@@ -2231,7 +2108,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
 		IPRangeVectorPos nPos;
 		IPRangeRule* pTest = findRangeMatch( ((IPRangeRule*)pRule)->startIP(), nPos );
 
-		// to be removed in alpha1
+		// TODO: remove for alpha1
 		Q_ASSERT( pTest == pRule );
 		Q_ASSERT( nPos < m_vIPRanges.size() );
 
@@ -2380,25 +2257,10 @@ void Manager::remove(RuleVectorPos nVectorPos)
 	// a rule has been removed, so we might want to save...
 	m_bUnsaved = true;
 
-#ifdef _DEBUG
-	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
-	{
-		Q_ASSERT( m_vRules[i] );
-		Rule* pTestRule = m_vRules[i];
-
-		if ( pTestRule->type() <= 0 ||
-			 pTestRule->type() >= RuleType::NoOfTypes ||
-			 pTestRule->getTotalCount() < 0 )
-		{
-			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
-			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
-		}
-	}
-#endif
-
 	// Remove rule entry from list of all rules
 	erase( nVectorPos );
 
+	// TODO: remove for alpha1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -2415,12 +2277,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
 	}
 #endif
 
-	qDebug() << "[Security] Finished removing rule. Emitting signal now.";
-
 	SharedRulePtr pReturn = SharedRulePtr( pRule );
-
-	Q_ASSERT( pReturn );
-
 	emit ruleRemoved( pReturn );
 }
 
@@ -2604,6 +2461,7 @@ bool Manager::isDenied(const CQueryHit* const pHit)
  */
 bool Manager::isDenied(const QList<QString>& lQuery, const QString& sContent)
 {
+	// if this happens, fix caller :D
 	Q_ASSERT( !lQuery.isEmpty() );
 
 	if ( lQuery.isEmpty() || sContent.isEmpty() )
@@ -2760,6 +2618,7 @@ bool Manager::isPrivateNew(const CEndPoint& oAddress)
 			{
 				if ( oAddress <= pRules[nMiddle]->endIP() )
 				{
+					// TODO: remove for alpha1
 					Q_ASSERT( pRules[nMiddle]->match( oAddress ) );
 					return true;
 				}
@@ -2822,24 +2681,13 @@ Manager::IPRangeVectorPos Manager::findRangeForMerging(const CEndPoint& oAddress
 
 	IPRangeVectorPos nReturn = bFound ? nMiddle : nBegin;
 
+	// TODO: remove for alpha1
 #ifdef _DEBUG
 	IPRangeVectorPos j = 0;
-	QString sAddr = oAddress.toString();
-	//qDebug() << "To find: " << sAddr;
-
-	QString sRangeStart = pRanges[j]->startIP().toString();
 	while ( j < nSize && pRanges[j]->startIP() < oAddress )
 	{
-		sRangeStart = pRanges[j]->startIP().toString();
-		//qDebug() << "*** " << sRangeStart;
 		++j;
 	}
-
-	if ( j < nSize )
-	{
-		//qDebug() << "item past the found one: " << pRanges[j]->getContentString();
-	}
-
 	--j;
 
 	if ( j != nReturn )
@@ -2896,19 +2744,6 @@ IPRangeRule* Manager::findRangeMatch(const CEndPoint& oAddress, IPRangeVectorPos
 			nItemsRemaining -= nHalf + 1;
 		}
 	}
-
-/*#ifdef _DEBUG
-	IPRangeVectorPos j = 0;
-	while ( j < nSize && oAddress < pRanges[j]->startIP() )
-	{
-		++j;
-	}
-
-	if ( j != nReturn )
-	{
-		Q_ASSERT( false );
-	}
-#endif*/
 
 	nPos = nSize;
 	return NULL;

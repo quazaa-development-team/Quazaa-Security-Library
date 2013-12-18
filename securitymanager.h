@@ -225,6 +225,7 @@ public:
 	 * Note: This makes no copy of the rule, so don't delete it after adding.
 	 * Locking: RW
 	 * @param pRule: the rule to be added. Will be set to NULL if redundant.
+	 * @return true if the rule has been added; false otherwise
 	 */
 	bool            add(Rule* pRule);
 
@@ -556,9 +557,9 @@ public:
 	/**
 	 * @brief Manager::insertRange inserts a range rule into the respective container.
 	 * Locking: REQUIRES RW
-	 * @param pNewRange : the range rule
+	 * @param pNew : the range rule
 	 */
-	void            insertRange(Rule*& pNew);
+	void            insertRange(IPRangeRule*& pNew);
 
 	/**
 	 * @brief Manager::insertRangeHelper inserts a range rule at the correct place into the vector.
