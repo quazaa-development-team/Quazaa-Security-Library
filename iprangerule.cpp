@@ -26,6 +26,8 @@
 
 #include "debug_new.h"
 
+#include "securitymanager.h"
+
 using namespace Security;
 
 IPRangeRule::IPRangeRule()
@@ -82,8 +84,12 @@ IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 	Q_ASSERT( pOther->m_oEndIP >= pOther->m_oStartIP );
 	Q_ASSERT(         m_oEndIP >=         m_oStartIP );
 
+	// TODO: All other asserts in this method shall be removed for Quazaa 1.0.0.0
+
 	bool bThisContainsOtherStartIP = contains( pOther->startIP() );
 	bool bThisContainsOtherEndIP   = contains( pOther->endIP() );
+
+	IPRangeRule* pReturn = NULL;
 
 	if ( bThisContainsOtherStartIP && bThisContainsOtherEndIP )
 	{
@@ -109,8 +115,13 @@ IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 				Q_ASSERT( pNewRule->m_oEndIP >= pNewRule->m_oStartIP );
 				Q_ASSERT(           m_oEndIP >=           m_oStartIP );
 
+				// Update GUI relevant info
+				pNewRule->m_sComment += QObject::tr( " (Split by range merging)" );
+				pNewRule->m_sContent = pNewRule->m_oStartIP.toString() + "-" +
+									   pNewRule->m_oEndIP.toString();
+
 				// return remaining second part of this rule
-				return pNewRule;
+				pReturn = pNewRule;
 			}
 		}
 		else
@@ -136,7 +147,17 @@ IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 		Q_ASSERT( m_oEndIP >= m_oStartIP );
 	}
 
-	return NULL;
+	// make sure to update GUI relevant info
+	if ( pOther )
+	{
+		pOther->m_sContent = pOther->m_oStartIP.toString() + "-" +
+							 pOther->m_oEndIP.toString();
+	}
+
+	m_sContent = m_oStartIP.toString() + "-" + m_oEndIP.toString();
+	securityManager.emitUpdate( m_nGUIID );
+
+	return pReturn;
 }
 
 bool IPRangeRule::contains(const CEndPoint& oAddress) const
