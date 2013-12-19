@@ -552,12 +552,15 @@ Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 		return NULL;
 	}
 
-// TODO: What is this for? / make backwards compatible
 	const QString sAutomatic = attributes.value( "automatic" ).toString();
-	if(sAutomatic == "true")
+	if ( sAutomatic == "true" )
+	{
 		pRule->m_bAutomatic = true;
+	}
 	else
+	{
 		pRule->m_bAutomatic = false;
+	}
 
 	pRule->m_sComment = attributes.value( "comment" ).toString().trimmed();
 
