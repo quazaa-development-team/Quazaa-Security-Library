@@ -26,6 +26,7 @@
 #define MISSCACHE_H
 
 #include <set>
+#include <QMutex>
 #include <QHostAddress>
 
 namespace Security

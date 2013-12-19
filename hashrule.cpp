@@ -163,7 +163,8 @@ void HashRule::reduceByHashPriority(uint nNumberOfHashes)
 		n = (*it).second.getAlgorithm();
 #endif
 
-		it = m_lmHashes.erase( it );
+		m_lmHashes.erase( it );
+		it = m_lmHashes.begin();
 	}
 }
 

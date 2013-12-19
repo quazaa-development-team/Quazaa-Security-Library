@@ -246,7 +246,14 @@ void MissCache::expire()
 		while ( it != m_lsIPv4Cache.end() )
 		{
 			if ( (*it).first < m_tOldestIP4Entry )
-				it = m_lsIPv4Cache.erase( it );
+			{
+				m_lsIPv4Cache.erase( it );
+				it = m_lsIPv4Cache.begin();
+			}
+			else
+			{
+				++it;
+			}
 		}
 	}
 
@@ -259,7 +266,14 @@ void MissCache::expire()
 		while ( it != m_lsIPv6Cache.end() )
 		{
 			if ( (*it).first < m_tOldestIP6Entry )
-				it = m_lsIPv6Cache.erase( it );
+			{
+				m_lsIPv6Cache.erase( it );
+				it = m_lsIPv6Cache.begin();
+			}
+			else
+			{
+				++it;
+			}
 		}
 	}
 
