@@ -41,7 +41,7 @@ Rule* CountryRule::getCopy() const
 
 bool CountryRule::parseContent(const QString& sContent)
 {
-	if ( geoIP.findCountryCode( sContent ) != "ZZ" )
+	if ( geoIP.countryNameFromCode( sContent ) != "Unknown" )
 	{
 		m_sContent = sContent;
 		return true;

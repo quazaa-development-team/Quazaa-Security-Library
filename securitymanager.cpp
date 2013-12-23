@@ -51,7 +51,7 @@ Manager::Manager() :
 	m_bUnsaved( false ),
 	m_bShutDown( false ),
 	m_bExpiryRequested( false ),
-	m_bIgnorePrivateIPs( false ),
+	m_bDenyPrivateIPs( false ),
 	m_bIsLoading( false ),
 	m_bDenyPolicy( false )
 {
@@ -741,7 +741,7 @@ bool Manager::isDenied(const CEndPoint& oAddress)
 	}
 
 	// Second, if quazaa local/private blocking is turned on, check if the IP is local/private
-	if ( m_bIgnorePrivateIPs )
+	if ( m_bDenyPrivateIPs )
 	{
 		if ( isPrivate( oAddress ) )
 		{
@@ -1564,7 +1564,7 @@ void Manager::settingsChanged()
 	}
 
 	m_bLogIPCheckHits   = securitySettigs.m_bLogIPCheckHits;
-	m_bIgnorePrivateIPs = securitySettigs.m_bIgnorePrivateIPs;
+	m_bDenyPrivateIPs = securitySettigs.m_bIgnorePrivateIPs;
 
 	securitySettigs.m_oLock.unlock();
 	m_oRWLock.unlock();

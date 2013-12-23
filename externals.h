@@ -58,7 +58,7 @@ void postLogMessage(LogSeverity::Severity eSeverity, QString sMessage, bool bDeb
  */
 QString dataPath();
 
-class Settings : public QObject
+class SecuritySettings : public QObject
 {
 	Q_OBJECT
 
@@ -86,6 +86,6 @@ signals:
 };
 }
 
-extern Security::Settings securitySettigs;
+extern Security::SecuritySettings securitySettigs;
 
 #endif // EXTERNALS_H

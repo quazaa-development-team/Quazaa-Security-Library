@@ -67,9 +67,9 @@ QString Security::dataPath()
 	return CQuazaaGlobals::DATA_PATH();
 }
 
-Security::Settings securitySettigs;
+Security::SecuritySettings securitySettigs;
 
-void Security::Settings::start()
+void Security::SecuritySettings::start()
 {
 	connect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
 			 &securitySettigs, SLOT( settingsChanged() ), Qt::QueuedConnection );
@@ -82,7 +82,7 @@ void Security::Settings::start()
 	settingsChanged();
 }
 
-void Security::Settings::stop()
+void Security::SecuritySettings::stop()
 {
 	disconnect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
 				&securitySettigs, SLOT( settingsChanged() ) );
@@ -94,7 +94,7 @@ void Security::Settings::stop()
  * and forwards them to the security manager.
  * Locking: YES
  */
-void Security::Settings::settingsChanged()
+void Security::SecuritySettings::settingsChanged()
 {
 	m_oLock.lock();
 

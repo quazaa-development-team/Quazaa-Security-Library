@@ -171,7 +171,7 @@ public:
 	mutable bool    m_bUnsaved;           // true if there are unsaved rules
 	bool            m_bShutDown;
 	bool            m_bExpiryRequested;
-	bool            m_bIgnorePrivateIPs;
+	bool            m_bDenyPrivateIPs;
 	bool            m_bIsLoading;         // true during import operations. Used to avoid unnecessary GUI updates.
 
 	bool            m_bDenyPolicy;
