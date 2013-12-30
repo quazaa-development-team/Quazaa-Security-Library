@@ -36,7 +36,11 @@ class MissCache : QObject
 {
 	Q_OBJECT
 
+#ifndef QUAZAA_SETUP_UNIT_TESTS
 private:
+#else
+public:
+#endif
 	typedef quint32                       IPv4Addr;
 
 	typedef struct

@@ -86,6 +86,8 @@ uint MissCache::size(QAbstractSocket::NetworkLayerProtocol eProtocol) const
 
 void MissCache::insert(const QHostAddress& oIP, const quint32 tNow)
 {
+	Q_ASSERT( !oIP.isNull() );
+
 	if ( m_bUseMissCache )
 	{
 		m_oSection.lock();
