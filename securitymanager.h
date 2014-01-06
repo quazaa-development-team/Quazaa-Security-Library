@@ -315,7 +315,7 @@ public:
 	 * @param sUserAgent : the agent string to be checked
 	 * @return true for especially bad / leecher clients, as well as user defined agent blocks.
 	 */
-	bool            isAgentBlocked(const QString& sUserAgent);
+	bool            isAgentDenied(const QString& sUserAgent);
 
 	/**
 	 * @brief Manager::isVendorBlocked checks for blocked vendors.
@@ -619,7 +619,7 @@ public:
 	 * @param sUserAgent : the user agent name
 	 * @return true if the user agent is denied; false otherwise
 	 */
-	bool            isAgentDenied(const QString& sUserAgent);
+	bool            isAgentDeniedInternal(const QString& sUserAgent);
 
 	/**
 	 * @brief Manager::isDenied checks a content string against the list of list of content rules.

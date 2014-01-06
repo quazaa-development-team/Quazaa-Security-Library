@@ -1004,7 +1004,7 @@ bool Manager::isClientBad(const QString& sUserAgent) const
  * @return true for especially bad / leecher clients, as well as user defined agent blocks.
  */
 // Test new releases, and remove block if/when they are fixed.
-bool Manager::isAgentBlocked(const QString& sUserAgent)
+bool Manager::isAgentDenied(const QString& sUserAgent)
 {
 	// The remote computer didn't send a "User-Agent", or it sent whitespace
 	// We don't like those.
@@ -1019,7 +1019,7 @@ bool Manager::isAgentBlocked(const QString& sUserAgent)
 
 	// Check by content filter
 	m_oRWLock.lockForRead();
-	bool bReturn = isAgentDenied( sUserAgent );
+	bool bReturn = isAgentDeniedInternal( sUserAgent );
 	m_oRWLock.unlock();
 
 	return bReturn;
@@ -2287,7 +2287,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
  * @param sUserAgent : the user agent name
  * @return true if the user agent is denied; false otherwise
  */
-bool Manager::isAgentDenied(const QString& sUserAgent)
+bool Manager::isAgentDeniedInternal(const QString& sUserAgent)
 {
 	if ( sUserAgent.isEmpty() )
 		return false;
