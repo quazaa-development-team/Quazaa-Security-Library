@@ -38,7 +38,7 @@ HashVector HashRule::getHashes() const
 	HashVector result;
 	result.reserve( m_lmHashes.size() );
 
-	std::map< CHash::Algorithm, CHash >::const_iterator it;
+	std::map< CHash::Algorithm, CHash >::const_iterator it = m_lmHashes.begin();
 	while ( it != m_lmHashes.end() )
 	{
 		result.push_back( (*it).second );
@@ -99,6 +99,7 @@ bool HashRule::parseContent(const QString& sContent)
 
 			qDebug() << "Expected hash length:" << length;
 			qDebug() << "Actual hash length:" << pos2;
+			qDebug() << "Tmp string length:" << tmp.length();
 
 			if ( pos2 == length )
 			{
@@ -130,7 +131,7 @@ bool HashRule::parseContent(const QString& sContent)
 				delete pHash;
 			}
 			else
-				qDebug() << "Hash type not recognised.";
+				qDebug() << "HashRule: Hash type not recognised.";
 		}
 	}
 
@@ -142,7 +143,7 @@ bool HashRule::parseContent(const QString& sContent)
 	else
 	{
 		postLogMessage( LogSeverity::Error,
-						QObject::tr( "Error: Failed to import XML hash rule: %1"
+						QObject::tr( "Error: Failed to parse content for hash rule: %1"
 									 ).arg( sContent ) );
 		return false;
 	}
