@@ -38,6 +38,11 @@
 // 0 - Initial implementation
 // 1 - Some changes to the way the rule time is stored and other minor adjustments.
 
+#define SECURITY_XML_VERSION "2.0"
+// History:
+// 1.0 - Original implementation by Shareaza
+// 2.0 - Adjustments for IP ranges, Regular Expressions etc.
+
 // the minimal amount of IP related rules before enabling the miss cache
 #define SECURITY_MIN_RULES_TO_ENABLE_CACHE 30
 

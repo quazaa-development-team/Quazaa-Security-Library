@@ -1402,7 +1402,7 @@ bool Manager::toXML(const QString& sPath) const
 	QXmlStreamWriter xmlDocument( &oFile );
 
 	xmlDocument.writeStartElement( xmlns, "security" );
-	xmlDocument.writeAttribute( "version", "2.0" );
+	xmlDocument.writeAttribute( "version", SECURITY_XML_VERSION );
 
 	m_oRWLock.lockForRead();
 

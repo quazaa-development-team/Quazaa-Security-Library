@@ -418,14 +418,66 @@ Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 
 	Rule* pRule = NULL;
 
-	// TODO: Fix this mess and make it compatible with specs again.
-	// see 7bec0c44458e895eb306f83baabb29ed75018fa1 for messup
 	if ( sType.compare( "address", Qt::CaseInsensitive ) == 0 )
 	{
 		QString sAddress = attributes.value( "address" ).toString();
 
-		pRule = new IPRule();
-		pRule->parseContent( sAddress );
+		if ( nVersion < 2.0 )
+		{
+			const QString sMask = attributes.value( "mask" ).toString().trimmed();
+
+			if ( sMask.isEmpty() || sMask == "255.255.255.255" ) // old style IPv4 rule
+			{
+				pRule = new IPRule();
+				if ( !pRule->parseContent( sAddress ) )
+				{
+					delete pRule;
+					pRule = NULL;
+				}
+			}
+			else // old style range rule
+			{
+				QHostAddress oIP( sAddress );
+				QHostAddress oMask( sMask );
+
+				if ( oIP.protocol()   == QAbstractSocket::IPv4Protocol ||
+					 oMask.protocol() == QAbstractSocket::IPv4Protocol )
+				{
+					// Reference matching code (Shareaza)
+					// pTest is the IP to test, pMask the netmask and pBase the range rule base IP
+					// if ( ( ( *pTest ) & ( *pMask ) ) == ( *pBase ) )
+					// {
+					//     return TRUE;
+					// }
+
+					quint32 nMask = oMask.toIPv4Address();
+					quint32 nIP   = oIP.toIPv4Address() & nMask; // this clears the lower bits
+
+					quint32 nStartIP = nIP;
+					quint32 nEndIP   = nIP | ~nMask; // this sets all the lower bits to 1
+
+					QString sStartIP = QHostAddress( nStartIP ).toString();
+					QString sEndIP   = QHostAddress( nEndIP ).toString();
+
+					pRule = new IPRangeRule();
+					if ( !pRule->parseContent( QString( "%1-%2" ).arg( sStartIP, sEndIP ) ) )
+					{
+						delete pRule;
+						pRule = NULL;
+					}
+				}
+			}
+		}
+		else
+		{
+			pRule = new IPRule();
+
+			if ( !pRule->parseContent( sAddress ) )
+			{
+				delete pRule;
+				pRule = NULL;
+			}
+		}
 	}
 	else if ( sType.compare( "addressrange", Qt::CaseInsensitive ) == 0 )
 	{
@@ -433,29 +485,29 @@ Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 		QString sEndAddress = attributes.value( "endaddress" ).toString();
 
 		pRule = new IPRangeRule();
-		pRule->parseContent( QString("%1-%2").arg(sStartAddress).arg(sEndAddress) );
+		if ( !pRule->parseContent( QString( "%1-%2" ).arg( sStartAddress, sEndAddress ) ) )
+		{
+			delete pRule;
+			pRule = NULL;
+		}
 	}
 	else if ( sType.compare( "hash", Qt::CaseInsensitive ) == 0 )
 	{
-		HashRule* rule = new HashRule();
-		if ( !rule->parseContent( attributes.value( "content" ).toString() ) )
+		pRule = new HashRule();
+		if ( !pRule->parseContent( attributes.value( "content" ).toString() ) )
 		{
-			delete rule;
-			return NULL;
+			delete pRule;
+			pRule = NULL;
 		}
-
-		pRule = rule;
 	}
 	else if ( sType.compare( "regexp", Qt::CaseInsensitive ) == 0 )
 	{
-		RegularExpressionRule* rule = new RegularExpressionRule();
-		if ( !rule->parseContent( attributes.value( "content" ).toString() ) )
+		pRule = new RegularExpressionRule();
+		if ( !pRule->parseContent( attributes.value( "content" ).toString() ) )
 		{
-			delete rule;
-			return NULL;
+			delete pRule;
+			pRule = NULL;
 		}
-
-		pRule = rule;
 	}
 	else if ( sType.compare( "content", Qt::CaseInsensitive ) == 0 )
 	{
@@ -466,71 +518,61 @@ Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 
 		if ( nVersion < 2.0 )
 		{
-			// This handles "old style" Shareaza RegExp rules.
-			if ( sMatch.compare( "regexp", Qt::CaseInsensitive ) == 0 )
+			// This handles old v1.0 style Shareaza RegExp rules.
+			if ( !sMatch.compare( "regexp", Qt::CaseInsensitive ) )
 			{
-				RegularExpressionRule* rule = new RegularExpressionRule();
-				if ( !rule->parseContent( sContent ) )
+				pRule = new RegularExpressionRule();
+				if ( !pRule->parseContent( sContent ) )
 				{
-					delete rule;
-					return NULL;
+					delete pRule;
+					pRule = NULL;
 				}
-
-				pRule = rule;
 			}
 			// This handles "old style" Shareaza hash rules.
-			else if ( sUrn.compare( "urn:", Qt::CaseInsensitive ) == 0 )
+			else if ( !sUrn.compare( "urn:", Qt::CaseInsensitive ) )
 			{
-				HashRule* rule = new HashRule();
-				if ( !rule->parseContent( sContent ) )
+				pRule = new HashRule();
+				if ( !pRule->parseContent( sContent ) )
 				{
-					delete rule;
-					return NULL;
+					delete pRule;
+					pRule = NULL;
 				}
-
-				pRule = rule;
 			}
 		}
 
 		if ( !pRule )
 		{
-			bool all = ( sMatch.compare( "all", Qt::CaseInsensitive ) == 0 );
+			bool all = ( !sMatch.compare( "all", Qt::CaseInsensitive ) );
 
-			if ( all || sMatch.compare( "any", Qt::CaseInsensitive ) == 0 )
+			if ( all || !sMatch.compare( "any", Qt::CaseInsensitive ) )
 			{
-				ContentRule* rule = new ContentRule();
-				if ( !rule->parseContent( sContent ) )
+				pRule = new ContentRule();
+				if ( !pRule->parseContent( sContent ) )
 				{
-					delete rule;
-					return NULL;
+					delete pRule;
+					pRule = NULL;
 				}
-
-				rule->setAll( all );
-				pRule = rule;
-			}
-			else
-			{
-				return NULL;
+				else
+				{
+					((ContentRule*)pRule)->setAll( all );
+				}
 			}
 		}
 	}
 #if SECURITY_ENABLE_GEOIP
-	else if ( sType.compare( "country", Qt::CaseInsensitive ) == 0 )
+	else if ( !sType.compare( "country", Qt::CaseInsensitive ) )
 	{
-		CountryRule* rule = new CountryRule();
-		if ( !rule->parseContent( attributes.value( "content" ).toString() ) )
+		pRule = new CountryRule();
+		if ( !pRule->parseContent( attributes.value( "content" ).toString() ) )
 		{
-			delete rule;
-			return NULL;
+			delete pRule;
+			pRule = NULL;
 		}
-
-		pRule = rule;
 	}
 #endif // SECURITY_ENABLE_GEOIP
-	else
-	{
+
+	if ( !pRule )
 		return NULL;
-	}
 
 	const QString sAction = attributes.value( "action" ).toString();
 
@@ -565,11 +607,11 @@ Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 	pRule->m_sComment = attributes.value( "comment" ).toString().trimmed();
 
 	QString sExpire = attributes.value( "expire" ).toString();
-	if ( sExpire.compare( "indefinite", Qt::CaseInsensitive ) == 0 )
+	if ( !sExpire.compare( "indefinite", Qt::CaseInsensitive ) )
 	{
 		pRule->m_tExpire = RuleTime::Forever;
 	}
-	else if ( sExpire.compare( "session", Qt::CaseInsensitive ) == 0 )
+	else if ( !sExpire.compare( "session", Qt::CaseInsensitive ) )
 	{
 		pRule->m_tExpire = RuleTime::Session;
 	}

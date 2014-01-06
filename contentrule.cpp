@@ -26,12 +26,19 @@
 
 #include "debug_new.h"
 
+#if QT_VERSION >= 0x050000
+#  include <QRegularExpression>
+#else
+#  include <QRegExp>
+#endif
+
 using namespace Security;
 
-ContentRule::ContentRule()
+ContentRule::ContentRule() :
+	m_bSize( false ),
+	m_bAll( true )
 {
 	m_nType = RuleType::Content;
-	m_bAll = true;
 }
 
 Rule* ContentRule::getCopy() const
@@ -51,31 +58,37 @@ bool ContentRule::parseContent(const QString& sContent)
 	QString sWork = sContent;
 	sWork.replace( '\t', ' ' );
 
-	m_lContent.clear();
-
-	QString tmp;
-
-	QList< QString > lWork;
-
-	while ( !sWork.isEmpty() )
-	{
-		sWork = sWork.trimmed();
-		int index = sWork.indexOf( ' ' );
-		tmp = ( index != -1 ) ? sWork.left( index ) : sWork;
-		if ( !tmp.isEmpty() )
-			lWork.push_back( tmp );
-		sWork = sWork.mid( ( index != -1 ) ? index : 0 );
-	}
+	QStringList lWork = sWork.split( ' ', QString::SkipEmptyParts );
 
 	if ( !lWork.isEmpty() )
 	{
+		m_lContent.clear();
 		m_lContent = lWork;
+		m_bSize = false;
+
+		QString sFilter = "^size:\\w+:\\d+$"; // match anything like size:<extension>:<filesize>
+#if QT_VERSION >= 0x050000
+		QRegularExpression oSizeFilter( sFilter );
+#else
+		QRegExp oSizeFilter( sFilter );
+#endif
 
 		m_sContent.clear();
 		for ( ListIterator i = m_lContent.begin() ; i != m_lContent.end() ; ++i )
 		{
-			m_sContent += *i;
+#if QT_VERSION >= 0x050000
+			if ( oSizeFilter.match( (*i) ).hasMatch() )
+#else
+			if ( oSizeFilter.exactMatch( (*i) ) )
+#endif
+			{
+				m_bSize = true;
+			}
+			m_sContent += *i + " ";
 		}
+
+		// remove trailing whitespace
+		m_sContent = m_sContent.trimmed();
 		return true;
 	}
 	return false;
@@ -119,12 +132,13 @@ bool ContentRule::match(const CQueryHit* const pHit) const
 		return false;
 
 	QString sFileName = pHit->m_sDescriptiveName;
-	qint32 index = sFileName.lastIndexOf( '.' );
-	if ( index != -1 )
+
+	qint32 index;
+	if ( m_bSize && ( ( index = sFileName.lastIndexOf( '.' ) + 1 ) ) )
 	{
 		QString sExt = sFileName.mid( index );
 		QString sExtFileSize = "size:%1:%2";
-		sExtFileSize.arg( sExt, QString::number( pHit->m_nObjectSize ) );
+		sExtFileSize = sExtFileSize.arg( sExt, QString::number( pHit->m_nObjectSize ) );
 		if ( match( sExtFileSize ) )
 			return true;
 	}

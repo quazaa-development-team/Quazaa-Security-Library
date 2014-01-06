@@ -33,10 +33,11 @@ namespace Security
 class ContentRule : public Rule
 {
 private:
-	bool                m_bAll;
-	QList< QString >    m_lContent;
+	bool        m_bSize;
+	bool        m_bAll;
+	QStringList m_lContent;
 
-	typedef QList< QString >::const_iterator ListIterator;
+	typedef QStringList::const_iterator ListIterator;
 
 public:
 	ContentRule();
