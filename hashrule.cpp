@@ -216,7 +216,6 @@ bool HashRule::match(const HashVector& lHashes) const
 	return nCount;
 }
 
-// TODO: verify xml compatibility
 void HashRule::toXML(QXmlStreamWriter& oXMLdocument) const
 {
 	Q_ASSERT( m_nType == RuleType::Hash );

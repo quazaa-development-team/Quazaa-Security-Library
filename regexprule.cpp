@@ -50,7 +50,7 @@ bool RegularExpressionRule::parseContent(const QString& sContent)
 	m_sContent = sContent.trimmed();
 
 	quint8 nCount = 0;
-	for ( quint8 i = 1; i < 10; ++i )
+	for ( quint8 i = 0; i < 10; ++i )
 	{
 		if ( m_sContent.contains( "<" + QString::number( i ) + ">" ) )
 		{
@@ -109,43 +109,29 @@ bool RegularExpressionRule::match(const QList<QString>& lQuery, const QString& s
 		QString sFilter, sBaseFilter = m_sContent;
 
 		int pos = sBaseFilter.indexOf( '<' );
-		if ( pos != -1 )
+		Q_ASSERT( pos != -1 );
+
+		quint8 nArg = 0;
+
+		// replace all relevant occurrences of <*something*
+		while ( pos != -1 )
 		{
-			quint8 nArg = 0;
+			sFilter += sBaseFilter.left( pos );
+			sBaseFilter.remove( 0, pos );
+			bool bSuccess = replace( sBaseFilter, lQuery, nArg );
 
-			// replace all relevant occurrences of <*something*
-			while ( pos != -1 );
-			{
-				sFilter += sBaseFilter.left( pos );
-				sBaseFilter.remove( 0, pos );
-				bool bSuccess = replace( sBaseFilter, lQuery, nArg );
-
-				pos = sBaseFilter.indexOf( '<', bSuccess ? 0 : 1 );
-			}
-			// add whats left of the base filter string to the newly generated filter
-			sFilter += sBaseFilter;
+			pos = sBaseFilter.indexOf( '<', bSuccess ? 0 : 1 );
+		}
+		// add whats left of the base filter string to the newly generated filter
+		sFilter += sBaseFilter;
 
 #if QT_VERSION >= 0x050000
-			QRegularExpression oRegExpFilter = QRegularExpression( sFilter );
-			return oRegExpFilter.match( sContent ).hasMatch();
+		QRegularExpression oRegExpFilter = QRegularExpression( sFilter );
+		return oRegExpFilter.match( sContent ).hasMatch();
 #else
-			QRegExp oRegExpFilter = QRegExp( sFilter );
-			return oRegExpFilter.exactMatch( sContent );
+		QRegExp oRegExpFilter = QRegExp( sFilter );
+		return oRegExpFilter.exactMatch( sContent );
 #endif
-		}
-		else
-		{
-			// This shouldn't happen, but it's covered anyway...
-			Q_ASSERT( false );
-
-#if QT_VERSION >= 0x050000
-			QRegularExpression oRegExpFilter = QRegularExpression( m_sContent );
-			return oRegExpFilter.match( sContent ).hasMatch();
-#else
-			QRegExp oRegExpFilter = QRegExp( m_sContent );
-			return oRegExpFilter.exactMatch( sContent );
-#endif
-		}
 	}
 	else
 	{
@@ -181,7 +167,8 @@ bool RegularExpressionRule::replace(QString& sReplace, const QList<QString>& lQu
 		sReplace.remove( 0, 2 );
 		if ( nCurrent < lQuery.size() )
 		{
-			sReplace = lQuery.at( nCurrent ) + "\\s*" + sReplace;
+			sReplace = ( nCurrent < lQuery.size() ? lQuery.at( nCurrent ) : QString() ) +
+					   "\\s*" + sReplace;
 		}
 		++nCurrent;
 		return true;
@@ -210,7 +197,8 @@ bool RegularExpressionRule::replace(QString& sReplace, const QList<QString>& lQu
 				sReplace.remove( 0, 3 );
 				if ( nArg < lQuery.size() )
 				{
-					sReplace = lQuery.at( nArg ) + "\\s*" + sReplace;
+					sReplace = ( nArg < lQuery.size() ? lQuery.at( nArg ) : QString() ) +
+							   "\\s*" + sReplace;
 				}
 				return true;
 			}

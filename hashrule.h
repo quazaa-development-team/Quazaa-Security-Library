@@ -40,6 +40,8 @@ class HashRule : public Rule
 private:
 	std::map< CHash::Algorithm, CHash > m_lmHashes;
 
+	// m_sContent contains a space separated list of the urns of all hashes
+
 public:
 	HashRule();
 
