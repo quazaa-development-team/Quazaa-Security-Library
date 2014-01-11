@@ -37,6 +37,7 @@
 
 #include "commonfunctions.h"
 
+#include "Misc/idprovider.h"
 #include "Misc/timedsignalqueue.h"
 
 namespace Security

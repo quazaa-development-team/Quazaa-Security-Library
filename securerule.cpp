@@ -44,9 +44,7 @@
 
 using namespace Security;
 
-ID           Rule::m_nLastID = 0;
-QMutex       Rule::m_oIDLock;
-std::set<ID> Rule::m_lsIDCheck;
+IDProvider<ID> Rule::m_oIDProvider;
 
 Rule::Rule() :
 	m_nToday( 0 ),
@@ -59,7 +57,7 @@ Rule::Rule() :
 	m_nAction = RuleAction::Deny;
 	m_idUUID  = QUuid::createUuid();
 
-	m_nGUIID  = generateID();
+	m_nGUIID  = m_oIDProvider.aquire();
 }
 
 Rule::Rule(const Rule& pRule)
@@ -75,12 +73,12 @@ Rule::Rule(const Rule& pRule)
 	m_sComment   = pRule.m_sComment;
 	m_bAutomatic = pRule.m_bAutomatic;
 
-	m_nGUIID     = generateID();
+	m_nGUIID     = m_oIDProvider.aquire();
 }
 
 Rule::~Rule()
 {
-	releaseID( m_nGUIID );
+	m_oIDProvider.release( m_nGUIID );
 }
 
 Rule* Rule::getCopy() const
@@ -691,37 +689,4 @@ void Rule::toXML(const Rule& oRule, QXmlStreamWriter& oXMLdocument)
 void Rule::toXML( QXmlStreamWriter& ) const
 {
 	Q_ASSERT( false );
-}
-
-ID Rule::generateID()
-{
-	m_oIDLock.lock();
-	static bool bNeedVerify = false;
-	bNeedVerify = !(++m_nLastID); // e.g. we got an overflow
-
-	// We only need to start checking the ID after the first overflow of m_nLastID.
-	if ( bNeedVerify )
-	{
-		while ( m_lsIDCheck.find( m_nLastID ) != m_lsIDCheck.end() )
-		{
-			++m_nLastID;
-		}
-	}
-
-	m_lsIDCheck.insert( m_nLastID );
-	ID nReturn = m_nLastID;
-
-	Q_ASSERT( m_lsIDCheck.find( m_nLastID ) != m_lsIDCheck.end() );
-
-	m_oIDLock.unlock();
-
-	return nReturn;
-}
-
-void Rule::releaseID(ID nID)
-{
-	m_oIDLock.lock();
-	if ( !m_lsIDCheck.erase( nID ) )
-		Q_ASSERT( false );
-	m_oIDLock.unlock();
 }
