@@ -2081,7 +2081,7 @@ void Manager::expireLater()
  */
 void Manager::remove(RuleVectorPos nVectorPos)
 {
-	qDebug() << "[Security] Starting to remove rule at position: " << QString::number(nVectorPos);
+	//qDebug() << "[Security] Starting to remove rule at position: " << QString::number(nVectorPos);
 
 	Q_ASSERT( nVectorPos >= 0 && nVectorPos < m_vRules.size() );
 

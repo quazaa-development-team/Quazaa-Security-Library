@@ -64,8 +64,6 @@
 #include "misscache.h"
 #include "sanitychecker.h"
 
-// TODO: Sanity checking for user agent rules not working
-
 // TODO: make sure the rule editing dialogue is protected when rules are removed.
 // TODO: use hashtable for single IPs
 // TODO: add defines for hit matching
@@ -74,7 +72,6 @@
 // TODO: handle m_bIsLoading and its locking more gracefully.
 // TODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
 // TODO: Enable/disable this according to the visibility within the GUI
-// TODO: user agent blocking case insensitive + partial matching
 // TODO: http://quazaa.sourceforge.net/index.php?option=com_jfusion&Itemid=4&jfile=viewtopic.php&f=8&t=201&view=unread#unread
 
 namespace Security
@@ -260,8 +257,6 @@ public:
 	 * @param bAutomatic : whether this was an automatic ban by Quazaa
 	 * @param sSender : string representation of the caller for debugging purposes
 	 */
-
-	// TODO: verify all ban calls
 	void            ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 						bool bMessage = true, const QString& sComment = "", bool bAutomatic = true
 #if SECURITY_LOG_BAN_SOURCES
