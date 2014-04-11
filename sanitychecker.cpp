@@ -88,7 +88,7 @@ bool SanityCecker::isNewlyDenied(const CEndPoint& oAddress)
  * @param lQuery : the query string
  * @return true if the hit is newly banned; false otherwise
  */
-bool SanityCecker::isNewlyDenied(const CQueryHit* const pHit, const QList<QString>& lQuery)
+bool SanityCecker::isNewlyDenied(const QueryHit* const pHit, const QList<QString>& lQuery)
 {
 	if ( !pHit )
 		return false;

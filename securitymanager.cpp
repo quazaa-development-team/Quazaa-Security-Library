@@ -602,7 +602,7 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
  * @param nMaxHashes : the maximum amount of hashes to add to the rule
  * @param sComment : comment; if blanc, a default comment is generated depending on nBanLength
  */
-void Manager::ban(const CQueryHit* const pHit, RuleTime::Time nBanLength, uint nMaxHashes,
+void Manager::ban(const QueryHit* const pHit, RuleTime::Time nBanLength, uint nMaxHashes,
 						const QString& sComment)
 {
 	if ( !pHit || !pHit->isValid() || pHit->m_lHashes.empty() )
@@ -863,7 +863,7 @@ bool Manager::isDenied(const CEndPoint& oAddress)
  * edit box of the GUI.
  * @return true if the IP is denied; false otherwise
  */
-bool Manager::isDenied(const CQueryHit* const pHit, const QList<QString> &lQuery)
+bool Manager::isDenied(const QueryHit* const pHit, const QList<QString> &lQuery)
 {
 	bool bReturn;
 
@@ -2381,7 +2381,7 @@ bool Manager::isAgentDeniedInternal(const QString& sUserAgent)
  * @param pHit : the query hit
  * @return true if the hit is denied; false otherwise
  */
-bool Manager::isDenied(const CQueryHit* const pHit)
+bool Manager::isDenied(const QueryHit* const pHit)
 {
 	if ( !pHit )
 		return false;

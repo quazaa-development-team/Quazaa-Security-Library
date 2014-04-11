@@ -191,7 +191,7 @@ bool HashRule::hashEquals(const HashRule& oRule) const
 	return true;
 }
 
-bool HashRule::match(const CQueryHit* const pHit) const
+bool HashRule::match(const QueryHit* const pHit) const
 {
 	return match( pHit->m_lHashes );
 }

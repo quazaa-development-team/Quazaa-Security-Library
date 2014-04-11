@@ -127,7 +127,7 @@ bool Rule::match(const CEndPoint&) const
 {
 	return false;
 }*/
-bool Rule::match(const CQueryHit* const) const
+bool Rule::match(const QueryHit* const) const
 {
 	return false;
 }

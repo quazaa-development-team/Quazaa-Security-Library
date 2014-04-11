@@ -51,7 +51,7 @@ public:
 	bool    getAll() const;
 
 	bool    match(const QString& sFileName) const; // called by  match(CQueryHit*)
-	bool    match(const CQueryHit* const pHit) const;
+	bool    match(const QueryHit* const pHit) const;
 
 	void    toXML(QXmlStreamWriter& oXMLdocument) const;
 };

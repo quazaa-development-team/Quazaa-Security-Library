@@ -126,7 +126,7 @@ bool ContentRule::match(const QString& sFileName) const
 	return false;
 }
 
-bool ContentRule::match(const CQueryHit* const pHit) const
+bool ContentRule::match(const QueryHit* const pHit) const
 {
 	if ( !pHit )
 		return false;
