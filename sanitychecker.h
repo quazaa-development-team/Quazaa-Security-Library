@@ -158,10 +158,10 @@ private:
 	 * @brief clearBatch unloads new rules from sanity check containers.
 	 * Locking: REQUIRES RW
 	 */
-	void            clearBatch();
+	void            clearBatch(bool bShutDown = false);
 
 	/**
-	 * @brief clear removes all rules.
+	 * @brief clear removes all rules. Only to be called on shutdown.
 	 * Locking: REQUIRES RW
 	 */
 	void            clear();

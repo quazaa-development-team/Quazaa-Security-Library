@@ -213,20 +213,20 @@ void SanityCecker::sanityCheckPerformed()
 	Q_ASSERT( m_bNewRulesLoaded );
 	Q_ASSERT( m_nPendingOperations > 0 );
 
-	if ( --m_nPendingOperations == 0 )
+	if ( --m_nPendingOperations )
+	{
+		if ( m_bVerboose )
+			postLogMessage( LogSeverity::Debug, tr( "A component finished with sanity checking. " )
+							+ tr( "Still waiting for %s other components to finish."
+								  ).arg( m_nPendingOperations ), true );
+	}
+	else
 	{
 		if ( m_bVerboose )
 			postLogMessage( LogSeverity::Debug, tr( "Sanity Check finished successfully. " ) +
 							tr( "Starting cleanup now." ), true );
 
 		clearBatch();
-	}
-	else
-	{
-		if ( m_bVerboose )
-			postLogMessage( LogSeverity::Debug, tr( "A component finished with sanity checking. " )
-							+ tr( "Still waiting for %s other components to finish."
-								  ).arg( m_nPendingOperations ), true );
 	}
 
 	m_oRWLock.unlock();
@@ -293,7 +293,7 @@ void SanityCecker::loadBatch()
  * @brief clearBatch unloads new rules from sanity check containers.
  * Locking: REQUIRES RW
  */
-void SanityCecker::clearBatch()
+void SanityCecker::clearBatch(bool bShutDown)
 {
 	Q_ASSERT( m_bNewRulesLoaded );
 	Q_ASSERT( !m_nPendingOperations );
@@ -311,7 +311,9 @@ void SanityCecker::clearBatch()
 	m_vLoadedRules.clear();
 
 #ifdef _DEBUG // use failsafe to abort sanity check only in debug version
-	if ( !m_idForceEoSC.isNull() )
+
+	// don't access the signalQueue on shutdown, as it might already have been deleted
+	if ( !m_idForceEoSC.isNull() && !bShutDown )
 	{
 		Q_ASSERT( signalQueue.pop( m_idForceEoSC ) );
 		m_idForceEoSC = QUuid();
@@ -329,7 +331,7 @@ void SanityCecker::clear()
 	m_nPendingOperations = 0;
 
 	if ( m_bNewRulesLoaded )
-		clearBatch();
+		clearBatch( true );
 
 	while ( m_lqNewRules.size() )
 	{
