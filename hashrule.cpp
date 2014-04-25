@@ -200,15 +200,15 @@ bool HashRule::match(const HashVector& lHashes) const
 	std::map< CHash::Algorithm, CHash >::const_iterator it;
 	quint8 nCount = 0;
 
-	foreach ( CHash oHash, lHashes )
+	for ( size_t i = 0, nSize = lHashes.size(); i < nSize; ++i )
 	{
-		it = m_lmHashes.find( oHash.getAlgorithm() );
+		it = m_lmHashes.find( lHashes[i].getAlgorithm() );
 
 		if ( it != m_lmHashes.end() )
 		{
 			++nCount;
 
-			if ( oHash != (*it).second )
+			if ( lHashes[i] != (*it).second )
 				return false;
 		}
 	}

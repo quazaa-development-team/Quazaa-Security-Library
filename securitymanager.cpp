@@ -236,9 +236,9 @@ bool Manager::add(Rule* pRule)
 		{
 			// If there isn't a rule for this content or there is a rule for
 			// similar but not 100% identical content, add hashes to map.
-			foreach ( CHash oHash, vHashes )
+			for ( size_t i = 0, nSize = vHashes.size(); i < nSize; ++i )
 			{
-				m_lmmHashes.insert( HashPair( qHash( oHash.rawValue() ), (HashRule*)pRule ) );
+				m_lmmHashes.insert( HashPair( qHash( vHashes[i].rawValue() ), (HashRule*)pRule ) );
 			}
 
 			bNewHit	= true;
@@ -683,9 +683,9 @@ void Manager::ban(const QueryHit* const pHit, RuleTime::Time nBanLength, uint nM
 
 		HashVector hashes;
 		hashes.reserve( pHit->m_lHashes.size() );
-		foreach( CHash oHash, pHit->m_lHashes )
+		for ( size_t i = 0, nSize = pHit->m_lHashes.size(); i < nSize; ++i )
 		{
-			hashes.push_back( oHash );
+			hashes.push_back( pHit->m_lHashes[i] );
 		}
 
 		pRule->setHashes( hashes );
@@ -2026,19 +2026,19 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
  * @param hashes : a vector of hashes to look for
  * @return the rule position
  */
-Manager::RuleVectorPos Manager::getHash(const HashVector& hashes) const
+Manager::RuleVectorPos Manager::getHash(const HashVector& vHashes) const
 {
 	// We are not searching for any hash. :)
-	if ( hashes.empty() )
+	if ( vHashes.empty() )
 		return m_vRules.size();
 
 	std::pair<HashIterator, HashIterator> oBounds;
 
 	// For each hash that has been given to the function:
-	foreach ( CHash oHash, hashes )
+	for ( size_t i = 0, nSize = vHashes.size(); i < nSize; ++i )
 	{
 		// 1. Check whether a corresponding rule can be found in our lookup container.
-		oBounds = m_lmmHashes.equal_range( qHash( oHash.rawValue() ) );
+		oBounds = m_lmmHashes.equal_range( qHash( vHashes[i].rawValue() ) );
 
 		HashIterator it = oBounds.first;
 
@@ -2046,7 +2046,7 @@ Manager::RuleVectorPos Manager::getHash(const HashVector& hashes) const
 		// (this is important for weaker hashes to deal correctly with hash collisions)
 		while ( it != oBounds.second )
 		{
-			if ( (*it).second->match( hashes ) )
+			if ( (*it).second->match( vHashes ) )
 				return getUUID( (*it).second->m_idUUID );
 			++it;
 		}
@@ -2145,9 +2145,9 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 		HashRuleMap::iterator it;
 		std::pair<HashRuleMap::iterator,HashRuleMap::iterator> oBounds;
-		foreach ( CHash oHash, vHashes )
+		for ( size_t i = 0, nSize = vHashes.size(); i < nSize; ++i )
 		{
-			oBounds = m_lmmHashes.equal_range( qHash( oHash.rawValue() ) );
+			oBounds = m_lmmHashes.equal_range( qHash( vHashes[i].rawValue() ) );
 			it = oBounds.first;
 
 			while ( it != oBounds.second )
