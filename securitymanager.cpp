@@ -1149,7 +1149,7 @@ bool Manager::save(bool bForceSaving) const
 
 	m_oRWLock.lockForRead();
 	m_bUnsaved   = false;
-	bool bReturn = common::securedSaveFile( sPath, "security.dat", Components::Security,
+	bool bReturn = common::securedSaveFile( sPath, "security.dat", Component::Security,
 											this, &Security::Manager::writeToFile );
 	m_oRWLock.unlock();
 

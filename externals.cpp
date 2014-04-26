@@ -31,7 +31,7 @@
 
 using namespace Security;
 
-void Security::postLogMessage(LogSeverity::Severity eSeverity, QString sMessage, bool bDebug)
+void Security::postLogMessage(LogSeverity eSeverity, QString sMessage, bool bDebug)
 {
 	switch ( eSeverity )
 	{
@@ -53,12 +53,12 @@ void Security::postLogMessage(LogSeverity::Severity eSeverity, QString sMessage,
 
 	if ( bDebug )
 	{
-		sMessage = systemLog.msgFromComponent( Components::Security ) + sMessage;
+		sMessage = systemLog.msgFromComponent( Component::Security ) + sMessage;
 		qDebug() << sMessage.toLocal8Bit().constData();
 	}
 	else
 	{
-		systemLog.postLog( eSeverity, Components::Security, sMessage );
+		systemLog.postLog( eSeverity, Component::Security, sMessage );
 	}
 }
 
