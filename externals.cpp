@@ -64,7 +64,7 @@ void Security::postLogMessage(LogSeverity eSeverity, QString sMessage, bool bDeb
 
 QString Security::dataPath()
 {
-	return CQuazaaGlobals::DATA_PATH();
+	return QuazaaGlobals::DATA_PATH();
 }
 
 Security::SecuritySettings securitySettigs;
