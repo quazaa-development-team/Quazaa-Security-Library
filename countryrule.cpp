@@ -49,7 +49,7 @@ bool CountryRule::parseContent(const QString& sContent)
 	return false;
 }
 
-bool CountryRule::match(const CEndPoint& oAddress) const
+bool CountryRule::match(const EndPoint& oAddress) const
 {
 	Q_ASSERT( !oAddress.isNull() && m_nType == RuleType::Country );
 

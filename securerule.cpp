@@ -119,7 +119,7 @@ QString Rule::getContentString() const
 	return m_sContent;
 }
 
-bool Rule::match(const CEndPoint&) const
+bool Rule::match(const EndPoint&) const
 {
 	return false;
 }

@@ -40,7 +40,7 @@ Rule* IPRule::getCopy() const
 
 bool IPRule::parseContent(const QString& sContent)
 {
-	CEndPoint oAddress;
+	EndPoint oAddress;
 	if ( oAddress.setAddress( sContent ) )
 	{
 		m_oIP = oAddress;
@@ -61,7 +61,7 @@ void IPRule::setIP(const QHostAddress& oIP )
 	m_sContent = oIP.toString();
 }
 
-bool IPRule::match(const CEndPoint& oAddress) const
+bool IPRule::match(const EndPoint& oAddress) const
 {
 	Q_ASSERT( !oAddress.isNull() && m_nType == RuleType::IPAddress );
 

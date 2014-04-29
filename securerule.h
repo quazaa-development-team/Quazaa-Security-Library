@@ -134,7 +134,7 @@ public:
 	RuleType::Type  type() const;
 
 	// Check content for hits
-	virtual bool    match(const CEndPoint& oAddress) const;
+	virtual bool    match(const EndPoint& oAddress) const;
 	//virtual bool    match(const QString& sContent) const;
 	virtual bool    match(const QueryHit* const pHit) const;
 	virtual bool    match(const QList<QString>& lQuery, const QString& sContent) const;

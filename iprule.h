@@ -38,7 +38,7 @@ namespace Security
 class IPRule : public Rule
 {
 private:
-	// Must not be CEndPoint because otherwise the port interfers in == operators etc.
+	// Must not be EndPoint because otherwise the port interfers in == operators etc.
 	QHostAddress m_oIP;
 
 public:
@@ -50,7 +50,7 @@ public:
 	QHostAddress    IP() const;
 	void            setIP(const QHostAddress& oIP);
 
-	bool        match(const CEndPoint& oAddress) const;
+	bool        match(const EndPoint& oAddress) const;
 	void        toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 

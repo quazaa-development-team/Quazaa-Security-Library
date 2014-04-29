@@ -94,7 +94,7 @@ public:
 	 * @param oAddress : the IP to be checked
 	 * @return true if the IP is newly banned; false otherwise
 	 */
-	bool            isNewlyDenied(const CEndPoint& oAddress);
+	bool            isNewlyDenied(const EndPoint& oAddress);
 
 	/**
 	 * @brief isNewlyDenied checks a hit against the list of loaded new security rules.

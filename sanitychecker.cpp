@@ -44,7 +44,7 @@ SanityCecker::~SanityCecker()
  * @param oAddress : the IP to be checked
  * @return true if the IP is newly banned; false otherwise
  */
-bool SanityCecker::isNewlyDenied(const CEndPoint& oAddress)
+bool SanityCecker::isNewlyDenied(const EndPoint& oAddress)
 {
 	if ( oAddress.isNull() )
 		return false;

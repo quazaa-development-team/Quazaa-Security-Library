@@ -281,7 +281,7 @@ public:
 	 * @param oAddress : the IP
 	 * @return true if the IP is denied; false otherwise
 	 */
-	bool            isDenied(const CEndPoint& oAddress);
+	bool            isDenied(const EndPoint& oAddress);
 
 	/**
 	 * @brief Manager::isDenied checks a hit against the security database.
@@ -650,7 +650,7 @@ public:
 	 * @param oAddress: the IP
 	 * @return true if the IP is within a private range; false otherwise
 	 */
-	bool            isPrivate(const CEndPoint& oAddress);
+	bool            isPrivate(const EndPoint& oAddress);
 
 #if SECURITY_DISABLE_IS_PRIVATE_OLD
 	/**
@@ -658,14 +658,14 @@ public:
 	 * @param oAddress : the IP
 	 * @return true if the IP is within a private range; false otherwise
 	 */
-	bool            isPrivateOld(const CEndPoint& oAddress);
+	bool            isPrivateOld(const EndPoint& oAddress);
 
 	/**
 	 * @brief Manager::isPrivateNew checks an IP the new way for whether it's private.
 	 * @param oAddress : the IP
 	 * @return true if the IP is within a private range; false otherwise
 	 */
-	bool            isPrivateNew(const CEndPoint& oAddress);
+	bool            isPrivateNew(const EndPoint& oAddress);
 #endif // SECURITY_DISABLE_IS_PRIVATE_OLD
 
 	/**
@@ -674,7 +674,7 @@ public:
 	 * @return first range with a oAddress >= startIP(), (e.g. the only range that might be
 	 * containing the given IP); m_vIPRanges.size() if no such range exists.
 	 */
-	IPRangeVectorPos findRangeForMerging(const CEndPoint& oAddress);
+	IPRangeVectorPos findRangeForMerging(const EndPoint& oAddress);
 
 	/**
 	 * @brief findRangeMatch allows to find the range rule containing a given IP.
@@ -682,7 +682,7 @@ public:
 	 * @param nPos : a value by reference that will be set to the rule pos within the vector
 	 * @return the range rule matching oAddress; NULL if no such range rule exists.
 	 */
-	IPRangeRule* findRangeMatch(const CEndPoint& oAddress, IPRangeVectorPos& nPos);
+	IPRangeRule* findRangeMatch(const EndPoint& oAddress, IPRangeVectorPos& nPos);
 
 	/**
 	 * @brief getRWIterator converts a const_iterator to an iterator

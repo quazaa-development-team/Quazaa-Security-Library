@@ -707,7 +707,7 @@ void Manager::ban(const QueryHit* const pHit, RuleTime::Time nBanLength, uint nM
  * @param oAddress : the IP
  * @return true if the IP is denied; false otherwise
  */
-bool Manager::isDenied(const CEndPoint& oAddress)
+bool Manager::isDenied(const EndPoint& oAddress)
 {
 	if ( oAddress.isNull() )
 	{
@@ -2511,7 +2511,7 @@ bool Manager::isDenied(const QList<QString>& lQuery, const QString& sContent)
  * @param oAddress: the IP
  * @return true if the IP is within a private range; false otherwise
  */
-bool Manager::isPrivate(const CEndPoint& oAddress)
+bool Manager::isPrivate(const EndPoint& oAddress)
 {
 #if SECURITY_DISABLE_IS_PRIVATE_OLD
 #ifdef _DEBUG
@@ -2529,56 +2529,56 @@ bool Manager::isPrivate(const CEndPoint& oAddress)
  * @param oAddress : the IP
  * @return true if the IP is within a private range; false otherwise
  */
-bool Manager::isPrivateOld(const CEndPoint& oAddress)
+bool Manager::isPrivateOld(const EndPoint& oAddress)
 {
 	if ( oAddress.protocol() == QAbstractSocket::IPv6Protocol )
 		return false;
 
-	if( oAddress <= CEndPoint("0.255.255.255") )
+	if( oAddress <= EndPoint("0.255.255.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("10.0.0.0") &&
-		oAddress <= CEndPoint("10.255.255.255") )
+	if( oAddress >= EndPoint("10.0.0.0") &&
+		oAddress <= EndPoint("10.255.255.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("100.64.0.0") &&
-		oAddress <= CEndPoint("100.127.255.255") )
+	if( oAddress >= EndPoint("100.64.0.0") &&
+		oAddress <= EndPoint("100.127.255.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("127.0.0.0") &&
-		oAddress <= CEndPoint("127.255.255.255") )
+	if( oAddress >= EndPoint("127.0.0.0") &&
+		oAddress <= EndPoint("127.255.255.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("169.254.0.0") &&
-		oAddress <= CEndPoint("169.254.255.255") )
+	if( oAddress >= EndPoint("169.254.0.0") &&
+		oAddress <= EndPoint("169.254.255.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("172.16.0.0") &&
-		oAddress <= CEndPoint("172.31.255.255") )
+	if( oAddress >= EndPoint("172.16.0.0") &&
+		oAddress <= EndPoint("172.31.255.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("192.0.0.0") &&
-		oAddress <= CEndPoint("192.0.2.255") )
+	if( oAddress >= EndPoint("192.0.0.0") &&
+		oAddress <= EndPoint("192.0.2.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("192.168.0.0") &&
-		oAddress <= CEndPoint("192.168.255.255") )
+	if( oAddress >= EndPoint("192.168.0.0") &&
+		oAddress <= EndPoint("192.168.255.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("198.18.0.0") &&
-		oAddress <= CEndPoint("198.19.255.255") )
+	if( oAddress >= EndPoint("198.18.0.0") &&
+		oAddress <= EndPoint("198.19.255.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("198.51.100.0") &&
-		oAddress <= CEndPoint("198.51.100.255") )
+	if( oAddress >= EndPoint("198.51.100.0") &&
+		oAddress <= EndPoint("198.51.100.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("203.0.113.0") &&
-		oAddress <= CEndPoint("203.0.113.255") )
+	if( oAddress >= EndPoint("203.0.113.0") &&
+		oAddress <= EndPoint("203.0.113.255") )
 		return true;
 
-	if( oAddress >= CEndPoint("240.0.0.0") &&
-		oAddress <= CEndPoint("255.255.255.255") )
+	if( oAddress >= EndPoint("240.0.0.0") &&
+		oAddress <= EndPoint("255.255.255.255") )
 		return true;
 
 	return false;
@@ -2589,7 +2589,7 @@ bool Manager::isPrivateOld(const CEndPoint& oAddress)
  * @param oAddress : the IP
  * @return true if the IP is within a private range; false otherwise
  */
-bool Manager::isPrivateNew(const CEndPoint& oAddress)
+bool Manager::isPrivateNew(const EndPoint& oAddress)
 {
 #endif // SECURITY_DISABLE_IS_PRIVATE_OLD
 	if ( oAddress.protocol() == QAbstractSocket::IPv6Protocol )
@@ -2639,7 +2639,7 @@ bool Manager::isPrivateNew(const CEndPoint& oAddress)
  * @return first range with a oAddress >= startIP(), (e.g. the only range that might be
  * containing the given IP); m_vIPRanges.size() if no such range exists.
  */
-Manager::IPRangeVectorPos Manager::findRangeForMerging(const CEndPoint& oAddress)
+Manager::IPRangeVectorPos Manager::findRangeForMerging(const EndPoint& oAddress)
 {
 	const IPRangeVectorPos nSize = m_vIPRanges.size();
 
@@ -2709,7 +2709,7 @@ Manager::IPRangeVectorPos Manager::findRangeForMerging(const CEndPoint& oAddress
  * @param nPos : a reference value that will be set to the rule pos within the vector (optional)
  * @return the range rule matching oAddress; NULL if no such range rule exists.
  */
-IPRangeRule* Manager::findRangeMatch(const CEndPoint& oAddress, IPRangeVectorPos& nPos)
+IPRangeRule* Manager::findRangeMatch(const EndPoint& oAddress, IPRangeVectorPos& nPos)
 {
 	const IPRangeVectorPos nSize = m_vIPRanges.size();
 

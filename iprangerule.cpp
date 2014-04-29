@@ -44,7 +44,7 @@ bool IPRangeRule::parseContent(const QString& sContent)
 {
 	QStringList lAddresses = sContent.split("-");
 
-	CEndPoint oStartAddress, oEndAddress;
+	EndPoint oStartAddress, oEndAddress;
 	if ( lAddresses.size() == 2 &&
 		 oStartAddress.setAddress( lAddresses.at( 0 ) ) &&
 		 oEndAddress.setAddress( lAddresses.at( 1 ) ) )
@@ -60,12 +60,12 @@ bool IPRangeRule::parseContent(const QString& sContent)
 	return false;
 }
 
-CEndPoint IPRangeRule::startIP() const
+EndPoint IPRangeRule::startIP() const
 {
 	return m_oStartIP;
 }
 
-CEndPoint IPRangeRule::endIP() const
+EndPoint IPRangeRule::endIP() const
 {
 	return m_oEndIP;
 }
@@ -160,7 +160,7 @@ IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 	return pReturn;
 }
 
-bool IPRangeRule::contains(const CEndPoint& oAddress) const
+bool IPRangeRule::contains(const EndPoint& oAddress) const
 {
 #ifdef _DEBUG
 	Q_ASSERT( m_nType == RuleType::IPAddressRange );
@@ -172,7 +172,7 @@ bool IPRangeRule::contains(const CEndPoint& oAddress) const
 	return false;
 }
 
-bool IPRangeRule::match(const CEndPoint& oAddress) const
+bool IPRangeRule::match(const EndPoint& oAddress) const
 {
 	if ( oAddress >= m_oStartIP && oAddress <= m_oEndIP )
 		return true;

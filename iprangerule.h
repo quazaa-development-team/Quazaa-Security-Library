@@ -38,8 +38,8 @@ namespace Security
 class IPRangeRule : public Rule
 {
 private:
-	CEndPoint m_oStartIP;
-	CEndPoint m_oEndIP;
+	EndPoint m_oStartIP;
+	EndPoint m_oEndIP;
 
 public:
 	IPRangeRule();
@@ -48,8 +48,8 @@ public:
 
 	bool            parseContent(const QString& sContent);
 
-	CEndPoint       startIP() const;
-	CEndPoint       endIP() const;
+	EndPoint       startIP() const;
+	EndPoint       endIP() const;
 
 	/**
 	 * @brief merge merges pOther into this rule.
@@ -62,8 +62,8 @@ public:
 	 */
 	IPRangeRule*    merge(IPRangeRule*& pOther);
 
-	bool            match(const CEndPoint& oAddress) const;
-	bool            contains(const CEndPoint& oAddress) const;
+	bool            match(const EndPoint& oAddress) const;
+	bool            contains(const EndPoint& oAddress) const;
 
 	void            toXML(QXmlStreamWriter& oXMLdocument) const;
 };

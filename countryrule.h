@@ -46,7 +46,7 @@ public:
 
 	bool    parseContent(const QString& sContent);
 
-	bool    match(const CEndPoint& oAddress) const;
+	bool    match(const EndPoint& oAddress) const;
 	void    toXML(QXmlStreamWriter& oXMLdocument) const;
 };
 
