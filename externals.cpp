@@ -76,7 +76,7 @@ void Security::SecuritySettings::start()
 
 #ifndef QUAZAA_SETUP_UNIT_TESTS
 	// Make sure securityManager is informed about application shutdown.
-	connect( MainWindow, SIGNAL( shutDown() ), &securityManager, SLOT( shutDown() ) );
+	connect( mainWindow, SIGNAL( shutDown() ), &securityManager, SLOT( shutDown() ) );
 #endif
 
 	settingsChanged();
