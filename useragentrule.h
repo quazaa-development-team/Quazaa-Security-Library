@@ -56,17 +56,17 @@ public:
 	UserAgentRule();
 	Rule*   getCopy() const;
 
-	bool    operator==(const Rule& pRule) const;
+	bool    operator==( const Rule& pRule ) const;
 
-	bool    parseContent(const QString& sContent);
+	bool    parseContent( const QString& sContent );
 
-	void    setRegExp(bool bRegExp);
+	void    setRegExp( bool bRegExp );
 	bool    getRegExp() const;
 
 	// partial and complete string matching as well as regEx matching
-	bool    match(const QString& sUserAgent) const;
+	bool    match( const QString& sUserAgent ) const;
 
-	void    toXML(QXmlStreamWriter& oXMLdocument) const;
+	void    toXML( QXmlStreamWriter& oXMLdocument ) const;
 };
 
 }

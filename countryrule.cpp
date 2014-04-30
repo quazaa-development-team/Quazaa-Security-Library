@@ -39,7 +39,7 @@ Rule* CountryRule::getCopy() const
 	return new CountryRule( *this );
 }
 
-bool CountryRule::parseContent(const QString& sContent)
+bool CountryRule::parseContent( const QString& sContent )
 {
 	if ( geoIP.countryNameFromCode( sContent ) != "Unknown" )
 	{
@@ -49,17 +49,19 @@ bool CountryRule::parseContent(const QString& sContent)
 	return false;
 }
 
-bool CountryRule::match(const EndPoint& oAddress) const
+bool CountryRule::match( const EndPoint& oAddress ) const
 {
 	Q_ASSERT( !oAddress.isNull() && m_nType == RuleType::Country );
 
 	if ( m_sContent == oAddress.country() )
+	{
 		return true;
+	}
 
 	return false;
 }
 
-void CountryRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void CountryRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 {
 	Q_ASSERT( m_nType == RuleType::Country );
 

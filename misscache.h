@@ -53,7 +53,7 @@ public:
 
 	struct IPv4EntrySort
 	{
-		bool operator()(const IPv4Entry& first, const IPv4Entry& second) const
+		bool operator()( const IPv4Entry& first, const IPv4Entry& second ) const
 		{
 			return first.second < second.second;
 		}
@@ -61,7 +61,7 @@ public:
 
 	struct IPv6EntrySort
 	{
-		bool operator()(const IPv6Entry& first, const IPv6Entry& second) const
+		bool operator()( const IPv6Entry& first, const IPv6Entry& second ) const
 		{
 			// second half of IPv6 is to be expected to be more diverse than first half
 			return first.second.data[1] < second.second.data[1];
@@ -90,7 +90,7 @@ public:
 	 * @param tNow : the time
 	 * @return the IPv4Entry
 	 */
-	static IPv4Entry qHostAddressToIP4(const QHostAddress& oIP, const quint32 tNow = 0);
+	static IPv4Entry qHostAddressToIP4( const QHostAddress& oIP, const quint32 tNow = 0 );
 
 	/**
 	 * @brief qHostAddressToIP6 converts an IP and a time to an IPv6Entry
@@ -98,14 +98,14 @@ public:
 	 * @param tNow : the time
 	 * @return the IPv6Entry
 	 */
-	static IPv6Entry qHostAddressToIP6(const QHostAddress& oIP, const quint32 tNow = 0);
+	static IPv6Entry qHostAddressToIP6( const QHostAddress& oIP, const quint32 tNow = 0 );
 
 	/**
 	 * @brief qipv6addrToIPv6Addr onverts an Q_IPV6ADDR struct to an IPv6Addr
 	 * @param qip6 : the Q_IPV6ADDR struct
 	 * @return the IPv6Addr
 	 */
-	static IPv6Addr qipv6addrToIPv6Addr(const Q_IPV6ADDR& qip6);
+	static IPv6Addr qipv6addrToIPv6Addr( const Q_IPV6ADDR& qip6 );
 
 public:
 	/**
@@ -120,21 +120,21 @@ public:
 	 * IPv6 entries in the cache.
 	 * @return the number of IPs in the cache
 	 */
-	uint size(QAbstractSocket::NetworkLayerProtocol eProtocol =
-			  QAbstractSocket::UnknownNetworkLayerProtocol) const;
+	uint size( QAbstractSocket::NetworkLayerProtocol eProtocol =
+				   QAbstractSocket::UnknownNetworkLayerProtocol ) const;
 
 	/**
 	 * @brief insert allows to insert an IP into the cache
 	 * @param oIP : the IP
 	 * @param tNow : the current time
 	 */
-	void insert(const QHostAddress& oIP, const quint32 tNow);
+	void insert( const QHostAddress& oIP, const quint32 tNow );
 
 	/**
 	 * @brief erase removes a specified IP from the cache
 	 * @param oIP : the IP
 	 */
-	void erase(const QHostAddress& oIP);
+	void erase( const QHostAddress& oIP );
 
 	/**
 	 * @brief clear removes all IPs from the cache
@@ -146,7 +146,7 @@ public:
 	 * @param oIP : the IP
 	 * @return true if the IP could be found; false otherwise
 	 */
-	bool check(const QHostAddress& oIP) const;
+	bool check( const QHostAddress& oIP ) const;
 
 	/**
 	 * @brief evaluateUsage recalculates the maximal cache size etc.

@@ -27,22 +27,22 @@
 
 using namespace Security;
 
-MissCache::IPv4Entry MissCache::qHostAddressToIP4(const QHostAddress& oIP, const quint32 tNow)
+MissCache::IPv4Entry MissCache::qHostAddressToIP4( const QHostAddress& oIP, const quint32 tNow )
 {
 	return IPv4Entry( tNow, oIP.toIPv4Address() );
 }
 
-MissCache::IPv6Entry MissCache::qHostAddressToIP6(const QHostAddress& oIP, const quint32 tNow)
+MissCache::IPv6Entry MissCache::qHostAddressToIP6( const QHostAddress& oIP, const quint32 tNow )
 {
 	return IPv6Entry( tNow, qipv6addrToIPv6Addr( oIP.toIPv6Address() ) );
 }
 
-MissCache::IPv6Addr MissCache::qipv6addrToIPv6Addr(const Q_IPV6ADDR& qip6)
+MissCache::IPv6Addr MissCache::qipv6addrToIPv6Addr( const Q_IPV6ADDR& qip6 )
 {
 	IPv6Addr ipReturn;
 
-	ipReturn.data[0] = ((quint64*)&qip6)[0];
-	ipReturn.data[1] = ((quint64*)&qip6)[1];
+	ipReturn.data[0] = ( ( quint64* )&qip6 )[0];
+	ipReturn.data[1] = ( ( quint64* )&qip6 )[1];
 
 	return ipReturn;
 }
@@ -56,24 +56,24 @@ MissCache::MissCache() :
 {
 }
 
-uint MissCache::size(QAbstractSocket::NetworkLayerProtocol eProtocol) const
+uint MissCache::size( QAbstractSocket::NetworkLayerProtocol eProtocol ) const
 {
 	uint nReturn;
 
 	m_oSection.lock();
-	switch( eProtocol )
+	switch ( eProtocol )
 	{
 	case QAbstractSocket::IPv4Protocol:
 	{
-		nReturn = (uint)m_lsIPv4Cache.size();
+		nReturn = ( uint )m_lsIPv4Cache.size();
 	}
 	case QAbstractSocket::IPv6Protocol:
 	{
-		nReturn = (uint)m_lsIPv6Cache.size();
+		nReturn = ( uint )m_lsIPv6Cache.size();
 	}
 	case QAbstractSocket::UnknownNetworkLayerProtocol:
 	{
-		nReturn = (uint)m_lsIPv4Cache.size() + (uint)m_lsIPv6Cache.size();
+		nReturn = ( uint )m_lsIPv4Cache.size() + ( uint )m_lsIPv6Cache.size();
 	}
 	default:
 		qDebug() << QString( "Cannot handle protocol %1 in miss cache." ).arg( eProtocol );
@@ -84,7 +84,7 @@ uint MissCache::size(QAbstractSocket::NetworkLayerProtocol eProtocol) const
 	return nReturn;
 }
 
-void MissCache::insert(const QHostAddress& oIP, const quint32 tNow)
+void MissCache::insert( const QHostAddress& oIP, const quint32 tNow )
 {
 	Q_ASSERT( !oIP.isNull() );
 
@@ -92,12 +92,14 @@ void MissCache::insert(const QHostAddress& oIP, const quint32 tNow)
 	{
 		m_oSection.lock();
 
-		switch( oIP.protocol() )
+		switch ( oIP.protocol() )
 		{
 		case QAbstractSocket::IPv4Protocol:
 		{
 			if ( !m_tOldestIP4Entry )
+			{
 				m_tOldestIP4Entry = tNow;
+			}
 
 			m_lsIPv4Cache.insert( qHostAddressToIP4( oIP, tNow ) );
 
@@ -110,7 +112,9 @@ void MissCache::insert(const QHostAddress& oIP, const quint32 tNow)
 		case QAbstractSocket::IPv6Protocol:
 		{
 			if ( !m_tOldestIP6Entry )
+			{
 				m_tOldestIP6Entry = tNow;
+			}
 
 			m_lsIPv6Cache.insert( qHostAddressToIP6( oIP, tNow ) );
 
@@ -128,7 +132,7 @@ void MissCache::insert(const QHostAddress& oIP, const quint32 tNow)
 	}
 }
 
-void MissCache::erase(const QHostAddress& oIP)
+void MissCache::erase( const QHostAddress& oIP )
 {
 	if ( m_bUseMissCache )
 	{
@@ -164,13 +168,13 @@ void MissCache::clear()
 	m_oSection.unlock();
 }
 
-bool MissCache::check(const QHostAddress& oIP) const
+bool MissCache::check( const QHostAddress& oIP ) const
 {
 	bool bReturn = false;
 
 	m_oSection.lock();
 
-	switch( oIP.protocol() )
+	switch ( oIP.protocol() )
 	{
 	case QAbstractSocket::IPv4Protocol:
 	{
@@ -197,8 +201,8 @@ void MissCache::evaluateUsage()
 	//       contain a large number of rules in 99% of the use cases.
 	//       Also, we don't need a lock here as the negative impasct of an erroneous value at this
 	//       place is negligible.
-	uint nIPMap       = (uint)securityManager.m_lmIPs.size();
-	uint nIPRanges    = (uint)securityManager.m_vIPRanges.size();
+	uint nIPMap       = ( uint )securityManager.m_lmIPs.size();
+	uint nIPRanges    = ( uint )securityManager.m_vIPRanges.size();
 
 	m_oSection.lock();
 
@@ -247,7 +251,7 @@ void MissCache::expire()
 
 		while ( it != m_lsIPv4Cache.end() )
 		{
-			if ( (*it).first < m_tOldestIP4Entry )
+			if ( ( *it ).first < m_tOldestIP4Entry )
 			{
 				m_lsIPv4Cache.erase( it );
 				it = m_lsIPv4Cache.begin();
@@ -267,7 +271,7 @@ void MissCache::expire()
 
 		while ( it != m_lsIPv6Cache.end() )
 		{
-			if ( (*it).first < m_tOldestIP6Entry )
+			if ( ( *it ).first < m_tOldestIP6Entry )
 			{
 				m_lsIPv6Cache.erase( it );
 				it = m_lsIPv6Cache.begin();

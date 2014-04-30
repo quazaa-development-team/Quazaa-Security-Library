@@ -76,7 +76,7 @@ public:
 	 * Locking: RW + R on the rule.
 	 * @param pRule : the rule.
 	 */
-	inline void     push(Rule* pRule);
+	inline void     push( Rule* pRule );
 
 	/**
 	 * @brief lockForWrite allocates a lock for reading.
@@ -94,7 +94,7 @@ public:
 	 * @param oAddress : the IP to be checked
 	 * @return true if the IP is newly banned; false otherwise
 	 */
-	bool            isNewlyDenied(const EndPoint& oAddress);
+	bool            isNewlyDenied( const EndPoint& oAddress );
 
 	/**
 	 * @brief isNewlyDenied checks a hit against the list of loaded new security rules.
@@ -103,7 +103,7 @@ public:
 	 * @param lQuery : the query string
 	 * @return true if the hit is newly banned; false otherwise
 	 */
-	bool            isNewlyDenied(const QueryHit* const pHit, const QList<QString>& lQuery);
+	bool            isNewlyDenied( const QueryHit* const pHit, const QList<QString>& lQuery );
 
 signals:
 	/**
@@ -117,7 +117,7 @@ signals:
 	 * @param ruleID : the rule GUI ID
 	 * @param nCount : the number of hits
 	 */
-	void            hit(ID ruleID, uint nCount);
+	void            hit( ID ruleID, uint nCount );
 
 public slots:
 	/**
@@ -158,7 +158,7 @@ private:
 	 * @brief clearBatch unloads new rules from sanity check containers.
 	 * Locking: REQUIRES RW
 	 */
-	void            clearBatch(bool bShutDown = false);
+	void            clearBatch( bool bShutDown = false );
 
 	/**
 	 * @brief clear removes all rules. Only to be called on shutdown.
@@ -172,7 +172,7 @@ private:
  * Locking: QUEUE + REQUIRES R on the rule.
  * @param pRule : the rule.
  */
-void SanityCecker::push(Rule* pRule)
+void SanityCecker::push( Rule* pRule )
 {
 	m_oQueueLock.lock();
 	m_lqNewRules.push( pRule->getCopy() );

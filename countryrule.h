@@ -44,10 +44,10 @@ public:
 	CountryRule();
 	Rule*   getCopy() const;
 
-	bool    parseContent(const QString& sContent);
+	bool    parseContent( const QString& sContent );
 
-	bool    match(const EndPoint& oAddress) const;
-	void    toXML(QXmlStreamWriter& oXMLdocument) const;
+	bool    match( const EndPoint& oAddress ) const;
+	void    toXML( QXmlStreamWriter& oXMLdocument ) const;
 };
 
 }

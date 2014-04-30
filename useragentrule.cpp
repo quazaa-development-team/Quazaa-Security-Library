@@ -39,12 +39,12 @@ Rule* UserAgentRule::getCopy() const
 	return new UserAgentRule( *this );
 }
 
-bool UserAgentRule::operator==(const Rule& pRule) const
+bool UserAgentRule::operator==( const Rule& pRule ) const
 {
-	return Rule::operator==( pRule ) && m_bRegExp == ((UserAgentRule*)&pRule)->m_bRegExp;
+	return Rule::operator==( pRule ) && m_bRegExp == ( ( UserAgentRule* )&pRule )->m_bRegExp;
 }
 
-bool UserAgentRule::parseContent(const QString& sContent)
+bool UserAgentRule::parseContent( const QString& sContent )
 {
 	m_sContent = sContent.trimmed();
 
@@ -60,7 +60,7 @@ bool UserAgentRule::parseContent(const QString& sContent)
 	return true;
 }
 
-void UserAgentRule::setRegExp(bool bRegExp)
+void UserAgentRule::setRegExp( bool bRegExp )
 {
 	m_bRegExp = bRegExp;
 
@@ -79,11 +79,11 @@ bool UserAgentRule::getRegExp() const
 	return m_bRegExp;
 }
 
-bool UserAgentRule::match(const QString& sUserAgent) const
+bool UserAgentRule::match( const QString& sUserAgent ) const
 {
 	Q_ASSERT( m_nType == RuleType::UserAgent );
 
-	if( m_bRegExp )
+	if ( m_bRegExp )
 	{
 #if QT_VERSION >= 0x050000
 		return m_regularExpressionContent.match( sUserAgent ).hasMatch();
@@ -99,7 +99,7 @@ bool UserAgentRule::match(const QString& sUserAgent) const
 	return false;
 }
 
-void UserAgentRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void UserAgentRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 {
 	Q_ASSERT( m_nType == RuleType::UserAgent );
 
@@ -107,7 +107,7 @@ void UserAgentRule::toXML(QXmlStreamWriter& oXMLdocument) const
 
 	oXMLdocument.writeAttribute( "type", "agent" );
 
-	if( m_bRegExp )
+	if ( m_bRegExp )
 	{
 		oXMLdocument.writeAttribute( "match", "regexp" );
 	}

@@ -51,7 +51,7 @@ namespace Security
  * @param bDebug : Defaults to false. If set to true, the message is send to qDebug() instead of
  * to the system log.
  */
-void postLogMessage(LogSeverity eSeverity, QString sMessage, bool bDebug = false);
+void postLogMessage( LogSeverity eSeverity, QString sMessage, bool bDebug = false );
 
 /**
  * @brief dataPath

@@ -41,14 +41,14 @@ HashVector HashRule::getHashes() const
 	std::map< CHash::Algorithm, CHash >::const_iterator it = m_lmHashes.begin();
 	while ( it != m_lmHashes.end() )
 	{
-		result.push_back( (*it).second );
+		result.push_back( ( *it ).second );
 		++it;
 	}
 
 	return result;
 }
 
-void HashRule::setHashes(const HashVector& hashes)
+void HashRule::setHashes( const HashVector& hashes )
 {
 	Q_ASSERT( m_nType == RuleType::Hash );
 
@@ -71,7 +71,7 @@ Rule* HashRule::getCopy() const
 	return new HashRule( *this );
 }
 
-bool HashRule::parseContent(const QString& sContent)
+bool HashRule::parseContent( const QString& sContent )
 {
 	QStringList prefixes;
 	prefixes << "urn:sha1:"
@@ -90,11 +90,11 @@ bool HashRule::parseContent(const QString& sContent)
 		QString tmp, sHash;
 		int pos1, pos2;
 
-		pos1 = sContent.indexOf( prefixes.at(i) );
+		pos1 = sContent.indexOf( prefixes.at( i ) );
 		if ( pos1 != -1 )
 		{
 			tmp  = sContent.mid( pos1 );
-			int length = CHash::lengthForUrn( prefixes.at(i) ) + prefixes.at(i).length();
+			int length = CHash::lengthForUrn( prefixes.at( i ) ) + prefixes.at( i ).length();
 			pos2 = tmp.indexOf( "&" );
 
 			qDebug() << "Expected hash length:" << length;
@@ -106,21 +106,21 @@ bool HashRule::parseContent(const QString& sContent)
 				qDebug() << "Hash:" << tmp.left( pos2 );
 				postLogMessage( LogSeverity::Information,
 								QObject::tr( "Hash found for hash rule: %1"
-											 ).arg( tmp.left( pos2 ) ) );
+										   ).arg( tmp.left( pos2 ) ) );
 				sHash = tmp.left( pos2 );
 			}
 			else if ( pos2 == -1 && tmp.length() == length )
 			{
 				postLogMessage( LogSeverity::Information,
 								QObject::tr( "Hash found for hash rule at end of string: %1"
-											 ).arg( tmp ) );
+										   ).arg( tmp ) );
 				sHash = tmp;
 			}
 			else
 			{
 				postLogMessage( LogSeverity::Information,
 								QObject::tr( "Error extracting hash: %1"
-											 ).arg( tmp.left( pos2 ) ) );
+										   ).arg( tmp.left( pos2 ) ) );
 				continue;
 			}
 
@@ -131,7 +131,9 @@ bool HashRule::parseContent(const QString& sContent)
 				delete pHash;
 			}
 			else
+			{
 				qDebug() << "HashRule: Hash type not recognised.";
+			}
 		}
 	}
 
@@ -144,12 +146,12 @@ bool HashRule::parseContent(const QString& sContent)
 	{
 		postLogMessage( LogSeverity::Error,
 						QObject::tr( "Error: Failed to parse content for hash rule: %1"
-									 ).arg( sContent ) );
+								   ).arg( sContent ) );
 		return false;
 	}
 }
 
-void HashRule::reduceByHashPriority(uint nNumberOfHashes)
+void HashRule::reduceByHashPriority( uint nNumberOfHashes )
 {
 #ifdef _DEBUG
 	int n = -1;
@@ -160,8 +162,8 @@ void HashRule::reduceByHashPriority(uint nNumberOfHashes)
 	while ( it != m_lmHashes.end() && m_lmHashes.size() > nNumberOfHashes )
 	{
 #ifdef _DEBUG
-		Q_ASSERT( n < (*it).second.getAlgorithm() );
-		n = (*it).second.getAlgorithm();
+		Q_ASSERT( n < ( *it ).second.getAlgorithm() );
+		n = ( *it ).second.getAlgorithm();
 #endif
 
 		m_lmHashes.erase( it );
@@ -169,10 +171,12 @@ void HashRule::reduceByHashPriority(uint nNumberOfHashes)
 	}
 }
 
-bool HashRule::hashEquals(const HashRule& oRule) const
+bool HashRule::hashEquals( const HashRule& oRule ) const
 {
 	if ( oRule.m_lmHashes.size() != m_lmHashes.size() )
+	{
 		return false;
+	}
 
 	std::map< CHash::Algorithm, CHash >::const_iterator it, itOther;
 
@@ -181,9 +185,11 @@ bool HashRule::hashEquals(const HashRule& oRule) const
 
 	while ( it != m_lmHashes.end() )
 	{
-		itOther = oRule.m_lmHashes.find( (*it).second.getAlgorithm() );
-		if ( (*it).second != (*itOther).second )
+		itOther = oRule.m_lmHashes.find( ( *it ).second.getAlgorithm() );
+		if ( ( *it ).second != ( *itOther ).second )
+		{
 			return false;
+		}
 
 		++it;
 	}
@@ -191,11 +197,11 @@ bool HashRule::hashEquals(const HashRule& oRule) const
 	return true;
 }
 
-bool HashRule::match(const QueryHit* const pHit) const
+bool HashRule::match( const QueryHit* const pHit ) const
 {
 	return match( pHit->m_lHashes );
 }
-bool HashRule::match(const HashVector& lHashes) const
+bool HashRule::match( const HashVector& lHashes ) const
 {
 	std::map< CHash::Algorithm, CHash >::const_iterator it;
 	quint8 nCount = 0;
@@ -208,15 +214,17 @@ bool HashRule::match(const HashVector& lHashes) const
 		{
 			++nCount;
 
-			if ( lHashes[i] != (*it).second )
+			if ( lHashes[i] != ( *it ).second )
+			{
 				return false;
+			}
 		}
 	}
 
 	return nCount;
 }
 
-void HashRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void HashRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 {
 	Q_ASSERT( m_nType == RuleType::Hash );
 

@@ -212,7 +212,7 @@ public:
 	 * Locking: RW
 	 * @param bDenyPolicy
 	 */
-	void            setDenyPolicy(bool bDenyPolicy);
+	void            setDenyPolicy( bool bDenyPolicy );
 
 	/**
 	 * @brief Manager::check allows to see whether a rule with the same UUID exists within the
@@ -221,7 +221,7 @@ public:
 	 * @param pRule the rule to be verified.
 	 * @return true if the rule exists within the manager; false otherwise.
 	 */
-	bool            check(const Rule* const pRule) const;
+	bool            check( const Rule* const pRule ) const;
 
 	/**
 	 * @brief Manager::add adds a rule to the security database.
@@ -230,7 +230,7 @@ public:
 	 * @param pRule: the rule to be added. Will be set to NULL if redundant.
 	 * @return true if the rule has been added; false otherwise
 	 */
-	bool            add(Rule* pRule);
+	bool            add( Rule* pRule );
 
 	/**
 	 * @brief Manager::remove removes a rule from the manager.
@@ -239,7 +239,7 @@ public:
 	 * Locking: RW
 	 * @param pRule : the rule
 	 */
-	void            remove(const Rule* const pRule);
+	void            remove( const Rule* const pRule );
 
 	/**
 	 * @brief Manager::clear frees all memory and storage containers. Removes all rules.
@@ -257,12 +257,12 @@ public:
 	 * @param bAutomatic : whether this was an automatic ban by Quazaa
 	 * @param sSender : string representation of the caller for debugging purposes
 	 */
-	void            ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
-						bool bMessage = true, const QString& sComment = "", bool bAutomatic = true
+	void            ban( const QHostAddress& oAddress, RuleTime::Time nBanLength,
+						 bool bMessage = true, const QString& sComment = "", bool bAutomatic = true
 #if SECURITY_LOG_BAN_SOURCES
-						, const QString& sSender = ""
+																							   , const QString& sSender = ""
 #endif
-						);
+					   );
 
 	/**
 	 * @brief Manager::ban bans a given file for a specified amount of time.
@@ -272,8 +272,8 @@ public:
 	 * @param nMaxHashes : the maximum amount of hashes to add to the rule
 	 * @param sComment : comment; if blanc, a default comment is generated depending on nBanLength
 	 */
-	void            ban(const QueryHit* const pHit, RuleTime::Time nBanLength, uint nMaxHashes = 3,
-						const QString& sComment = "");
+	void            ban( const QueryHit* const pHit, RuleTime::Time nBanLength, uint nMaxHashes = 3,
+						 const QString& sComment = "" );
 
 	/**
 	 * @brief Manager::isDenied checks an IP against the security database.
@@ -281,7 +281,7 @@ public:
 	 * @param oAddress : the IP
 	 * @return true if the IP is denied; false otherwise
 	 */
-	bool            isDenied(const EndPoint& oAddress);
+	bool            isDenied( const EndPoint& oAddress );
 
 	/**
 	 * @brief Manager::isDenied checks a hit against the security database.
@@ -292,7 +292,7 @@ public:
 	 * edit box of the GUI.
 	 * @return true if the IP is denied; false otherwise
 	 */
-	bool            isDenied(const QueryHit* const pHit, const QList<QString>& lQuery);
+	bool            isDenied( const QueryHit* const pHit, const QList<QString>& lQuery );
 
 	/**
 	 * @brief Manager::isClientBad checks for bad user agents.
@@ -303,7 +303,7 @@ public:
 	 * @return true if the remote computer is running a client that is breaking GPL, causing
 	 * problems etc.; false otherwise
 	 */
-	bool            isClientBad(const QString& sUserAgent) const;
+	bool            isClientBad( const QString& sUserAgent ) const;
 
 	/**
 	 * @brief Manager::isAgentBlocked checks the agent string for banned clients.
@@ -311,7 +311,7 @@ public:
 	 * @param sUserAgent : the agent string to be checked
 	 * @return true for especially bad / leecher clients, as well as user defined agent blocks.
 	 */
-	bool            isAgentDenied(const QString& sUserAgent);
+	bool            isAgentDenied( const QString& sUserAgent );
 
 	/**
 	 * @brief Manager::isVendorBlocked checks for blocked vendors.
@@ -319,7 +319,7 @@ public:
 	 * @param sVendor
 	 * @return true for blocked vendors; false otherwise
 	 */
-	bool            isVendorBlocked(const QString& sVendor) const;
+	bool            isVendorBlocked( const QString& sVendor ) const;
 
 	/**
 	 * @brief Manager::registerMetaTypes registers the necessary meta types for signals and slots.
@@ -358,7 +358,7 @@ public:
 	 * isn't needed ATM
 	 * @return true if saving has been successfull/saving has been skipped; false otherwise
 	 */
-	bool            save(bool bForceSaving = false) const;
+	bool            save( bool bForceSaving = false ) const;
 
 	/**
 	 * @brief Manager::writeToFile is a helper method required for save().
@@ -367,7 +367,7 @@ public:
 	 * @param oFile : the file to be written to
 	 * @return the number of rules written to file
 	 */
-	static quint32  writeToFile(const void* const pManager, QFile& oFile); // used by save()
+	static quint32  writeToFile( const void* const pManager, QFile& oFile ); // used by save()
 
 	/**
 	 * @brief Manager::import imports a security file with unknown format located at sPath.
@@ -375,7 +375,7 @@ public:
 	 * @param sPath : the location
 	 * @return true on success; false otherwise
 	 */
-	bool            import(const QString& sPath);
+	bool            import( const QString& sPath );
 
 	/**
 	 * @brief Manager::fromP2P imports a P2P rule file into the manager.
@@ -383,7 +383,7 @@ public:
 	 * @param sPath : the file location
 	 * @return true if successful; false otherwise
 	 */
-	bool            fromP2P(const QString& sPath);
+	bool            fromP2P( const QString& sPath );
 
 	/**
 	 * @brief Manager::xmlns contains the xml file schema specification.
@@ -396,7 +396,7 @@ public:
 	 * @param sPath : the path to the XML file.
 	 * @return true if at least one rule could be imported; false otherwise
 	 */
-	bool            fromXML(const QString& sPath);
+	bool            fromXML( const QString& sPath );
 
 	/**
 	 * @brief Manager::toXML exports all rules to an XML file.
@@ -404,7 +404,7 @@ public:
 	 * @param sPath : the path to the new rules file
 	 * @return true if successful; false otherwise
 	 */
-	bool            toXML(const QString& sPath) const;
+	bool            toXML( const QString& sPath ) const;
 
 	/**
 	 * @brief Manager::receivers returns the number of listeners to a given signal of the manager.
@@ -421,7 +421,7 @@ public:
 	 * Locking: /
 	 * @param nID : the ID
 	 */
-	void            emitUpdate(ID nID);
+	void            emitUpdate( ID nID );
 
 	/* ========================================================================================== */
 	/* ======================================== Signals  ======================================== */
@@ -436,26 +436,26 @@ signals:
 	 * @brief ruleAdded informs about a new rule having been added.
 	 * @param pRule : the rule
 	 */
-	void            ruleAdded(Rule* pRule);
+	void            ruleAdded( Rule* pRule );
 
 	/**
 	 * @brief ruleRemoved informs about a rule having been removed.
 	 * @param pRule : the rule
 	 */
-	void            ruleRemoved(SharedRulePtr pRule);
+	void            ruleRemoved( SharedRulePtr pRule );
 
 	/**
 	 * @brief ruleInfo info signal to get informed about all rules within the manager.
 	 * See Manager::requestRuleList() for more information.
 	 * @param pRule : the rule
 	 */
-	void            ruleInfo(Rule* pRule);
+	void            ruleInfo( Rule* pRule );
 
 	/**
 	 * @brief ruleUpdated informs about a rule having been updated.
 	 * @param nID : the GUI ID of the updated rule
 	 */
-	void            ruleUpdated(ID nID);
+	void            ruleUpdated( ID nID );
 
 	/**
 	 * @brief cleared informs about the manager having been cleared.
@@ -466,13 +466,13 @@ signals:
 	 * @brief updateLoadMax informs about a change in the max value of the loading progress bar.
 	 * @param max : the new max value
 	 */
-	void            updateLoadMax(int max);
+	void            updateLoadMax( int max );
 
 	/**
 	 * @brief updateLoadProgress updates the load progress bar.
 	 * @param progress : the new progress
 	 */
-	void            updateLoadProgress(int progress);
+	void            updateLoadProgress( int progress );
 
 	/* ========================================================================================== */
 	/* ========================================= Slots  ========================================= */
@@ -520,7 +520,7 @@ public:
 	 * Locking: /
 	 * @param pRule : the rule that has been hit
 	 */
-	void            hit(Rule *pRule);
+	void            hit( Rule* pRule );
 
 	/**
 	 * @brief Manager::loadPrivates loads the private IP renges into the appropriate container.
@@ -539,41 +539,41 @@ public:
 	 * @param sPath : the location of the rule file on disk
 	 * @return true if loading was successful; false otherwise
 	 */
-	bool            load(QString sPath);
+	bool            load( QString sPath );
 
 	/**
 	 * @brief Manager::insert inserts a new rule at the correct place into the rules vector.
 	 * Locking: REQUIRES RW
 	 * @param pRule : the rule to be inserted
 	 */
-	void            insert(Rule* pRule);
+	void            insert( Rule* pRule );
 
 	/**
 	 * @brief Manager::erase removes the rule at the position nPos from the vector.
 	 * Locking: REQUIRES RW
 	 * @param nPos : the position
 	 */
-	void            erase(RuleVectorPos nPos);
+	void            erase( RuleVectorPos nPos );
 
 	/**
 	 * @brief Manager::insertRange inserts a range rule into the respective container.
 	 * Locking: REQUIRES RW
 	 * @param pNew : the range rule
 	 */
-	void            insertRange(IPRangeRule*& pNew);
+	void            insertRange( IPRangeRule*& pNew );
 
 	/**
 	 * @brief Manager::insertRangeHelper inserts a range rule at the correct place into the vector.
 	 * @param pNewRange : the range rule
 	 */
-	void            insertRangeHelper(IPRangeRule* pNewRange);
+	void            insertRangeHelper( IPRangeRule* pNewRange );
 
 	/**
 	 * @brief Manager::erase removes the rule at the position nPos from the IP ranges vector.
 	 * Locking: REQUIRES RW
 	 * @param nPos : the position
 	 */
-	void            eraseRange(const IPRangeVectorPos nPos);
+	void            eraseRange( const IPRangeVectorPos nPos );
 
 	/**
 	 * @brief Manager::getUUID returns the rule position for the given UUID.
@@ -582,7 +582,7 @@ public:
 	 * @param idUUID : the UUID
 	 * @return the rule position
 	 */
-	RuleVectorPos   getUUID(const QUuid& idUUID) const;
+	RuleVectorPos   getUUID( const QUuid& idUUID ) const;
 
 	/**
 	 * @brief Manager::getHash
@@ -591,7 +591,7 @@ public:
 	 * @param hashes : a vector of hashes to look for
 	 * @return the rule position
 	 */
-	RuleVectorPos   getHash(const HashVector& hashes) const;
+	RuleVectorPos   getHash( const HashVector& hashes ) const;
 
 	/**
 	 * @brief Manager::expireLater invokes delayed rule expiry on return to the main loop.
@@ -607,7 +607,7 @@ public:
 	 * Locking: REQUIRES RW
 	 * @param nPos : the position
 	 */
-	void            remove(RuleVectorPos nVectorPos);
+	void            remove( RuleVectorPos nVectorPos );
 
 	/**
 	 * @brief Manager::isAgentDenied checks a user agent name against the list of user agent rules.
@@ -615,7 +615,7 @@ public:
 	 * @param sUserAgent : the user agent name
 	 * @return true if the user agent is denied; false otherwise
 	 */
-	bool            isAgentDeniedInternal(const QString& sUserAgent);
+	bool            isAgentDeniedInternal( const QString& sUserAgent );
 
 	/**
 	 * @brief Manager::isDenied checks a content string against the list of list of content rules.
@@ -631,7 +631,7 @@ public:
 	 * @param pHit : the query hit
 	 * @return true if the hit is denied; false otherwise
 	 */
-	bool            isDenied(const QueryHit* const pHit);
+	bool            isDenied( const QueryHit* const pHit );
 
 	/**
 	 * @brief Manager::isDenied checks a hit against hash and content rules.
@@ -641,7 +641,7 @@ public:
 	 * @param sContent : the content string/file name to be checked
 	 * @return true if the hit is denied; false otherwise
 	 */
-	bool            isDenied(const QList<QString>& lQuery, const QString& sContent);
+	bool            isDenied( const QList<QString>& lQuery, const QString& sContent );
 
 	/**
 	 * @brief CSecurity::isPrivate checks whether a given IP is within one of the IP ranges
@@ -650,7 +650,7 @@ public:
 	 * @param oAddress: the IP
 	 * @return true if the IP is within a private range; false otherwise
 	 */
-	bool            isPrivate(const EndPoint& oAddress);
+	bool            isPrivate( const EndPoint& oAddress );
 
 #if SECURITY_DISABLE_IS_PRIVATE_OLD
 	/**
@@ -658,14 +658,14 @@ public:
 	 * @param oAddress : the IP
 	 * @return true if the IP is within a private range; false otherwise
 	 */
-	bool            isPrivateOld(const EndPoint& oAddress);
+	bool            isPrivateOld( const EndPoint& oAddress );
 
 	/**
 	 * @brief Manager::isPrivateNew checks an IP the new way for whether it's private.
 	 * @param oAddress : the IP
 	 * @return true if the IP is within a private range; false otherwise
 	 */
-	bool            isPrivateNew(const EndPoint& oAddress);
+	bool            isPrivateNew( const EndPoint& oAddress );
 #endif // SECURITY_DISABLE_IS_PRIVATE_OLD
 
 	/**
@@ -674,7 +674,7 @@ public:
 	 * @return first range with a oAddress >= startIP(), (e.g. the only range that might be
 	 * containing the given IP); m_vIPRanges.size() if no such range exists.
 	 */
-	IPRangeVectorPos findRangeForMerging(const EndPoint& oAddress);
+	IPRangeVectorPos findRangeForMerging( const EndPoint& oAddress );
 
 	/**
 	 * @brief findRangeMatch allows to find the range rule containing a given IP.
@@ -682,7 +682,7 @@ public:
 	 * @param nPos : a value by reference that will be set to the rule pos within the vector
 	 * @return the range rule matching oAddress; NULL if no such range rule exists.
 	 */
-	IPRangeRule* findRangeMatch(const EndPoint& oAddress, IPRangeVectorPos& nPos);
+	IPRangeRule* findRangeMatch( const EndPoint& oAddress, IPRangeVectorPos& nPos );
 
 	/**
 	 * @brief getRWIterator converts a const_iterator to an iterator

@@ -46,7 +46,7 @@ public:
 
 	Rule*           getCopy() const;
 
-	bool            parseContent(const QString& sContent);
+	bool            parseContent( const QString& sContent );
 
 	EndPoint       startIP() const;
 	EndPoint       endIP() const;
@@ -60,12 +60,12 @@ public:
 	 * @return NULL except if pOther is contained within this rule in which case a Rule is returned
 	 * which represents the part of this rules range after the range of pOther.
 	 */
-	IPRangeRule*    merge(IPRangeRule*& pOther);
+	IPRangeRule*    merge( IPRangeRule*& pOther );
 
-	bool            match(const EndPoint& oAddress) const;
-	bool            contains(const EndPoint& oAddress) const;
+	bool            match( const EndPoint& oAddress ) const;
+	bool            contains( const EndPoint& oAddress ) const;
 
-	void            toXML(QXmlStreamWriter& oXMLdocument) const;
+	void            toXML( QXmlStreamWriter& oXMLdocument ) const;
 };
 
 }

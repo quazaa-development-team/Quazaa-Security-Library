@@ -60,7 +60,7 @@ Rule::Rule() :
 	m_nGUIID  = m_oIDProvider.aquire();
 }
 
-Rule::Rule(const Rule& pRule)
+Rule::Rule( const Rule& pRule )
 {
 	// The usage of a custom copy constructor makes sure each rule gets a distinct GUI ID.
 	m_nType      = pRule.m_nType;
@@ -89,7 +89,7 @@ Rule* Rule::getCopy() const
 	return new Rule( *this );
 }
 
-bool Rule::operator==(const Rule& pRule) const
+bool Rule::operator==( const Rule& pRule ) const
 {
 	// we don't compare GUI IDs or hit counters
 	return m_nType      == pRule.m_nType      &&
@@ -101,12 +101,12 @@ bool Rule::operator==(const Rule& pRule) const
 		   m_sComment   == pRule.m_sComment;
 }
 
-bool Rule::operator!=(const Rule& pRule) const
+bool Rule::operator!=( const Rule& pRule ) const
 {
 	return !( *this == pRule );
 }
 
-bool Rule::parseContent(const QString&)
+bool Rule::parseContent( const QString& )
 {
 	Q_ASSERT( false );
 	return false;
@@ -119,7 +119,7 @@ QString Rule::getContentString() const
 	return m_sContent;
 }
 
-bool Rule::match(const EndPoint&) const
+bool Rule::match( const EndPoint& ) const
 {
 	return false;
 }
@@ -127,20 +127,20 @@ bool Rule::match(const EndPoint&) const
 {
 	return false;
 }*/
-bool Rule::match(const QueryHit* const) const
+bool Rule::match( const QueryHit* const ) const
 {
 	return false;
 }
-bool Rule::match(const QList<QString>&, const QString&) const
+bool Rule::match( const QList<QString>&, const QString& ) const
 {
 	return false;
 }
 
-void Rule::save(const Rule* const pRule, QDataStream &oStream)
+void Rule::save( const Rule* const pRule, QDataStream& oStream )
 {
 	// we don't store GUI IDs and session hit counter
-	oStream << (quint8)(pRule->m_nType);
-	oStream << (quint8)(pRule->m_nAction);
+	oStream << ( quint8 )( pRule->m_nType );
+	oStream << ( quint8 )( pRule->m_nAction );
 	oStream << pRule->m_sComment;
 	oStream << pRule->m_idUUID.toString();
 	oStream << pRule->m_tExpire;
@@ -150,15 +150,15 @@ void Rule::save(const Rule* const pRule, QDataStream &oStream)
 
 	if ( pRule->m_nType == RuleType::UserAgent )
 	{
-		oStream << ((UserAgentRule*)pRule)->getRegExp();
+		oStream << ( ( UserAgentRule* )pRule )->getRegExp();
 	}
 	else if ( pRule->m_nType == RuleType::Content )
 	{
-		oStream << ((ContentRule*)pRule)->getAll();
+		oStream << ( ( ContentRule* )pRule )->getAll();
 	}
 }
 
-void Rule::load(Rule*& pRule, QDataStream &fsFile, int)
+void Rule::load( Rule*& pRule, QDataStream& fsFile, int )
 {
 	if ( pRule )
 	{
@@ -219,13 +219,13 @@ void Rule::load(Rule*& pRule, QDataStream &fsFile, int)
 	case RuleType::UserAgent:
 		pRule = new UserAgentRule();
 		fsFile >> bTmp;
-		((UserAgentRule*)pRule)->setRegExp( bTmp );
+		( ( UserAgentRule* )pRule )->setRegExp( bTmp );
 		break;
 
 	case RuleType::Content:
 		pRule = new ContentRule();
 		fsFile >> bTmp;
-		((ContentRule*)pRule)->setAll( bTmp );
+		( ( ContentRule* )pRule )->setAll( bTmp );
 		break;
 
 	default:
@@ -238,7 +238,7 @@ void Rule::load(Rule*& pRule, QDataStream &fsFile, int)
 		break;
 	}
 
-	pRule->m_nAction    = (RuleAction::Action)nAction;
+	pRule->m_nAction    = ( RuleAction::Action )nAction;
 	pRule->m_sComment   = sComment;
 	pRule->m_idUUID     = QUuid( sUUID );
 	pRule->m_tExpire    = tExpire;
@@ -254,7 +254,7 @@ void Rule::load(Rule*& pRule, QDataStream &fsFile, int)
  * cases, set this to true and the return value for session ban rules will be true.
  * @return true if the rule has expired, false otherwise
  */
-bool Rule::isExpired(quint32 tNow, bool bSession) const
+bool Rule::isExpired( quint32 tNow, bool bSession ) const
 {
 	switch ( m_tExpire )
 	{
@@ -273,7 +273,7 @@ bool Rule::isExpired(quint32 tNow, bool bSession) const
  * @brief Rule::setExpiryTime
  * @param tExpire
  */
-void Rule::setExpiryTime(const quint32 tExpire)
+void Rule::setExpiryTime( const quint32 tExpire )
 {
 	m_tExpire = tExpire;
 }
@@ -282,7 +282,7 @@ void Rule::setExpiryTime(const quint32 tExpire)
  * @brief Rule::addExpiryTime
  * @param tAdd
  */
-void Rule::addExpiryTime(const quint32 tAdd)
+void Rule::addExpiryTime( const quint32 tAdd )
 {
 	if ( m_tExpire != RuleTime::Session && m_tExpire != RuleTime::Forever )
 	{
@@ -307,7 +307,7 @@ quint32 Rule::getExpiryTime() const
  * pDestination.
  * Requires Locking: RW
  */
-void Rule::mergeInto(Rule* pDestination)
+void Rule::mergeInto( Rule* pDestination )
 {
 	if ( m_sContent != pDestination->m_sContent || m_nType != pDestination->m_nType )
 	{
@@ -315,7 +315,9 @@ void Rule::mergeInto(Rule* pDestination)
 	}
 
 	if ( !m_bAutomatic )
-		pDestination->m_bAutomatic = false; // don't overwrite manual with automatic rules
+	{
+		pDestination->m_bAutomatic = false;    // don't overwrite manual with automatic rules
+	}
 
 	if ( m_tExpire == RuleTime::Forever )
 	{
@@ -331,12 +333,18 @@ void Rule::mergeInto(Rule* pDestination)
 
 #ifdef _DEBUG // allows to easily spot multiply merged rules in debug builds
 	if ( !pDestination->m_sComment.contains( " (AutoMerged Rule)" ) )
+	{
 		pDestination->m_sComment += " (AutoMerged Rule)";
+	}
 	else
+	{
 		pDestination->m_sComment += "+";
+	}
 #else
 	if ( !pDestination->m_sComment.endsWith( " (AutoMerged Rule)" ) )
+	{
 		pDestination->m_sComment += " (AutoMerged Rule)";
+	}
 #endif
 
 	pDestination->m_nToday.fetchAndAddRelaxed( m_nToday.load() );
@@ -392,7 +400,7 @@ quint32 Rule::getTotalCount() const
  */
 void Rule::loadTotalCount( quint32 nTotal )
 {
-	m_nTotal.storeRelease(nTotal);
+	m_nTotal.storeRelease( nTotal );
 }
 
 /**
@@ -405,14 +413,16 @@ RuleType::Type Rule::type() const
 	return m_nType;
 }
 
-Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
+Rule* Rule::fromXML( QXmlStreamReader& oXMLdocument, float nVersion )
 {
 	QXmlStreamAttributes attributes = oXMLdocument.attributes();
 
 	const QString sType = attributes.value( "type" ).toString();
 
 	if ( sType.isEmpty() )
+	{
 		return NULL;
+	}
 
 	Rule* pRule = NULL;
 
@@ -552,7 +562,7 @@ Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 				}
 				else
 				{
-					((ContentRule*)pRule)->setAll( all );
+					( ( ContentRule* )pRule )->setAll( all );
 				}
 			}
 		}
@@ -570,7 +580,9 @@ Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 #endif // SECURITY_ENABLE_GEOIP
 
 	if ( !pRule )
+	{
 		return NULL;
+	}
 
 	const QString sAction = attributes.value( "action" ).toString();
 
@@ -620,7 +632,9 @@ Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 
 	QString sUUID = attributes.value( "uuid" ).toString();
 	if ( sUUID.isEmpty() )
+	{
 		sUUID = attributes.value( "guid" ).toString();
+	}
 
 	if ( sUUID.isEmpty() )
 	{
@@ -635,7 +649,7 @@ Rule* Rule::fromXML(QXmlStreamReader& oXMLdocument, float nVersion)
 }
 
 // Contains default code for XML generation.
-void Rule::toXML(const Rule& oRule, QXmlStreamWriter& oXMLdocument)
+void Rule::toXML( const Rule& oRule, QXmlStreamWriter& oXMLdocument )
 {
 	QString sValue;
 
@@ -657,7 +671,9 @@ void Rule::toXML(const Rule& oRule, QXmlStreamWriter& oXMLdocument)
 	oXMLdocument.writeAttribute( "action", sValue );
 
 	if ( oRule.m_bAutomatic )
+	{
 		oXMLdocument.writeAttribute( "automatic", "true" );
+	}
 
 	// Write expiry date.
 	if ( oRule.m_tExpire == RuleTime::Forever )

@@ -40,9 +40,9 @@ Rule* IPRangeRule::getCopy() const
 	return new IPRangeRule( *this );
 }
 
-bool IPRangeRule::parseContent(const QString& sContent)
+bool IPRangeRule::parseContent( const QString& sContent )
 {
-	QStringList lAddresses = sContent.split("-");
+	QStringList lAddresses = sContent.split( "-" );
 
 	EndPoint oStartAddress, oEndAddress;
 	if ( lAddresses.size() == 2 &&
@@ -79,7 +79,7 @@ EndPoint IPRangeRule::endIP() const
  * @return NULL except if pOther is contained within this rule in which case a Rule is returned
  * which represents the part of this rules range after the range of pOther.
  */
-IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
+IPRangeRule* IPRangeRule::merge( IPRangeRule*& pOther )
 {
 	Q_ASSERT( pOther->m_oEndIP >= pOther->m_oStartIP );
 	Q_ASSERT(         m_oEndIP >=         m_oStartIP );
@@ -104,7 +104,7 @@ IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 			else
 			{
 				// Split this rule into two parts: this before pOther, pNewRule after pOther
-				IPRangeRule* pNewRule = (IPRangeRule*)getCopy();
+				IPRangeRule* pNewRule = ( IPRangeRule* )getCopy();
 				pNewRule->m_oStartIP = pOther->m_oEndIP;
 				++pNewRule->m_oStartIP;
 
@@ -160,27 +160,31 @@ IPRangeRule* IPRangeRule::merge(IPRangeRule*& pOther)
 	return pReturn;
 }
 
-bool IPRangeRule::contains(const EndPoint& oAddress) const
+bool IPRangeRule::contains( const EndPoint& oAddress ) const
 {
 #ifdef _DEBUG
 	Q_ASSERT( m_nType == RuleType::IPAddressRange );
 #endif //_DEBUG
 
-	if ( oAddress > m_oStartIP && oAddress < m_oEndIP)
+	if ( oAddress > m_oStartIP && oAddress < m_oEndIP )
+	{
 		return true;
+	}
 
 	return false;
 }
 
-bool IPRangeRule::match(const EndPoint& oAddress) const
+bool IPRangeRule::match( const EndPoint& oAddress ) const
 {
 	if ( oAddress >= m_oStartIP && oAddress <= m_oEndIP )
+	{
 		return true;
+	}
 
 	return false;
 }
 
-void IPRangeRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void IPRangeRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 {
 	Q_ASSERT( m_nType == RuleType::IPAddressRange );
 

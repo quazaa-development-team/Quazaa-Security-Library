@@ -38,7 +38,7 @@ Rule* IPRule::getCopy() const
 	return new IPRule( *this );
 }
 
-bool IPRule::parseContent(const QString& sContent)
+bool IPRule::parseContent( const QString& sContent )
 {
 	EndPoint oAddress;
 	if ( oAddress.setAddress( sContent ) )
@@ -55,13 +55,13 @@ QHostAddress IPRule::IP() const
 	return m_oIP;
 }
 
-void IPRule::setIP(const QHostAddress& oIP )
+void IPRule::setIP( const QHostAddress& oIP )
 {
 	m_oIP = oIP;
 	m_sContent = oIP.toString();
 }
 
-bool IPRule::match(const EndPoint& oAddress) const
+bool IPRule::match( const EndPoint& oAddress ) const
 {
 	Q_ASSERT( !oAddress.isNull() && m_nType == RuleType::IPAddress );
 
@@ -72,7 +72,7 @@ bool IPRule::match(const EndPoint& oAddress) const
 	return false;
 }
 
-void IPRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void IPRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 {
 	Q_ASSERT( m_nType == RuleType::IPAddress );
 

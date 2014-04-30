@@ -47,19 +47,19 @@ public:
 
 	Rule*   getCopy() const;
 
-	bool    parseContent(const QString& sContent);
+	bool    parseContent( const QString& sContent );
 
 	HashVector  getHashes() const;
-	void        setHashes(const HashVector& hashes);
+	void        setHashes( const HashVector& hashes );
 
-	void    reduceByHashPriority(uint nNumberOfHashes);
+	void    reduceByHashPriority( uint nNumberOfHashes );
 
-	bool    hashEquals(const HashRule& oRule) const;
+	bool    hashEquals( const HashRule& oRule ) const;
 
-	bool    match(const QueryHit* const pHit) const;
-	bool    match(const HashVector& lHashes) const;  // called by match(CQueryHit*)
+	bool    match( const QueryHit* const pHit ) const;
+	bool    match( const HashVector& lHashes ) const; // called by match(CQueryHit*)
 
-	void    toXML(QXmlStreamWriter& oXMLdocument) const;
+	void    toXML( QXmlStreamWriter& oXMLdocument ) const;
 };
 
 }

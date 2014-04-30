@@ -86,7 +86,7 @@ bool Manager::denyPolicy() const
  * Locking: RW
  * @param bDenyPolicy
  */
-void Manager::setDenyPolicy(bool bDenyPolicy)
+void Manager::setDenyPolicy( bool bDenyPolicy )
 {
 	m_oRWLock.lockForWrite();
 	if ( m_bDenyPolicy != bDenyPolicy )
@@ -104,7 +104,7 @@ void Manager::setDenyPolicy(bool bDenyPolicy)
  * @param pRule the rule to be verified.
  * @return true if the rule exists within the manager; false otherwise.
  */
-bool Manager::check(const Rule* const pRule) const
+bool Manager::check( const Rule* const pRule ) const
 {
 	m_oRWLock.lockForRead();
 	bool bReturn = pRule && getUUID( pRule->m_idUUID ) != m_vRules.size();
@@ -120,9 +120,12 @@ bool Manager::check(const Rule* const pRule) const
  * @param pRule: the rule to be added. Will be set to NULL if redundant.
  * @return true if the rule has been added; false otherwise
  */
-bool Manager::add(Rule* pRule)
+bool Manager::add( Rule* pRule )
 {
-	if ( !pRule ) return false;
+	if ( !pRule )
+	{
+		return false;
+	}
 
 	QWriteLocker writeLock( &m_oRWLock );
 
@@ -166,19 +169,19 @@ bool Manager::add(Rule* pRule)
 	{
 	case RuleType::IPAddress:
 	{
-		uint nIP = qHash( ((IPRule*)pRule)->IP() );
+		uint nIP = qHash( ( ( IPRule* )pRule )->IP() );
 		IPMap::iterator it = m_lmIPs.find( nIP );
 
 		if ( it != m_lmIPs.end() ) // there is a conflicting rule in our map
 		{
-			pRule->mergeInto( (*it).second );
+			pRule->mergeInto( ( *it ).second );
 
 			delete pRule;
 			pRule = NULL;
 		}
 		else
 		{
-			m_lmIPs[ nIP ] = (IPRule*)pRule;
+			m_lmIPs[ nIP ] = ( IPRule* )pRule;
 
 			bNewAddress = true;
 		}
@@ -187,7 +190,7 @@ bool Manager::add(Rule* pRule)
 
 	case RuleType::IPAddressRange:
 	{
-		IPRangeRule* pRange = (IPRangeRule*)pRule;
+		IPRangeRule* pRange = ( IPRangeRule* )pRule;
 		insertRange( pRange );
 		pRule = pRange; // set pRule to NULL if pRange has been set to NULL
 		bNewAddress = pRule; // evaluates to false if the previous method sets pRule to NULL
@@ -201,14 +204,14 @@ bool Manager::add(Rule* pRule)
 
 		if ( i != m_lmCountries.end() ) // there is a conflicting rule in our map
 		{
-			pRule->mergeInto( (*i).second );
+			pRule->mergeInto( ( *i ).second );
 
 			delete pRule;
 			pRule = NULL;
 		}
 		else
 		{
-			m_lmCountries[ country ] = (CountryRule*)pRule;
+			m_lmCountries[ country ] = ( CountryRule* )pRule;
 
 			bNewAddress = true;
 		}
@@ -220,7 +223,7 @@ bool Manager::add(Rule* pRule)
 #endif // SECURITY_ENABLE_GEOIP
 	case RuleType::Hash:
 	{
-		HashVector vHashes = ((HashRule*)pRule)->getHashes();
+		HashVector vHashes = ( ( HashRule* )pRule )->getHashes();
 		RuleVectorPos nPos = getHash( vHashes );
 
 		if ( nPos != m_vRules.size() )
@@ -238,7 +241,7 @@ bool Manager::add(Rule* pRule)
 			// similar but not 100% identical content, add hashes to map.
 			for ( size_t i = 0, nSize = vHashes.size(); i < nSize; ++i )
 			{
-				m_lmmHashes.insert( HashPair( qHash( vHashes[i].rawValue() ), (HashRule*)pRule ) );
+				m_lmmHashes.insert( HashPair( qHash( vHashes[i].rawValue() ), ( HashRule* )pRule ) );
 			}
 
 			bNewHit	= true;
@@ -268,7 +271,7 @@ bool Manager::add(Rule* pRule)
 
 		if ( pRule )
 		{
-			m_vRegularExpressions.push_back( (RegularExpressionRule*)pRule );
+			m_vRegularExpressions.push_back( ( RegularExpressionRule* )pRule );
 
 			bNewHit	= true;
 		}
@@ -285,7 +288,7 @@ bool Manager::add(Rule* pRule)
 			for ( ContentVectorPos i = 0; i < nSize; ++i )
 			{
 				if ( pContentRules[i]->getContentString() ==  pRule->getContentString() &&
-					 pContentRules[i]->getAll()           == ((ContentRule*)pRule)->getAll() )
+					 pContentRules[i]->getAll()           == ( ( ContentRule* )pRule )->getAll() )
 				{
 					pRule->mergeInto( pContentRules[i] );
 
@@ -298,7 +301,7 @@ bool Manager::add(Rule* pRule)
 
 		if ( pRule )
 		{
-			m_vContents.push_back( (ContentRule*)pRule );
+			m_vContents.push_back( ( ContentRule* )pRule );
 
 			bNewHit	= true;
 		}
@@ -327,7 +330,7 @@ bool Manager::add(Rule* pRule)
 
 		if ( pRule )
 		{
-			m_vUserAgents.push_back( (UserAgentRule*)pRule );
+			m_vUserAgents.push_back( ( UserAgentRule* )pRule );
 		}
 	}
 	break;
@@ -349,7 +352,7 @@ bool Manager::add(Rule* pRule)
 		{
 			if ( nType == RuleType::IPAddress )
 			{
-				m_oMissCache.erase( ((IPRule*)pRule)->IP() );
+				m_oMissCache.erase( ( ( IPRule* )pRule )->IP() );
 			}
 			else
 			{
@@ -383,7 +386,9 @@ bool Manager::add(Rule* pRule)
 			m_oSanity.sanityCheck();
 
 			if ( bSave )
+			{
 				save();
+			}
 		}
 	}
 	else
@@ -419,10 +424,12 @@ bool Manager::add(Rule* pRule)
  * Locking: RW
  * @param pRule : the rule
  */
-void Manager::remove(const Rule* const pRule)
+void Manager::remove( const Rule* const pRule )
 {
 	if ( !pRule )
+	{
 		return;
+	}
 
 	m_oRWLock.lockForWrite();
 
@@ -484,12 +491,12 @@ void Manager::clear()
  * @param bAutomatic : whether this was an automatic ban by Quazaa
  * @param sSender : string representation of the caller for debugging purposes
  */
-void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
-				  bool bMessage, const QString& sComment, bool bAutomatic
+void Manager::ban( const QHostAddress& oAddress, RuleTime::Time nBanLength,
+				   bool bMessage, const QString& sComment, bool bAutomatic
 #if SECURITY_LOG_BAN_SOURCES
-				  , const QString& sSender
+				   , const QString& sSender
 #endif // SECURITY_LOG_BAN_SOURCES
-				  )
+				 )
 {
 #ifdef _DEBUG
 	if ( oAddress.isNull() )
@@ -518,7 +525,7 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 	pIPRule->setExpiryTime( tNow + nBanLength );
 	QString sUntil;
 
-	switch( nBanLength )
+	switch ( nBanLength )
 	{
 	case RuleTime::FiveMinutes:
 		pIPRule->m_sComment = tr( "Temp Ignore (5 min)" );
@@ -569,7 +576,9 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
 	}
 
 	if ( !( sComment.isEmpty() ) )
+	{
 		pIPRule->m_sComment = sComment;
+	}
 
 	Rule* pRule = pIPRule;
 
@@ -602,8 +611,8 @@ void Manager::ban(const QHostAddress& oAddress, RuleTime::Time nBanLength,
  * @param nMaxHashes : the maximum amount of hashes to add to the rule
  * @param sComment : comment; if blanc, a default comment is generated depending on nBanLength
  */
-void Manager::ban(const QueryHit* const pHit, RuleTime::Time nBanLength, uint nMaxHashes,
-						const QString& sComment)
+void Manager::ban( const QueryHit* const pHit, RuleTime::Time nBanLength, uint nMaxHashes,
+				   const QString& sComment )
 {
 	if ( !pHit || !pHit->isValid() || pHit->m_lHashes.empty() )
 	{
@@ -628,7 +637,7 @@ void Manager::ban(const QueryHit* const pHit, RuleTime::Time nBanLength, uint nM
 		pRule->setExpiryTime( tNow + nBanLength );
 		QString sUntil;
 
-		switch( nBanLength )
+		switch ( nBanLength )
 		{
 		case RuleTime::FiveMinutes:
 			pRule->m_sComment = tr( "Temp Ignore (5 min)" );
@@ -679,7 +688,9 @@ void Manager::ban(const QueryHit* const pHit, RuleTime::Time nBanLength, uint nM
 		}
 
 		if ( !( sComment.isEmpty() ) )
+		{
 			pRule->m_sComment = sComment;
+		}
 
 		HashVector hashes;
 		hashes.reserve( pHit->m_lHashes.size() );
@@ -707,7 +718,7 @@ void Manager::ban(const QueryHit* const pHit, RuleTime::Time nBanLength, uint nM
  * @param oAddress : the IP
  * @return true if the IP is denied; false otherwise
  */
-bool Manager::isDenied(const EndPoint& oAddress)
+bool Manager::isDenied( const EndPoint& oAddress )
 {
 	if ( oAddress.isNull() )
 	{
@@ -726,8 +737,8 @@ bool Manager::isDenied(const EndPoint& oAddress)
 		{
 			postLogMessage( LogSeverity::Security,
 							tr( "Skipped repeat IP security check for %1 (%2 IPs cached)."
-								).arg( oAddress.toString(),
-									   QString::number( m_oMissCache.size() ) ) );
+							  ).arg( oAddress.toString(),
+									 QString::number( m_oMissCache.size() ) ) );
 		}
 
 		return m_bDenyPolicy;
@@ -737,7 +748,7 @@ bool Manager::isDenied(const EndPoint& oAddress)
 	{
 		postLogMessage( LogSeverity::Security,
 						tr( "Called first-time IP security check for %1."
-							).arg( oAddress.toString() ) );
+						  ).arg( oAddress.toString() ) );
 	}
 
 	// Second, if quazaa local/private blocking is turned on, check if the IP is local/private
@@ -760,7 +771,7 @@ bool Manager::isDenied(const EndPoint& oAddress)
 
 		if ( itCountries != m_lmCountries.end() )
 		{
-			CountryRule* pCountryRule = (*itCountries).second;
+			CountryRule* pCountryRule = ( *itCountries ).second;
 
 			if ( pCountryRule->isExpired( tNow ) )
 			{
@@ -818,7 +829,7 @@ bool Manager::isDenied(const EndPoint& oAddress)
 
 		if ( itIPs != m_lmIPs.end() )
 		{
-			IPRule* pIPRule = (*itIPs).second;
+			IPRule* pIPRule = ( *itIPs ).second;
 
 			if ( pIPRule->isExpired( tNow ) )
 			{
@@ -863,7 +874,7 @@ bool Manager::isDenied(const EndPoint& oAddress)
  * edit box of the GUI.
  * @return true if the IP is denied; false otherwise
  */
-bool Manager::isDenied(const QueryHit* const pHit, const QList<QString> &lQuery)
+bool Manager::isDenied( const QueryHit* const pHit, const QList<QString>& lQuery )
 {
 	bool bReturn;
 
@@ -884,10 +895,13 @@ bool Manager::isDenied(const QueryHit* const pHit, const QList<QString> &lQuery)
  * @return true if the remote computer is running a client that is breaking GPL, causing
  * problems etc.; false otherwise
  */
-bool Manager::isClientBad(const QString& sUserAgent) const
+bool Manager::isClientBad( const QString& sUserAgent ) const
 {
 	// No user agent- assume bad - They allowed to connect but no searches were performed
-	if ( sUserAgent.isEmpty() )                 return true;
+	if ( sUserAgent.isEmpty() )
+	{
+		return true;
+	}
 
 	QString sSubStr;
 
@@ -895,22 +909,64 @@ bool Manager::isClientBad(const QString& sUserAgent) const
 	if ( sUserAgent.startsWith( "shareaza", Qt::CaseInsensitive ) )
 	{
 		sSubStr = sUserAgent.mid( 8 );
-		if ( sSubStr.startsWith( " 0."  ) )     return true;
+		if ( sSubStr.startsWith( " 0."  ) )
+		{
+			return true;
+		}
 		// There can be some 1.x versions of the real Shareaza but most are fakes
-		if ( sSubStr.startsWith( " 1."  ) )     return true;
+		if ( sSubStr.startsWith( " 1."  ) )
+		{
+			return true;
+		}
 		// There is also a Shareaza rip-off that identifies as Shareaza 2.0.0.0. Also, the real
-		if ( sSubStr.startsWith( " 2.0" ) )     return true; // Shareaza 2.0.0.0 is old and bad.
-		if ( sSubStr.startsWith( " 2.1" ) )     return true; // Old version
-		if ( sSubStr.startsWith( " 2.2" ) )     return true; // Old version
-		if ( sSubStr.startsWith( " 2.3" ) )     return true; // Old version
-		if ( sSubStr.startsWith( " 2.4" ) )     return true; // Old version
-		if ( sSubStr.startsWith( " 2.5.0" ) )   return true; // Old version
-		if ( sSubStr.startsWith( " 2.5.1" ) )   return true; // Old version
-		if ( sSubStr.startsWith( " 2.5.2" ) )   return true; // Old version
-		if ( sSubStr.startsWith( " 3" ) )       return true;
-		if ( sSubStr.startsWith( " 6"  ) )      return true;
-		if ( sSubStr.startsWith( " 7"  ) )      return true;
-		if ( sSubStr.startsWith( " Pro" ) )     return true;
+		if ( sSubStr.startsWith( " 2.0" ) )
+		{
+			return true;    // Shareaza 2.0.0.0 is old and bad.
+		}
+		if ( sSubStr.startsWith( " 2.1" ) )
+		{
+			return true;    // Old version
+		}
+		if ( sSubStr.startsWith( " 2.2" ) )
+		{
+			return true;    // Old version
+		}
+		if ( sSubStr.startsWith( " 2.3" ) )
+		{
+			return true;    // Old version
+		}
+		if ( sSubStr.startsWith( " 2.4" ) )
+		{
+			return true;    // Old version
+		}
+		if ( sSubStr.startsWith( " 2.5.0" ) )
+		{
+			return true;    // Old version
+		}
+		if ( sSubStr.startsWith( " 2.5.1" ) )
+		{
+			return true;    // Old version
+		}
+		if ( sSubStr.startsWith( " 2.5.2" ) )
+		{
+			return true;    // Old version
+		}
+		if ( sSubStr.startsWith( " 3" ) )
+		{
+			return true;
+		}
+		if ( sSubStr.startsWith( " 6"  ) )
+		{
+			return true;
+		}
+		if ( sSubStr.startsWith( " 7"  ) )
+		{
+			return true;
+		}
+		if ( sSubStr.startsWith( " Pro" ) )
+		{
+			return true;
+		}
 
 		return false;
 	}
@@ -920,8 +976,14 @@ bool Manager::isClientBad(const QString& sUserAgent) const
 	if ( sUserAgent.startsWith( "Dianlei", Qt::CaseInsensitive ) )
 	{
 		sSubStr = sUserAgent.mid( 7 );
-		if ( sSubStr.startsWith( " 1." ) )      return true;
-		if ( sSubStr.startsWith( " 0." ) )      return true;
+		if ( sSubStr.startsWith( " 1." ) )
+		{
+			return true;
+		}
+		if ( sSubStr.startsWith( " 0." ) )
+		{
+			return true;
+		}
 
 		return false;
 	}
@@ -930,70 +992,139 @@ bool Manager::isClientBad(const QString& sUserAgent) const
 	if ( sUserAgent.startsWith( "BearShare", Qt::CaseInsensitive ) )
 	{
 		sSubStr = sUserAgent.mid( 9 );
-		if ( sSubStr.startsWith( " Lite"  ) )   return true;
-		if ( sSubStr.startsWith( " Pro"   ) )   return true;
-		if ( sSubStr.startsWith( " MP3"   ) )   return true;	// GPL breaker
-		if ( sSubStr.startsWith( " Music" ) )   return true;	// GPL breaker
-		if ( sSubStr.startsWith( " 6."    ) )   return true;	// iMesh
+		if ( sSubStr.startsWith( " Lite"  ) )
+		{
+			return true;
+		}
+		if ( sSubStr.startsWith( " Pro"   ) )
+		{
+			return true;
+		}
+		if ( sSubStr.startsWith( " MP3"   ) )
+		{
+			return true;    // GPL breaker
+		}
+		if ( sSubStr.startsWith( " Music" ) )
+		{
+			return true;    // GPL breaker
+		}
+		if ( sSubStr.startsWith( " 6."    ) )
+		{
+			return true;    // iMesh
+		}
 
 		return false;
 	}
 
 	// Fastload.TV
-	if ( sUserAgent.startsWith( "Fastload.TV",            Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "Fastload.TV",            Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Fildelarprogram
-	if ( sUserAgent.startsWith( "Fildelarprogram",        Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "Fildelarprogram",        Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Gnutella Turbo (Look into this client some more)
-	if ( sUserAgent.startsWith( "Gnutella Turbo",         Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "Gnutella Turbo",         Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Identified Shareaza Leecher Mod
-	if ( sUserAgent.startsWith( "eMule mod (4)",          Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "eMule mod (4)",          Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// iMesh
-	if ( sUserAgent.startsWith( "iMesh",                  Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "iMesh",                  Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Mastermax File Sharing
-	if ( sUserAgent.startsWith( "Mastermax File Sharing", Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "Mastermax File Sharing", Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Trilix
-	if ( sUserAgent.startsWith( "Trilix",                 Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "Trilix",                 Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Wru (bad GuncDNA based client)
-	if ( sUserAgent.startsWith( "Wru",                    Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "Wru",                    Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// GPL breakers- Clients violating the GPL
 	// See http://www.gnu.org/copyleft/gpl.html
 	// Some other breakers outside the list
 
-	if ( sUserAgent.startsWith( "C -3.0.1",               Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "C -3.0.1",               Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// outdated rip-off
-	if ( sUserAgent.startsWith( "eTomi",                  Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "eTomi",                  Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Shareaza rip-off / GPL violator
-	if ( sUserAgent.startsWith( "FreeTorrentViewer",      Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "FreeTorrentViewer",      Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Is it bad?
-	if ( sUserAgent.startsWith( "K-Lite",                 Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "K-Lite",                 Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Leechers, do not allow to connect
-	if ( sUserAgent.startsWith( "mxie",                   Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "mxie",                   Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// ShareZilla (bad Shareaza clone)
-	if ( sUserAgent.startsWith( "ShareZilla",             Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "ShareZilla",             Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Shareaza rip-off / GPL violator
-	if ( sUserAgent.startsWith( "P2P Rocket",             Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "P2P Rocket",             Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Rip-off with bad tweaks
-	if ( sUserAgent.startsWith( "SlingerX",               Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "SlingerX",               Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Not clear why it's bad
-	if ( sUserAgent.startsWith( "vagaa",                  Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "vagaa",                  Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
-	if ( sUserAgent.startsWith( "WinMX",                  Qt::CaseInsensitive ) ) return true;
+	if ( sUserAgent.startsWith( "WinMX",                  Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Unknown- Assume OK
 	return false;
@@ -1006,18 +1137,27 @@ bool Manager::isClientBad(const QString& sUserAgent) const
  * @return true for especially bad / leecher clients, as well as user defined agent blocks.
  */
 // Test new releases, and remove block if/when they are fixed.
-bool Manager::isAgentDenied(const QString& sUserAgent)
+bool Manager::isAgentDenied( const QString& sUserAgent )
 {
 	// The remote computer didn't send a "User-Agent", or it sent whitespace
 	// We don't like those.
-	if ( sUserAgent.isEmpty() )                                         return true;
+	if ( sUserAgent.isEmpty() )
+	{
+		return true;
+	}
 
 	// foxy - leecher client. (Tested, does not upload)
 	// having something like Authentication which is not defined on specification
-	if ( sUserAgent.startsWith( "foxy", Qt::CaseInsensitive ) )         return true;
+	if ( sUserAgent.startsWith( "foxy", Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// i2hub - leecher client. (Tested, does not upload)
-	if ( sUserAgent.startsWith( "i2hub 2.0", Qt::CaseInsensitive ) )    return true;
+	if ( sUserAgent.startsWith( "i2hub 2.0", Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
 
 	// Check by content filter
 	m_oRWLock.lockForRead();
@@ -1033,12 +1173,14 @@ bool Manager::isAgentDenied(const QString& sUserAgent)
  * @param sVendor
  * @return true for blocked vendors; false otherwise
  */
-bool Manager::isVendorBlocked(const QString& sVendor) const
+bool Manager::isVendorBlocked( const QString& sVendor ) const
 {
 	// foxy - leecher client. (Tested, does not upload)
 	// having something like Authentication which is not defined on specification
 	if ( sVendor.startsWith( "foxy", Qt::CaseInsensitive ) )
+	{
 		return true;
+	}
 
 	// Allow it
 	return false;
@@ -1124,7 +1266,7 @@ bool Manager::load()
 
 		// fall back to default file if neither primary nor backup file exists
 		sPath = QDir::toNativeSeparators( QString( "%1/DefaultSecurity.dat"
-												   ).arg( qApp->applicationDirPath() ) );
+												 ).arg( qApp->applicationDirPath() ) );
 		return load( sPath );
 	}
 }
@@ -1137,7 +1279,7 @@ bool Manager::load()
  * isn't needed ATM
  * @return true if saving has been successfull/saving has been skipped; false otherwise
  */
-bool Manager::save(bool bForceSaving) const
+bool Manager::save( bool bForceSaving ) const
 {
 #ifndef QUAZAA_SETUP_UNIT_TESTS
 	if ( !m_bUnsaved && !bForceSaving )
@@ -1167,12 +1309,12 @@ bool Manager::save(bool bForceSaving) const
  * @param oFile : the file to be written to
  * @return the number of rules written to file
  */
-quint32 Manager::writeToFile(const void * const pManager, QFile& oFile)
+quint32 Manager::writeToFile( const void* const pManager, QFile& oFile )
 {
 	quint16 nVersion = SECURITY_CODE_VERSION;
 
 	QDataStream oStream( &oFile );
-	Manager* pSManager = (Manager*)pManager;
+	Manager* pSManager = ( Manager* )pManager;
 
 	oStream << nVersion;
 	oStream << pSManager->m_bDenyPolicy;
@@ -1182,14 +1324,14 @@ quint32 Manager::writeToFile(const void * const pManager, QFile& oFile)
 
 	if ( nSize )
 	{
-		Rule** pRules = &(pSManager->m_vRules)[0];
+		Rule** pRules = &( pSManager->m_vRules )[0];
 		for ( RuleVectorPos n = 0; n < nSize; ++n )
 		{
 			Rule::save( pRules[n], oStream );
 		}
 	}
 
-	return (quint32)pSManager->count();
+	return ( quint32 )pSManager->count();
 }
 
 /**
@@ -1198,7 +1340,7 @@ quint32 Manager::writeToFile(const void * const pManager, QFile& oFile)
  * @param sPath : the location
  * @return true on success; false otherwise
  */
-bool Manager::import(const QString& sPath)
+bool Manager::import( const QString& sPath )
 {
 	return fromXML( sPath ) || fromP2P( sPath );
 }
@@ -1209,14 +1351,16 @@ bool Manager::import(const QString& sPath)
  * @param sPath : the file location
  * @return true if successful; false otherwise
  */
-bool Manager::fromP2P(const QString& sPath)
+bool Manager::fromP2P( const QString& sPath )
 {
-	QFile file(sPath);
+	QFile file( sPath );
 
 	if ( !file.open( QIODevice::ReadOnly | QIODevice::Text ) )
+	{
 		return false;
+	}
 
-	emit updateLoadMax(file.size());
+	emit updateLoadMax( file.size() );
 
 	quint8 nGuiThrottle = 0;
 	uint   nCount       = 0;
@@ -1234,15 +1378,15 @@ bool Manager::fromP2P(const QString& sPath)
 		if ( !sLine.isEmpty() && !sLine.startsWith( "#" ) && sLine.contains( ":" ) )
 		{
 			QStringList lArguments = sLine.split( ":" );
-			QString     sComment   = lArguments.at(0);
-			QString     sContent   = lArguments.at(1);
+			QString     sComment   = lArguments.at( 0 );
+			QString     sContent   = lArguments.at( 1 );
 			Rule* pRule;
 
 			QStringList lAddresses = sContent.split( "-" );
 
-			if ( lAddresses.at(0) == lAddresses.at(1) )
+			if ( lAddresses.at( 0 ) == lAddresses.at( 1 ) )
 			{
-				sContent = lAddresses.at(0);
+				sContent = lAddresses.at( 0 );
 				pRule = new IPRule();
 			}
 			else
@@ -1251,7 +1395,9 @@ bool Manager::fromP2P(const QString& sPath)
 			}
 
 			if ( !pRule->parseContent( sContent ) )
+			{
 				break;
+			}
 
 			pRule->m_sComment   = sComment;
 			pRule->m_nAction    = RuleAction::Deny;
@@ -1291,18 +1437,22 @@ const QString Manager::xmlns = "http://www.shareaza.com/schemas/Security.xsd";
  * @param sPath : the path to the XML file.
  * @return true if at least one rule could be imported; false otherwise
  */
-bool Manager::fromXML(const QString& sPath)
+bool Manager::fromXML( const QString& sPath )
 {
 	QFile oFile( sPath );
 	if ( !oFile.open( QIODevice::ReadOnly ) )
+	{
 		return false;
+	}
 
 	QXmlStreamReader xmlDocument( &oFile );
 
 	if ( xmlDocument.atEnd() ||
-		!xmlDocument.readNextStartElement() ||
+		 !xmlDocument.readNextStartElement() ||
 		 xmlDocument.name().toString().compare( "security", Qt::CaseInsensitive ) )
+	{
 		return false;
+	}
 
 	postLogMessage( LogSeverity::Information,
 					tr( "Importing security rules from file: " ) + sPath );
@@ -1373,7 +1523,7 @@ bool Manager::fromXML(const QString& sPath)
 		}
 
 		// prevent GUI from becoming unresponsive
-		qApp->processEvents(QEventLoop::ExcludeUserInputEvents, 50);
+		qApp->processEvents( QEventLoop::ExcludeUserInputEvents, 50 );
 	}
 
 	m_oRWLock.lockForWrite();
@@ -1395,11 +1545,13 @@ bool Manager::fromXML(const QString& sPath)
  * @param sPath : the path to the new rules file
  * @return true if successful; false otherwise
  */
-bool Manager::toXML(const QString& sPath) const
+bool Manager::toXML( const QString& sPath ) const
 {
 	QFile oFile( sPath );
-	if( !oFile.open( QIODevice::ReadWrite ) )
+	if ( !oFile.open( QIODevice::ReadWrite ) )
+	{
 		return false;
+	}
 
 	QXmlStreamWriter xmlDocument( &oFile );
 
@@ -1412,7 +1564,7 @@ bool Manager::toXML(const QString& sPath) const
 
 	if ( nSize )
 	{
-		Rule* const * pRules = &m_vRules[0];
+		Rule* const* pRules = &m_vRules[0];
 		for ( RuleVectorPos n = 0; n < nSize ; ++n )
 		{
 			pRules[n]->toXML( xmlDocument );
@@ -1444,7 +1596,7 @@ bool Manager::toXML(const QString& sPath) const
  * Locking: /
  * @param nID : the ID
  */
-void Manager::emitUpdate(ID nID)
+void Manager::emitUpdate( ID nID )
 {
 	emit ruleUpdated( nID );
 }
@@ -1459,7 +1611,7 @@ quint32 Manager::requestRuleInfo()
 {
 	m_oRWLock.lockForRead();
 
-	const quint32 nSize = (quint32)m_vRules.size();
+	const quint32 nSize = ( quint32 )m_vRules.size();
 
 	if ( nSize )
 	{
@@ -1588,7 +1740,7 @@ void Manager::shutDown()
  * Locking: /
  * @param pRule : the rule that has been hit
  */
-void Manager::hit(Rule* pRule)
+void Manager::hit( Rule* pRule )
 {
 	pRule->count();
 	emit ruleUpdated( pRule->m_nGUIID );
@@ -1666,7 +1818,9 @@ bool Manager::load( QString sPath )
 	QFile oFile( sPath );
 
 	if ( ! oFile.open( QIODevice::ReadOnly ) )
+	{
 		return false;
+	}
 
 	Rule* pRule = NULL;
 
@@ -1722,9 +1876,9 @@ bool Manager::load( QString sPath )
 		if ( nSuccessCount )
 		{
 			postLogMessage( LogSeverity::Debug, QObject::tr( "Loaded security rules from file: %1"
-															 ).arg( sPath ) );
+														   ).arg( sPath ) );
 			postLogMessage( LogSeverity::Debug, QObject::tr( "Loaded %1 rules."
-															 ).arg( nSuccessCount ) );
+														   ).arg( nSuccessCount ) );
 		}
 
 		// perform sanity check after loading.
@@ -1735,7 +1889,9 @@ bool Manager::load( QString sPath )
 	catch ( ... )
 	{
 		if ( pRule )
+		{
 			delete pRule;
+		}
 
 		clear();
 
@@ -1772,7 +1928,7 @@ bool Manager::load( QString sPath )
  * Locking: REQUIRES RW
  * @param pRule : the rule to be inserted
  */
-void Manager::insert(Rule* pRule)
+void Manager::insert( Rule* pRule )
 {
 	RuleVectorPos nPos = m_vRules.size();
 	m_vRules.push_back( NULL );
@@ -1795,7 +1951,7 @@ void Manager::insert(Rule* pRule)
  * Locking: REQUIRES RW
  * @param nPos : the position
  */
-void Manager::erase(RuleVectorPos nPos)
+void Manager::erase( RuleVectorPos nPos )
 {
 	Q_ASSERT( nPos >= 0 && nPos < m_vRules.size() );
 
@@ -1818,7 +1974,7 @@ void Manager::erase(RuleVectorPos nPos)
  * Locking: REQUIRES RW
  * @param pNew : the range rule
  */
-void Manager::insertRange(IPRangeRule*& pNew)
+void Manager::insertRange( IPRangeRule*& pNew )
 {
 	IPRangeRule* pSecondHalf = NULL;
 	IPRangeVectorPos    nPos = findRangeForMerging( pNew->startIP() );
@@ -1841,7 +1997,7 @@ void Manager::insertRange(IPRangeRule*& pNew)
 			{
 				postLogMessage( LogSeverity::Security,
 								tr( "Merging IP range rules. Removing overlapped IP range %1."
-									).arg( m_vIPRanges[nPos]->getContentString() ) );
+								  ).arg( m_vIPRanges[nPos]->getContentString() ) );
 
 				// this moves a new rule to position nPos, so we don't need to do sth like ++nPos
 				remove( getUUID( m_vIPRanges[nPos]->m_idUUID ) );
@@ -1877,7 +2033,7 @@ void Manager::insertRange(IPRangeRule*& pNew)
  * Locking: REQUIRES RW
  * @param pNewRange : the range rule
  */
-void Manager::insertRangeHelper(IPRangeRule* pNewRange)
+void Manager::insertRangeHelper( IPRangeRule* pNewRange )
 {
 	IPRangeVectorPos nPos = m_vIPRanges.size();
 	m_vIPRanges.push_back( NULL );
@@ -1899,7 +2055,7 @@ void Manager::insertRangeHelper(IPRangeRule* pNewRange)
  * Locking: REQUIRES RW
  * @param nPos : the position
  */
-void Manager::eraseRange(const IPRangeVectorPos nPos)
+void Manager::eraseRange( const IPRangeVectorPos nPos )
 {
 	qDebug() << "Erasing range from range vector: " << m_vIPRanges[nPos]->getContentString();
 
@@ -1943,7 +2099,7 @@ void Manager::eraseRange(const IPRangeVectorPos nPos)
  * @param idUUID : the UUID
  * @return the rule position
  */
-Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
+Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
 {
 	const RuleVectorPos nSize = m_vRules.size();
 
@@ -1952,7 +2108,7 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
 		return nSize;
 	}
 
-	Rule* const * pRules = &m_vRules[0];
+	Rule* const* pRules = &m_vRules[0];
 
 	RuleVectorPos nMiddle, nHalf, nBegin = 0;
 	RuleVectorPos n = nSize;
@@ -1964,7 +2120,9 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
 	for ( i = 0; i < nSize; ++i )
 	{
 		if ( idUUID == pRules[i]->m_idUUID )
+		{
 			break;
+		}
 	}
 #endif // _DEBUG
 
@@ -2007,7 +2165,9 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
 	for ( j = 0; j < nSize; ++j )
 	{
 		if ( idUUID == pRules[j]->m_idUUID )
+		{
 			break;
+		}
 	}
 
 	if ( j != nReturn )
@@ -2026,11 +2186,13 @@ Manager::RuleVectorPos Manager::getUUID(const QUuid& idUUID) const
  * @param hashes : a vector of hashes to look for
  * @return the rule position
  */
-Manager::RuleVectorPos Manager::getHash(const HashVector& vHashes) const
+Manager::RuleVectorPos Manager::getHash( const HashVector& vHashes ) const
 {
 	// We are not searching for any hash. :)
 	if ( vHashes.empty() )
+	{
 		return m_vRules.size();
+	}
 
 	std::pair<HashIterator, HashIterator> oBounds;
 
@@ -2046,8 +2208,10 @@ Manager::RuleVectorPos Manager::getHash(const HashVector& vHashes) const
 		// (this is important for weaker hashes to deal correctly with hash collisions)
 		while ( it != oBounds.second )
 		{
-			if ( (*it).second->match( vHashes ) )
-				return getUUID( (*it).second->m_idUUID );
+			if ( ( *it ).second->match( vHashes ) )
+			{
+				return getUUID( ( *it ).second->m_idUUID );
+			}
 			++it;
 		}
 	}
@@ -2079,14 +2243,16 @@ void Manager::expireLater()
  * Locking: REQUIRES RW
  * @param nPos : the position
  */
-void Manager::remove(RuleVectorPos nVectorPos)
+void Manager::remove( RuleVectorPos nVectorPos )
 {
 	//qDebug() << "[Security] Starting to remove rule at position: " << QString::number(nVectorPos);
 
 	Q_ASSERT( nVectorPos >= 0 && nVectorPos < m_vRules.size() );
 
 	if ( nVectorPos == m_vRules.size() )
+	{
 		return;
+	}
 
 	Rule* pRule  = m_vRules[nVectorPos];
 
@@ -2095,10 +2261,10 @@ void Manager::remove(RuleVectorPos nVectorPos)
 	{
 	case RuleType::IPAddress:
 	{
-		uint nIP = qHash( ((IPRule*)pRule)->IP() );
+		uint nIP = qHash( ( ( IPRule* )pRule )->IP() );
 		IPMap::iterator it = m_lmIPs.find( nIP );
 
-		if ( it != m_lmIPs.end() && (*it).second->m_idUUID == pRule->m_idUUID )
+		if ( it != m_lmIPs.end() && ( *it ).second->m_idUUID == pRule->m_idUUID )
 		{
 			m_lmIPs.erase( it );
 		}
@@ -2108,7 +2274,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
 	case RuleType::IPAddressRange:
 	{
 		IPRangeVectorPos nPos;
-		IPRangeRule* pTest = findRangeMatch( ((IPRangeRule*)pRule)->startIP(), nPos );
+		IPRangeRule* pTest = findRangeMatch( ( ( IPRangeRule* )pRule )->startIP(), nPos );
 
 		// TODO: remove for alpha1
 		Q_ASSERT( pTest == pRule );
@@ -2127,7 +2293,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
 	{
 		CountryRuleMap::iterator it = m_lmCountries.find( pRule->getContentString() );
 
-		if ( it != m_lmCountries.end() && (*it).second->m_idUUID == pRule->m_idUUID )
+		if ( it != m_lmCountries.end() && ( *it ).second->m_idUUID == pRule->m_idUUID )
 		{
 			m_lmCountries.erase( it );
 		}
@@ -2140,11 +2306,11 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 	case RuleType::Hash:
 	{
-		HashRule* pHashRule = (HashRule*)pRule;
+		HashRule* pHashRule = ( HashRule* )pRule;
 		HashVector vHashes  = pHashRule->getHashes();
 
 		HashRuleMap::iterator it;
-		std::pair<HashRuleMap::iterator,HashRuleMap::iterator> oBounds;
+		std::pair<HashRuleMap::iterator, HashRuleMap::iterator> oBounds;
 		for ( size_t i = 0, nSize = vHashes.size(); i < nSize; ++i )
 		{
 			oBounds = m_lmmHashes.equal_range( qHash( vHashes[i].rawValue() ) );
@@ -2152,7 +2318,7 @@ void Manager::remove(RuleVectorPos nVectorPos)
 
 			while ( it != oBounds.second )
 			{
-				if ( (*it).second->m_idUUID == pHashRule->m_idUUID )
+				if ( ( *it ).second->m_idUUID == pHashRule->m_idUUID )
 				{
 					m_lmmHashes.erase( it );
 					break;
@@ -2176,7 +2342,9 @@ void Manager::remove(RuleVectorPos nVectorPos)
 			while ( nPos < nSize )
 			{
 				if ( pArray[nPos]->m_idUUID == pRule->m_idUUID )
+				{
 					break;
+				}
 				++nPos;
 			}
 
@@ -2204,7 +2372,9 @@ void Manager::remove(RuleVectorPos nVectorPos)
 			while ( nPos < nSize )
 			{
 				if ( pArray[nPos]->m_idUUID == pRule->m_idUUID )
+				{
 					break;
+				}
 				++nPos;
 			}
 
@@ -2232,7 +2402,9 @@ void Manager::remove(RuleVectorPos nVectorPos)
 			while ( nPos < nSize )
 			{
 				if ( pArray[nPos]->m_idUUID == pRule->m_idUUID )
+				{
 					break;
+				}
 				++nPos;
 			}
 
@@ -2289,10 +2461,12 @@ void Manager::remove(RuleVectorPos nVectorPos)
  * @param sUserAgent : the user agent name
  * @return true if the user agent is denied; false otherwise
  */
-bool Manager::isAgentDeniedInternal(const QString& sUserAgent)
+bool Manager::isAgentDeniedInternal( const QString& sUserAgent )
 {
 	if ( sUserAgent.isEmpty() )
+	{
 		return false;
+	}
 
 	const UserAgentVectorPos nSize = m_vUserAgents.size();
 
@@ -2381,10 +2555,12 @@ bool Manager::isAgentDeniedInternal(const QString& sUserAgent)
  * @param pHit : the query hit
  * @return true if the hit is denied; false otherwise
  */
-bool Manager::isDenied(const QueryHit* const pHit)
+bool Manager::isDenied( const QueryHit* const pHit )
 {
 	if ( !pHit )
+	{
 		return false;
+	}
 
 	const HashVector& lHashes = pHit->m_lHashes;
 
@@ -2396,7 +2572,7 @@ bool Manager::isDenied(const QueryHit* const pHit)
 	// If this rule matches the file, return the specified action.
 	if ( nPos != m_vRules.size() )
 	{
-		HashRule* pHashRule = (HashRule*)m_vRules[nPos];
+		HashRule* pHashRule = ( HashRule* )m_vRules[nPos];
 		if ( !pHashRule->isExpired( tNow ) )
 		{
 			if ( pHashRule->match( lHashes ) )
@@ -2461,13 +2637,15 @@ bool Manager::isDenied(const QueryHit* const pHit)
  * @param sContent : the content string/file name to be checked
  * @return true if the hit is denied; false otherwise
  */
-bool Manager::isDenied(const QList<QString>& lQuery, const QString& sContent)
+bool Manager::isDenied( const QList<QString>& lQuery, const QString& sContent )
 {
 	// if this happens, fix caller :D
 	Q_ASSERT( !lQuery.isEmpty() );
 
 	if ( lQuery.isEmpty() || sContent.isEmpty() )
+	{
 		return false;
+	}
 
 	const RegExpVectorPos nSize = m_vRegularExpressions.size();
 
@@ -2511,7 +2689,7 @@ bool Manager::isDenied(const QList<QString>& lQuery, const QString& sContent)
  * @param oAddress: the IP
  * @return true if the IP is within a private range; false otherwise
  */
-bool Manager::isPrivate(const EndPoint& oAddress)
+bool Manager::isPrivate( const EndPoint& oAddress )
 {
 #if SECURITY_DISABLE_IS_PRIVATE_OLD
 #ifdef _DEBUG
@@ -2529,57 +2707,83 @@ bool Manager::isPrivate(const EndPoint& oAddress)
  * @param oAddress : the IP
  * @return true if the IP is within a private range; false otherwise
  */
-bool Manager::isPrivateOld(const EndPoint& oAddress)
+bool Manager::isPrivateOld( const EndPoint& oAddress )
 {
 	if ( oAddress.protocol() == QAbstractSocket::IPv6Protocol )
+	{
 		return false;
+	}
 
-	if( oAddress <= EndPoint("0.255.255.255") )
+	if ( oAddress <= EndPoint( "0.255.255.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("10.0.0.0") &&
-		oAddress <= EndPoint("10.255.255.255") )
+	if ( oAddress >= EndPoint( "10.0.0.0" ) &&
+		 oAddress <= EndPoint( "10.255.255.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("100.64.0.0") &&
-		oAddress <= EndPoint("100.127.255.255") )
+	if ( oAddress >= EndPoint( "100.64.0.0" ) &&
+		 oAddress <= EndPoint( "100.127.255.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("127.0.0.0") &&
-		oAddress <= EndPoint("127.255.255.255") )
+	if ( oAddress >= EndPoint( "127.0.0.0" ) &&
+		 oAddress <= EndPoint( "127.255.255.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("169.254.0.0") &&
-		oAddress <= EndPoint("169.254.255.255") )
+	if ( oAddress >= EndPoint( "169.254.0.0" ) &&
+		 oAddress <= EndPoint( "169.254.255.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("172.16.0.0") &&
-		oAddress <= EndPoint("172.31.255.255") )
+	if ( oAddress >= EndPoint( "172.16.0.0" ) &&
+		 oAddress <= EndPoint( "172.31.255.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("192.0.0.0") &&
-		oAddress <= EndPoint("192.0.2.255") )
+	if ( oAddress >= EndPoint( "192.0.0.0" ) &&
+		 oAddress <= EndPoint( "192.0.2.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("192.168.0.0") &&
-		oAddress <= EndPoint("192.168.255.255") )
+	if ( oAddress >= EndPoint( "192.168.0.0" ) &&
+		 oAddress <= EndPoint( "192.168.255.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("198.18.0.0") &&
-		oAddress <= EndPoint("198.19.255.255") )
+	if ( oAddress >= EndPoint( "198.18.0.0" ) &&
+		 oAddress <= EndPoint( "198.19.255.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("198.51.100.0") &&
-		oAddress <= EndPoint("198.51.100.255") )
+	if ( oAddress >= EndPoint( "198.51.100.0" ) &&
+		 oAddress <= EndPoint( "198.51.100.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("203.0.113.0") &&
-		oAddress <= EndPoint("203.0.113.255") )
+	if ( oAddress >= EndPoint( "203.0.113.0" ) &&
+		 oAddress <= EndPoint( "203.0.113.255" ) )
+	{
 		return true;
+	}
 
-	if( oAddress >= EndPoint("240.0.0.0") &&
-		oAddress <= EndPoint("255.255.255.255") )
+	if ( oAddress >= EndPoint( "240.0.0.0" ) &&
+		 oAddress <= EndPoint( "255.255.255.255" ) )
+	{
 		return true;
+	}
 
 	return false;
 }
@@ -2589,11 +2793,13 @@ bool Manager::isPrivateOld(const EndPoint& oAddress)
  * @param oAddress : the IP
  * @return true if the IP is within a private range; false otherwise
  */
-bool Manager::isPrivateNew(const EndPoint& oAddress)
+bool Manager::isPrivateNew( const EndPoint& oAddress )
 {
 #endif // SECURITY_DISABLE_IS_PRIVATE_OLD
 	if ( oAddress.protocol() == QAbstractSocket::IPv6Protocol )
+	{
 		return false;
+	}
 
 	const IPRangeVectorPos nSize = m_vPrivateRanges.size();
 
@@ -2639,7 +2845,7 @@ bool Manager::isPrivateNew(const EndPoint& oAddress)
  * @return first range with a oAddress >= startIP(), (e.g. the only range that might be
  * containing the given IP); m_vIPRanges.size() if no such range exists.
  */
-Manager::IPRangeVectorPos Manager::findRangeForMerging(const EndPoint& oAddress)
+Manager::IPRangeVectorPos Manager::findRangeForMerging( const EndPoint& oAddress )
 {
 	const IPRangeVectorPos nSize = m_vIPRanges.size();
 
@@ -2709,7 +2915,7 @@ Manager::IPRangeVectorPos Manager::findRangeForMerging(const EndPoint& oAddress)
  * @param nPos : a reference value that will be set to the rule pos within the vector (optional)
  * @return the range rule matching oAddress; NULL if no such range rule exists.
  */
-IPRangeRule* Manager::findRangeMatch(const EndPoint& oAddress, IPRangeVectorPos& nPos)
+IPRangeRule* Manager::findRangeMatch( const EndPoint& oAddress, IPRangeVectorPos& nPos )
 {
 	const IPRangeVectorPos nSize = m_vIPRanges.size();
 

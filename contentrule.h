@@ -43,17 +43,17 @@ public:
 	ContentRule();
 	Rule*   getCopy() const;
 
-	bool    operator==(const Rule& pRule) const;
+	bool    operator==( const Rule& pRule ) const;
 
-	bool    parseContent(const QString& sContent);
+	bool    parseContent( const QString& sContent );
 
-	void    setAll(bool all = true);
+	void    setAll( bool all = true );
 	bool    getAll() const;
 
-	bool    match(const QString& sFileName) const; // called by  match(CQueryHit*)
-	bool    match(const QueryHit* const pHit) const;
+	bool    match( const QString& sFileName ) const; // called by  match(CQueryHit*)
+	bool    match( const QueryHit* const pHit ) const;
 
-	void    toXML(QXmlStreamWriter& oXMLdocument) const;
+	void    toXML( QXmlStreamWriter& oXMLdocument ) const;
 };
 
 }

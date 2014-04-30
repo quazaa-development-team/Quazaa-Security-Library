@@ -45,13 +45,13 @@ public:
 	IPRule();
 	Rule*       getCopy() const;
 
-	bool        parseContent(const QString& sContent);
+	bool        parseContent( const QString& sContent );
 
 	QHostAddress    IP() const;
-	void            setIP(const QHostAddress& oIP);
+	void            setIP( const QHostAddress& oIP );
 
-	bool        match(const EndPoint& oAddress) const;
-	void        toXML(QXmlStreamWriter& oXMLdocument) const;
+	bool        match( const EndPoint& oAddress ) const;
+	void        toXML( QXmlStreamWriter& oXMLdocument ) const;
 };
 
 }

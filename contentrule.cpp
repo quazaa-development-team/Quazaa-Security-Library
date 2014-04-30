@@ -46,12 +46,12 @@ Rule* ContentRule::getCopy() const
 	return new ContentRule( *this );
 }
 
-bool ContentRule::operator==(const Rule& pRule) const
+bool ContentRule::operator==( const Rule& pRule ) const
 {
-	return Rule::operator==( pRule ) && m_bAll == ((ContentRule*)&pRule)->m_bAll;
+	return Rule::operator==( pRule ) && m_bAll == ( ( ContentRule* )&pRule )->m_bAll;
 }
 
-bool ContentRule::parseContent(const QString& sContent)
+bool ContentRule::parseContent( const QString& sContent )
 {
 	Q_ASSERT( m_nType == RuleType::Content );
 
@@ -77,9 +77,9 @@ bool ContentRule::parseContent(const QString& sContent)
 		for ( ListIterator i = m_lContent.begin() ; i != m_lContent.end() ; ++i )
 		{
 #if QT_VERSION >= 0x050000
-			if ( oSizeFilter.match( (*i) ).hasMatch() )
+			if ( oSizeFilter.match( *i ).hasMatch() )
 #else
-			if ( oSizeFilter.exactMatch( (*i) ) )
+			if ( oSizeFilter.exactMatch( *i ) )
 #endif
 			{
 				m_bSize = true;
@@ -94,7 +94,7 @@ bool ContentRule::parseContent(const QString& sContent)
 	return false;
 }
 
-void ContentRule::setAll(bool all)
+void ContentRule::setAll( bool all )
 {
 	m_bAll = all;
 }
@@ -104,7 +104,7 @@ bool ContentRule::getAll() const
 	return m_bAll;
 }
 
-bool ContentRule::match(const QString& sFileName) const
+bool ContentRule::match( const QString& sFileName ) const
 {
 	for ( ListIterator i = m_lContent.begin() ; i != m_lContent.end() ; ++i )
 	{
@@ -121,15 +121,19 @@ bool ContentRule::match(const QString& sFileName) const
 	}
 
 	if ( m_bAll )
+	{
 		return true;
+	}
 
 	return false;
 }
 
-bool ContentRule::match(const QueryHit* const pHit) const
+bool ContentRule::match( const QueryHit* const pHit ) const
 {
 	if ( !pHit )
+	{
 		return false;
+	}
 
 	QString sFileName = pHit->m_sDescriptiveName;
 
@@ -140,13 +144,15 @@ bool ContentRule::match(const QueryHit* const pHit) const
 		QString sExtFileSize = "size:%1:%2";
 		sExtFileSize = sExtFileSize.arg( sExt, QString::number( pHit->m_nObjectSize ) );
 		if ( match( sExtFileSize ) )
+		{
 			return true;
+		}
 	}
 
 	return match( sFileName );
 }
 
-void ContentRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void ContentRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 {
 	Q_ASSERT( m_nType == RuleType::Content );
 
@@ -154,7 +160,7 @@ void ContentRule::toXML(QXmlStreamWriter& oXMLdocument) const
 
 	oXMLdocument.writeAttribute( "type", "content" );
 
-	if( m_bAll )
+	if ( m_bAll )
 	{
 		oXMLdocument.writeAttribute( "match", "all" );
 	}

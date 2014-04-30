@@ -40,29 +40,29 @@ typedef quint32 ID; // used for GUI updating
 
 namespace RuleType
 {
-	enum Type
-	{
-		Undefined = 0, IPAddress = 1, IPAddressRange = 2, Country = 3, Hash = 4,
-		RegularExpression = 5, UserAgent = 6, Content = 7, NoOfTypes = 8
-	};
+enum Type
+{
+	Undefined = 0, IPAddress = 1, IPAddressRange = 2, Country = 3, Hash = 4,
+	RegularExpression = 5, UserAgent = 6, Content = 7, NoOfTypes = 8
+};
 }
 
 namespace RuleAction
 {
-	enum Action
-	{
-		None = 0, Accept = 1, Deny = 2, NoOfActions = 3
-	};
+enum Action
+{
+	None = 0, Accept = 1, Deny = 2, NoOfActions = 3
+};
 }
 
 namespace RuleTime
 {
-	enum Time
-	{
-		Forever = 0, Session = 1, FiveMinutes = 300, ThirtyMinutes = 1800, TwoHours = 7200,
-		SixHours = 21600, TwelveHours = 42300, Day = 86400, Week = 604800, Month = 2592000,
-		SixMonths = 15552000
-	};
+enum Time
+{
+	Forever = 0, Session = 1, FiveMinutes = 300, ThirtyMinutes = 1800, TwoHours = 7200,
+	SixHours = 21600, TwelveHours = 42300, Day = 86400, Week = 604800, Month = 2592000,
+	SixMonths = 15552000
+};
 }
 
 class Rule
@@ -95,7 +95,7 @@ public:
 public:
 	// Construction / Destruction
 	Rule();
-	Rule(const Rule& pRule);
+	Rule( const Rule& pRule );
 	virtual ~Rule();
 
 	// Returns a copy of the current rule. Note that this copy does not contain
@@ -103,15 +103,15 @@ public:
 	virtual Rule* getCopy() const;
 
 	// Operators
-	virtual bool    operator==(const Rule& pRule) const;
-	bool            operator!=(const Rule& pRule) const;
+	virtual bool    operator==( const Rule& pRule ) const;
+	bool            operator!=( const Rule& pRule ) const;
 
-	virtual bool    parseContent(const QString& sContent);
+	virtual bool    parseContent( const QString& sContent );
 	QString         getContentString() const;
 
-	bool    isExpired(quint32 tNow, bool bSession = false) const;
-	void    setExpiryTime(const quint32 tExpire);
-	void    addExpiryTime(const quint32 tAdd);
+	bool    isExpired( quint32 tNow, bool bSession = false ) const;
+	void    setExpiryTime( const quint32 tExpire );
+	void    addExpiryTime( const quint32 tAdd );
 	quint32 getExpiryTime() const;
 
 	/**
@@ -121,35 +121,35 @@ public:
 	 * pDestination.
 	 * Requires Locking: RW
 	 */
-	void    mergeInto(Rule* pDestination);
+	void    mergeInto( Rule* pDestination );
 
 	// Hit count control
 	void    count();
 	void    resetCount();
 	quint32 getTodayCount() const;
 	quint32 getTotalCount() const;
-	void    loadTotalCount(quint32 nTotal);
+	void    loadTotalCount( quint32 nTotal );
 
 	// get the rule type
 	RuleType::Type  type() const;
 
 	// Check content for hits
-	virtual bool    match(const EndPoint& oAddress) const;
+	virtual bool    match( const EndPoint& oAddress ) const;
 	//virtual bool    match(const QString& sContent) const;
-	virtual bool    match(const QueryHit* const pHit) const;
-	virtual bool    match(const QList<QString>& lQuery, const QString& sContent) const;
+	virtual bool    match( const QueryHit* const pHit ) const;
+	virtual bool    match( const QList<QString>& lQuery, const QString& sContent ) const;
 
 	// Read/write rule from/to file
-	static void     load(Rule*& pRule, QDataStream& fsFile, const int nVersion);
-	static void     save(const Rule* const pRule, QDataStream& oStream);
+	static void     load( Rule*& pRule, QDataStream& fsFile, const int nVersion );
+	static void     save( const Rule* const pRule, QDataStream& oStream );
 
 	// XML Import/Export functionality
-	static Rule*    fromXML(QXmlStreamReader& oXMLdocument, float nVersion);
-	virtual void    toXML(QXmlStreamWriter& oXMLdocument) const;
+	static Rule*    fromXML( QXmlStreamReader& oXMLdocument, float nVersion );
+	virtual void    toXML( QXmlStreamWriter& oXMLdocument ) const;
 
 protected:
 	// Contains default code for XML generation.
-	static void     toXML(const Rule& oRule, QXmlStreamWriter& oXMLdocument);
+	static void     toXML( const Rule& oRule, QXmlStreamWriter& oXMLdocument );
 };
 
 }

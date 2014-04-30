@@ -39,13 +39,13 @@ Rule* RegularExpressionRule::getCopy() const
 	return new RegularExpressionRule( *this );
 }
 
-bool RegularExpressionRule::operator==(const Rule& pRule) const
+bool RegularExpressionRule::operator==( const Rule& pRule ) const
 {
 	return Rule::operator==( pRule ) &&
-		   m_bSpecialElements == ((RegularExpressionRule*)&pRule)->m_bSpecialElements;
+		   m_bSpecialElements == ( ( RegularExpressionRule* )&pRule )->m_bSpecialElements;
 }
 
-bool RegularExpressionRule::parseContent(const QString& sContent)
+bool RegularExpressionRule::parseContent( const QString& sContent )
 {
 	m_sContent = sContent.trimmed();
 
@@ -82,12 +82,14 @@ bool RegularExpressionRule::parseContent(const QString& sContent)
 	}
 }
 
-bool RegularExpressionRule::match(const QList<QString>& lQuery, const QString& sContent) const
+bool RegularExpressionRule::match( const QList<QString>& lQuery, const QString& sContent ) const
 {
 	Q_ASSERT( m_nType == RuleType::RegularExpression );
 
 	if ( m_sContent.isEmpty() )
+	{
 		return false;
+	}
 
 	if ( m_bSpecialElements )
 	{
@@ -143,7 +145,7 @@ bool RegularExpressionRule::match(const QList<QString>& lQuery, const QString& s
 	}
 }
 
-void RegularExpressionRule::toXML(QXmlStreamWriter& oXMLdocument) const
+void RegularExpressionRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 {
 	Q_ASSERT( m_nType == RuleType::RegularExpression );
 
@@ -157,10 +159,12 @@ void RegularExpressionRule::toXML(QXmlStreamWriter& oXMLdocument) const
 	oXMLdocument.writeEndElement();
 }
 
-bool RegularExpressionRule::replace(QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent)
+bool RegularExpressionRule::replace( QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent )
 {
 	if ( sReplace.at( 0 ) != '<' )
+	{
 		return false;
+	}
 
 	if ( sReplace.length() > 1 && sReplace.at( 1 ) == '>' )
 	{

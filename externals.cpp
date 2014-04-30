@@ -31,7 +31,7 @@
 
 using namespace Security;
 
-void Security::postLogMessage(LogSeverity eSeverity, QString sMessage, bool bDebug)
+void Security::postLogMessage( LogSeverity eSeverity, QString sMessage, bool bDebug )
 {
 	switch ( eSeverity )
 	{

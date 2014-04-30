@@ -44,10 +44,12 @@ SanityCecker::~SanityCecker()
  * @param oAddress : the IP to be checked
  * @return true if the IP is newly banned; false otherwise
  */
-bool SanityCecker::isNewlyDenied(const EndPoint& oAddress)
+bool SanityCecker::isNewlyDenied( const EndPoint& oAddress )
 {
 	if ( oAddress.isNull() )
+	{
 		return false;
+	}
 
 	// This should only be called if new rules have been loaded previously.
 	Q_ASSERT( m_bNewRulesLoaded );
@@ -88,10 +90,12 @@ bool SanityCecker::isNewlyDenied(const EndPoint& oAddress)
  * @param lQuery : the query string
  * @return true if the hit is newly banned; false otherwise
  */
-bool SanityCecker::isNewlyDenied(const QueryHit* const pHit, const QList<QString>& lQuery)
+bool SanityCecker::isNewlyDenied( const QueryHit* const pHit, const QList<QString>& lQuery )
 {
 	if ( !pHit )
+	{
 		return false;
+	}
 
 	// This should only be called if new rules have been loaded previously.
 	Q_ASSERT( m_bNewRulesLoaded );
@@ -135,7 +139,9 @@ bool SanityCecker::isNewlyDenied(const QueryHit* const pHit, const QList<QString
 void SanityCecker::sanityCheck()
 {
 	if ( m_bVerboose )
+	{
 		postLogMessage( LogSeverity::Debug, tr( "Initializing Sanity. " ), true );
+	}
 
 	if ( m_oRWLock.tryLockForWrite( 200 ) )
 	{
@@ -185,7 +191,9 @@ void SanityCecker::sanityCheck()
 
 		if ( bEmit )
 			// Inform all other modules aber the necessity of a sanity check.
+		{
 			emit beginSanityCheck();
+		}
 	}
 	else // We didn't get a write lock in a timely manner.
 	{
@@ -195,7 +203,9 @@ void SanityCecker::sanityCheck()
 							tr( "Failed to obtain lock. Trying again in 5 sec." ),
 							true );
 		else
+		{
 			qDebug() << "[Security] Failed to obtain Sanity check lock. Trying again in 5 sec.";
+		}
 		signalQueue.push( this, "sanityCheck", 5 );
 	}
 }
@@ -218,7 +228,7 @@ void SanityCecker::sanityCheckPerformed()
 		if ( m_bVerboose )
 			postLogMessage( LogSeverity::Debug, tr( "A component finished with sanity checking. " )
 							+ tr( "Still waiting for %s other components to finish."
-								  ).arg( m_nPendingOperations ), true );
+								).arg( m_nPendingOperations ), true );
 	}
 	else
 	{
@@ -293,7 +303,7 @@ void SanityCecker::loadBatch()
  * @brief clearBatch unloads new rules from sanity check containers.
  * Locking: REQUIRES RW
  */
-void SanityCecker::clearBatch(bool bShutDown)
+void SanityCecker::clearBatch( bool bShutDown )
 {
 	Q_ASSERT( m_bNewRulesLoaded );
 	Q_ASSERT( !m_nPendingOperations );
@@ -331,7 +341,9 @@ void SanityCecker::clear()
 	m_nPendingOperations = 0;
 
 	if ( m_bNewRulesLoaded )
+	{
 		clearBatch( true );
+	}
 
 	while ( m_lqNewRules.size() )
 	{

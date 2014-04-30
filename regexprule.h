@@ -59,15 +59,15 @@ public:
 	RegularExpressionRule();
 	Rule*       getCopy() const;
 
-	bool        operator==(const Rule& pRule) const;
+	bool        operator==( const Rule& pRule ) const;
 
-	bool        parseContent(const QString& sContent);
+	bool        parseContent( const QString& sContent );
 
-	bool        match(const QList<QString>& lQuery, const QString& sContent) const;
-	void        toXML(QXmlStreamWriter& oXMLdocument) const;
+	bool        match( const QList<QString>& lQuery, const QString& sContent ) const;
+	void        toXML( QXmlStreamWriter& oXMLdocument ) const;
 
 private:
-	static bool replace(QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent);
+	static bool replace( QString& sReplace, const QList<QString>& lQuery, quint8& nCurrent );
 };
 
 }
