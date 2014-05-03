@@ -38,7 +38,7 @@ namespace Security
 class HashRule : public Rule
 {
 private:
-	std::map< CHash::Algorithm, CHash > m_lmHashes;
+	HashSet m_vHashes;
 
 	// m_sContent contains a space separated list of the urns of all hashes
 
@@ -49,15 +49,15 @@ public:
 
 	bool    parseContent( const QString& sContent );
 
-	HashVector  getHashes() const;
-	void        setHashes( const HashVector& hashes );
+	const HashSet& getHashes() const;
+	void        setHashes( const HashSet& hashes );
 
-	void    reduceByHashPriority( uint nNumberOfHashes );
+	void    simplifyByHashPriority( quint8 nNumberOfHashes );
 
 	bool    hashEquals( const HashRule& oRule ) const;
 
 	bool    match( const QueryHit* const pHit ) const;
-	bool    match( const HashVector& lHashes ) const; // called by match(CQueryHit*)
+	bool    match(const HashSet& vHashes ) const; // called by match(CQueryHit*)
 
 	void    toXML( QXmlStreamWriter& oXMLdocument ) const;
 };

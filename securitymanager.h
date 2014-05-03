@@ -272,8 +272,8 @@ public:
 	 * @param nMaxHashes : the maximum amount of hashes to add to the rule
 	 * @param sComment : comment; if blanc, a default comment is generated depending on nBanLength
 	 */
-	void            ban( const QueryHit* const pHit, RuleTime::Time nBanLength, uint nMaxHashes = 3,
-						 const QString& sComment = "" );
+	void            ban( const QueryHit* const pHit, RuleTime::Time nBanLength,
+						 quint8 nMaxHashes = 3, const QString& sComment = "" );
 
 	/**
 	 * @brief Manager::isDenied checks an IP against the security database.
@@ -591,7 +591,7 @@ public:
 	 * @param hashes : a vector of hashes to look for
 	 * @return the rule position
 	 */
-	RuleVectorPos   getHash( const HashVector& hashes ) const;
+	RuleVectorPos   getHash( const HashSet& hashes ) const;
 
 	/**
 	 * @brief Manager::expireLater invokes delayed rule expiry on return to the main loop.

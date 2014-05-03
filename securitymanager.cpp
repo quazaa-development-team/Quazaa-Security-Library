@@ -223,7 +223,7 @@ bool Manager::add( Rule* pRule )
 #endif // SECURITY_ENABLE_GEOIP
 	case RuleType::Hash:
 	{
-		HashVector vHashes = ( ( HashRule* )pRule )->getHashes();
+		const HashSet& vHashes = ( ( HashRule* )pRule )->getHashes();
 		RuleVectorPos nPos = getHash( vHashes );
 
 		if ( nPos != m_vRules.size() )
@@ -239,9 +239,10 @@ bool Manager::add( Rule* pRule )
 		{
 			// If there isn't a rule for this content or there is a rule for
 			// similar but not 100% identical content, add hashes to map.
-			for ( size_t i = 0, nSize = vHashes.size(); i < nSize; ++i )
+			for ( quint8 i = 0, nSize = vHashes.size(); i < nSize; ++i )
 			{
-				m_lmmHashes.insert( HashPair( qHash( vHashes[i].rawValue() ), ( HashRule* )pRule ) );
+				uint nKey = qHash( vHashes[i]->rawValue() );
+				m_lmmHashes.insert( HashPair( nKey, ( HashRule* )pRule ) );
 			}
 
 			bNewHit	= true;
@@ -611,17 +612,17 @@ void Manager::ban( const QHostAddress& oAddress, RuleTime::Time nBanLength,
  * @param nMaxHashes : the maximum amount of hashes to add to the rule
  * @param sComment : comment; if blanc, a default comment is generated depending on nBanLength
  */
-void Manager::ban( const QueryHit* const pHit, RuleTime::Time nBanLength, uint nMaxHashes,
+void Manager::ban( const QueryHit* const pHit, RuleTime::Time nBanLength, quint8 nMaxHashes,
 				   const QString& sComment )
 {
-	if ( !pHit || !pHit->isValid() || pHit->m_lHashes.empty() )
+	if ( !pHit || !pHit->isValid() || pHit->m_vHashes.empty() )
 	{
 		postLogMessage( LogSeverity::Security, tr( "Error: Could not ban invalid file." ) );
 		return;
 	}
 
 	m_oRWLock.lockForRead();
-	bool bAlreadyBlocked = ( getHash( pHit->m_lHashes ) != m_vRules.size() );
+	bool bAlreadyBlocked = ( getHash( pHit->m_vHashes ) != m_vRules.size() );
 	m_oRWLock.unlock();
 
 	if ( bAlreadyBlocked )
@@ -692,15 +693,8 @@ void Manager::ban( const QueryHit* const pHit, RuleTime::Time nBanLength, uint n
 			pRule->m_sComment = sComment;
 		}
 
-		HashVector hashes;
-		hashes.reserve( pHit->m_lHashes.size() );
-		for ( size_t i = 0, nSize = pHit->m_lHashes.size(); i < nSize; ++i )
-		{
-			hashes.push_back( pHit->m_lHashes[i] );
-		}
-
-		pRule->setHashes( hashes );
-		pRule->reduceByHashPriority( nMaxHashes );
+		pRule->setHashes( pHit->m_vHashes );
+		pRule->simplifyByHashPriority( nMaxHashes );
 
 		if ( add( pRule ) )
 		{
@@ -2186,7 +2180,7 @@ Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
  * @param hashes : a vector of hashes to look for
  * @return the rule position
  */
-Manager::RuleVectorPos Manager::getHash( const HashVector& vHashes ) const
+Manager::RuleVectorPos Manager::getHash( const HashSet& vHashes ) const
 {
 	// We are not searching for any hash. :)
 	if ( vHashes.empty() )
@@ -2197,10 +2191,10 @@ Manager::RuleVectorPos Manager::getHash( const HashVector& vHashes ) const
 	std::pair<HashIterator, HashIterator> oBounds;
 
 	// For each hash that has been given to the function:
-	for ( size_t i = 0, nSize = vHashes.size(); i < nSize; ++i )
+	for ( quint8 i = 0, nSize = vHashes.size(); i < nSize; ++i )
 	{
 		// 1. Check whether a corresponding rule can be found in our lookup container.
-		oBounds = m_lmmHashes.equal_range( qHash( vHashes[i].rawValue() ) );
+		oBounds = m_lmmHashes.equal_range( qHash( vHashes[i]->rawValue() ) );
 
 		HashIterator it = oBounds.first;
 
@@ -2307,13 +2301,13 @@ void Manager::remove( RuleVectorPos nVectorPos )
 	case RuleType::Hash:
 	{
 		HashRule* pHashRule = ( HashRule* )pRule;
-		HashVector vHashes  = pHashRule->getHashes();
+		const HashSet& vHashes = pHashRule->getHashes();
 
 		HashRuleMap::iterator it;
 		std::pair<HashRuleMap::iterator, HashRuleMap::iterator> oBounds;
-		for ( size_t i = 0, nSize = vHashes.size(); i < nSize; ++i )
+		for ( quint8 i = 0, nSize = vHashes.size(); i < nSize; ++i )
 		{
-			oBounds = m_lmmHashes.equal_range( qHash( vHashes[i].rawValue() ) );
+			oBounds = m_lmmHashes.equal_range( qHash( vHashes[i]->rawValue() ) );
 			it = oBounds.first;
 
 			while ( it != oBounds.second )
@@ -2562,12 +2556,12 @@ bool Manager::isDenied( const QueryHit* const pHit )
 		return false;
 	}
 
-	const HashVector& lHashes = pHit->m_lHashes;
+	const HashSet& vHashes = pHit->m_vHashes;
 
 	const quint32 tNow = common::getTNowUTC();
 
 	// Search for a rule matching these hashes
-	RuleVectorPos nPos = getHash( lHashes );
+	RuleVectorPos nPos = getHash( vHashes );
 
 	// If this rule matches the file, return the specified action.
 	if ( nPos != m_vRules.size() )
@@ -2575,7 +2569,7 @@ bool Manager::isDenied( const QueryHit* const pHit )
 		HashRule* pHashRule = ( HashRule* )m_vRules[nPos];
 		if ( !pHashRule->isExpired( tNow ) )
 		{
-			if ( pHashRule->match( lHashes ) )
+			if ( pHashRule->match( vHashes ) )
 			{
 				hit( pHashRule );
 
