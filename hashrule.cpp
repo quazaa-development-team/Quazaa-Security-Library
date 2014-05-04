@@ -82,7 +82,7 @@ bool HashRule::parseContent( const QString& sContent )
 		if ( pos1 != -1 )
 		{
 			tmp  = sContent.mid( pos1 );
-			int length = CHash::lengthForUrn( prefixes.at( i ) ) + prefixes.at( i ).length();
+			int length = Hash::lengthForUrn( prefixes.at( i ) ) + prefixes.at( i ).length();
 			pos2 = tmp.indexOf( "&" );
 
 			qDebug() << "Expected hash length:" << length;
@@ -112,7 +112,7 @@ bool HashRule::parseContent( const QString& sContent )
 				continue;
 			}
 
-			CHash* pHash = CHash::fromURN( sHash );
+			Hash* pHash = Hash::fromURN( sHash );
 			if ( pHash )
 			{
 				vHashes.insert( pHash );
