@@ -342,7 +342,7 @@ public:
 	 * Locking: RW
 	 * @return true if saving was successful; false otherwise
 	 */
-	bool            stop(); // makes the Security Manager ready for destruction
+	void            stop(); // makes the Security Manager ready for destruction
 
 	/**
 	 * @brief Manager::load loads the rule database from the HDD.
@@ -359,7 +359,7 @@ public:
 	 * isn't needed ATM
 	 * @return true if saving has been successfull/saving has been skipped; false otherwise
 	 */
-	bool            save( bool bForceSaving = false ) const;
+	void            save( bool bForceSaving = false ) const;
 
 	/**
 	 * @brief Manager::writeToFile is a helper method required for save().
@@ -540,7 +540,7 @@ public:
 	 * @param sPath : the location of the rule file on disk
 	 * @return true if loading was successful; false otherwise
 	 */
-	bool            load( QString sPath );
+	bool            load( const QString& sPath );
 
 	/**
 	 * @brief Manager::insert inserts a new rule at the correct place into the rules vector.

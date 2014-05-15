@@ -1224,7 +1224,7 @@ bool Manager::start()
  * Locking: RW
  * @return true if saving was successful; false otherwise
  */
-bool Manager::stop()
+void Manager::stop()
 {
 	signalQueue.pop( this );    // Remove all cleanup intervall timers from the queue.
 
@@ -1233,10 +1233,8 @@ bool Manager::stop()
 
 	securitySettings.stop();
 
-	bool bSaved = save( true ); // Save security rules to disk.
-	clear();                    // Release memory and free containers.
-
-	return bSaved;
+	save( true ); // Save security rules to disk.
+	clear();      // Release memory and free containers.
 }
 
 /**
@@ -1254,11 +1252,21 @@ bool Manager::load()
 	}
 	else
 	{
+		postLogMessage( LogSeverity::Warning,
+						tr( "Failed loading security rules from primary file:\n" )
+						+ sPath + "security.dat\n"
+						+ tr( "Switching to backup file instead." ) );
+
 		// try backup file if primary file failed for some reason
 		if ( load( sPath + "security_backup.dat" ) )
 		{
 			return true;
 		}
+
+		postLogMessage( LogSeverity::Warning,
+						tr( "Failed loading security rules from backup file:\n" )
+						+ sPath + "security_backup.dat\n"
+						+ tr( "Loading default rules now." ) );
 
 		// fall back to default file if neither primary nor backup file exists
 		sPath = QDir::toNativeSeparators( QString( "%1/DefaultSecurity.dat"
@@ -1275,26 +1283,26 @@ bool Manager::load()
  * isn't needed ATM
  * @return true if saving has been successfull/saving has been skipped; false otherwise
  */
-bool Manager::save( bool bForceSaving ) const
+void Manager::save( bool bForceSaving ) const
 {
 #ifndef QUAZAA_SETUP_UNIT_TESTS
 	if ( !m_bUnsaved && !bForceSaving )
 	{
-		return true;		// Saving not required ATM.
+		return;		// Saving not required ATM.
 	}
 
 	const QString sPath = dataPath();
 
 	m_oRWLock.lockForRead();
 	m_bUnsaved   = false;
-	bool bReturn = common::securedSaveFile( sPath, "security.dat", Component::Security,
+	quint32 nCount = common::securedSaveFile( sPath, "security.dat", Component::Security,
 											this, &Security::Manager::writeToFile );
 	m_oRWLock.unlock();
 
-	return bReturn;
+	postLogMessage( LogSeverity::Debug, tr( "%0 rules saved." ).arg( nCount ) );
 #else
 	Q_UNUSED( bForceSaving );
-	return true;
+	return;
 #endif
 }
 
@@ -1311,23 +1319,22 @@ quint32 Manager::writeToFile( const void* const pManager, QFile& oFile )
 
 	QDataStream oStream( &oFile );
 	Manager* pSManager = ( Manager* )pManager;
+	const RuleVectorPos nCount = pSManager->m_vRules.size();
 
 	oStream << nVersion;
 	oStream << pSManager->m_bDenyPolicy;
-	oStream << pSManager->count();
+	oStream << ( quint32 )nCount;
 
-	const RuleVectorPos nSize = pSManager->m_vRules.size();
-
-	if ( nSize )
+	if ( nCount )
 	{
 		Rule** pRules = &( pSManager->m_vRules )[0];
-		for ( RuleVectorPos n = 0; n < nSize; ++n )
+		for ( RuleVectorPos n = 0; n < nCount; ++n )
 		{
 			Rule::save( pRules[n], oStream );
 		}
 	}
 
-	return ( quint32 )pSManager->count();
+	return ( quint32 )nCount;
 }
 
 /**
@@ -1809,7 +1816,7 @@ void Manager::clearPrivates()
  * @param sPath : the location of the rule file on disk
  * @return true if loading was successful; false otherwise
  */
-bool Manager::load( QString sPath )
+bool Manager::load( const QString& sPath )
 {
 	QFile oFile( sPath );
 
@@ -1844,7 +1851,6 @@ bool Manager::load( QString sPath )
 		m_oRWLock.unlock();
 
 		int nSuccessCount = 0;
-
 		if ( nVersion >= 1 )
 		{
 			while ( nCount > 0 )
@@ -1869,13 +1875,9 @@ bool Manager::load( QString sPath )
 		m_bIsLoading = false;
 		m_oRWLock.unlock();
 
-		if ( nSuccessCount )
-		{
-			postLogMessage( LogSeverity::Debug, QObject::tr( "Loaded security rules from file: %1"
-														   ).arg( sPath ) );
-			postLogMessage( LogSeverity::Debug, QObject::tr( "Loaded %1 rules."
-														   ).arg( nSuccessCount ) );
-		}
+		postLogMessage( LogSeverity::Information,
+						tr( "Loaded %0 security rules from file: %1"
+							).arg( QString::number( nSuccessCount ), sPath ) );
 
 		// perform sanity check after loading.
 		m_oSanity.sanityCheck();
@@ -1907,11 +1909,9 @@ bool Manager::load( QString sPath )
 		Rule* pTestRule = m_vRules[i];
 
 		if ( pTestRule->type() <= 0 ||
-			 pTestRule->type() >= RuleType::NoOfTypes ||
-			 pTestRule->getTotalCount() < 0 )
+			 pTestRule->type() >= RuleType::NoOfTypes )
 		{
 			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
-			Q_ASSERT( pTestRule->getTotalCount() >= 0 );
 		}
 	}
 #endif
