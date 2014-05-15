@@ -25,6 +25,12 @@
 #ifndef EXTERNALS_H
 #define EXTERNALS_H
 
+// the minimal amount of IP related rules before enabling the miss cache
+#define SECURITY_MIN_RULES_TO_ENABLE_CACHE 30
+
+#define SECURITY_LOG_BAN_SOURCES 0
+#define SECURITY_DISABLE_IS_PRIVATE_OLD 0
+
 // Enable/disable GeoIP support of the security library.
 #define SECURITY_ENABLE_GEOIP 1
 

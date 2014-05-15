@@ -32,23 +32,6 @@
 
 #include <QFile>
 
-// Increment this if there have been made changes to the way of storing security rules.
-#define SECURITY_CODE_VERSION 1
-// History:
-// 0 - Initial implementation
-// 1 - Some changes to the way the rule time is stored and other minor adjustments.
-
-#define SECURITY_XML_VERSION "2.0"
-// History:
-// 1.0 - Original implementation by Shareaza
-// 2.0 - Adjustments for IP ranges, Regular Expressions etc.
-
-// the minimal amount of IP related rules before enabling the miss cache
-#define SECURITY_MIN_RULES_TO_ENABLE_CACHE 30
-
-#define SECURITY_LOG_BAN_SOURCES 0
-#define SECURITY_DISABLE_IS_PRIVATE_OLD 0
-
 #include "externals.h"
 
 #include "securerule.h"
@@ -64,12 +47,22 @@
 #include "misscache.h"
 #include "sanitychecker.h"
 
+// Increment this if there have been made changes to the way of storing security rules.
+#define SECURITY_CODE_VERSION 1
+// History:
+// 0 - Initial implementation
+// 1 - Some changes to the way the rule time is stored and other minor adjustments.
+
+#define SECURITY_XML_VERSION "2.0"
+// History:
+// 1.0 - Original implementation by Shareaza
+// 2.0 - Adjustments for IP ranges, Regular Expressions etc.
+
 // TODO: Use QMetaMethod for method invokation
 // TODO: make sure the rule editing dialogue is protected when rules are removed.
 // TODO: use hashtable for single IPs
 // TODO: add defines for hit matching
 // TODO: improve doxygen
-// TODO: add header with all defines and external dependencies
 // TODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
 // TODO: Enable/disable this according to the visibility within the GUI
 // TODO: http://quazaa.sourceforge.net/index.php?option=com_jfusion&Itemid=4&jfile=viewtopic.php&f=8&t=201&view=unread#unread

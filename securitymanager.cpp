@@ -2125,8 +2125,6 @@ Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
 			nBegin = nMiddle + 1;
 			n -= nHalf + 1;
 		}
-
-
 	}
 
 	// TODO: remove for alpha1
