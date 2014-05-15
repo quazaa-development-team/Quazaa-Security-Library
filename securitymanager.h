@@ -63,7 +63,6 @@
 // TODO: use hashtable for single IPs
 // TODO: add defines for hit matching
 // TODO: improve doxygen
-// TODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
 // TODO: Enable/disable this according to the visibility within the GUI
 // TODO: http://quazaa.sourceforge.net/index.php?option=com_jfusion&Itemid=4&jfile=viewtopic.php&f=8&t=201&view=unread#unread
 
