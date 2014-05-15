@@ -64,6 +64,7 @@
 #include "misscache.h"
 #include "sanitychecker.h"
 
+// TODO: Use QMetaMethod for method invokation
 // TODO: make sure the rule editing dialogue is protected when rules are removed.
 // TODO: use hashtable for single IPs
 // TODO: add defines for hit matching

@@ -87,6 +87,6 @@ signals:
 };
 }
 
-extern Security::SecuritySettings securitySettigs;
+extern Security::SecuritySettings securitySettings;
 
 #endif // EXTERNALS_H

@@ -1203,10 +1203,11 @@ bool Manager::start()
 {
 	registerMetaTypes();
 
-	connect( &securitySettigs, SIGNAL( settingsUpdate() ), SLOT( settingsChanged() ) );
+	connect( &securitySettings, &SecuritySettings::settingsUpdate,
+			 this, &Manager::settingsChanged );
 
 	// Make sure to initialize the external settings module.
-	securitySettigs.start();
+	securitySettings.start();
 
 	loadPrivates();
 
@@ -1227,9 +1228,10 @@ bool Manager::stop()
 {
 	signalQueue.pop( this );    // Remove all cleanup intervall timers from the queue.
 
-	disconnect( &securitySettigs, SIGNAL( settingsUpdate() ), this, SLOT( settingsChanged() ) );
+	disconnect( &securitySettings, &SecuritySettings::settingsUpdate,
+				this, &Manager::settingsChanged );
 
-	securitySettigs.stop();
+	securitySettings.stop();
 
 	bool bSaved = save( true ); // Save security rules to disk.
 	clear();                    // Release memory and free containers.
@@ -1687,11 +1689,11 @@ void Manager::expire()
 void Manager::settingsChanged()
 {
 	m_oRWLock.lockForWrite();
-	securitySettigs.m_oLock.lock();
+	securitySettings.m_oLock.lock();
 
-	if ( m_tRuleExpiryInterval != securitySettigs.m_tRuleExpiryInterval )
+	if ( m_tRuleExpiryInterval != securitySettings.m_tRuleExpiryInterval )
 	{
-		m_tRuleExpiryInterval = securitySettigs.m_tRuleExpiryInterval;
+		m_tRuleExpiryInterval = securitySettings.m_tRuleExpiryInterval;
 		if ( m_tRuleExpiryInterval )
 		{
 			if ( m_idRuleExpiry.isNull() )
@@ -1711,10 +1713,10 @@ void Manager::settingsChanged()
 		}
 	}
 
-	m_bLogIPCheckHits   = securitySettigs.m_bLogIPCheckHits;
-	m_bDenyPrivateIPs = securitySettigs.m_bIgnorePrivateIPs;
+	m_bLogIPCheckHits   = securitySettings.m_bLogIPCheckHits;
+	m_bDenyPrivateIPs = securitySettings.m_bIgnorePrivateIPs;
 
-	securitySettigs.m_oLock.unlock();
+	securitySettings.m_oLock.unlock();
 	m_oRWLock.unlock();
 }
 

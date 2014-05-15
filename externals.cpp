@@ -67,16 +67,17 @@ QString Security::dataPath()
 	return QuazaaGlobals::DATA_PATH();
 }
 
-Security::SecuritySettings securitySettigs;
+Security::SecuritySettings securitySettings;
 
 void Security::SecuritySettings::start()
 {
-	connect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
-			 &securitySettigs, SLOT( settingsChanged() ), Qt::QueuedConnection );
+	connect( &quazaaSettings, &QuazaaSettings::securitySettingsChanged, &securitySettings,
+			 &Security::SecuritySettings::settingsChanged, Qt::QueuedConnection );
 
 #ifndef QUAZAA_SETUP_UNIT_TESTS
 	// Make sure securityManager is informed about application shutdown.
-	connect( mainWindow, SIGNAL( shutDown() ), &securityManager, SLOT( shutDown() ) );
+	connect( mainWindow, &CWinMain::shutDown, &securityManager, &Security::Manager::shutDown,
+			 Qt::UniqueConnection );
 #endif
 
 	settingsChanged();
@@ -84,8 +85,8 @@ void Security::SecuritySettings::start()
 
 void Security::SecuritySettings::stop()
 {
-	disconnect( &quazaaSettings, SIGNAL( securitySettingsChanged() ),
-				&securitySettigs, SLOT( settingsChanged() ) );
+	disconnect( &quazaaSettings, &QuazaaSettings::securitySettingsChanged,
+				&securitySettings, &Security::SecuritySettings::settingsChanged );
 }
 
 /**
