@@ -114,8 +114,6 @@ private:
 	/* ======================================= Attributes ======================================= */
 	/* ========================================================================================== */
 public:
-	//static const char* ruleInfoSignal;
-
 	mutable QReadWriteLock  m_oRWLock;
 	SanityCecker            m_oSanity; // has its own locking
 

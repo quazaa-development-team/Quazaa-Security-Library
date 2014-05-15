@@ -37,13 +37,8 @@ Security::Manager securityManager;
 using namespace Security;
 
 /**
- * @brief Manager::ruleInfoSignal
+ * @brief Manager::Manager
  */
-//const char* Manager::ruleInfoSignal = SIGNAL( ruleInfo( Rule* ) );
-
-// QApplication hasn't been started when the global definition creates this object, so
-// no qt specific calls (for example connect() or emit signal) may be used over here.
-// See initialize() for that kind of initializations.
 Manager::Manager() :
 	m_bEnableCountries( false ),
 	m_bLogIPCheckHits( false ),
@@ -54,6 +49,9 @@ Manager::Manager() :
 	m_bDenyPrivateIPs( false ),
 	m_bDenyPolicy( false )
 {
+	// QApplication hasn't been started when the global definition creates this object, so
+	// no qt specific calls (for example connect() or emit signal) may be used over here.
+	// See initialize() for that kind of initializations.
 }
 
 Manager::~Manager()
