@@ -52,7 +52,6 @@ Manager::Manager() :
 	m_bShutDown( false ),
 	m_bExpiryRequested( false ),
 	m_bDenyPrivateIPs( false ),
-	m_bIsLoading( false ),
 	m_bDenyPolicy( false )
 {
 }
@@ -120,7 +119,7 @@ bool Manager::check( const Rule* const pRule ) const
  * @param pRule: the rule to be added. Will be set to NULL if redundant.
  * @return true if the rule has been added; false otherwise
  */
-bool Manager::add( Rule* pRule )
+bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 {
 	if ( !pRule )
 	{
@@ -377,7 +376,7 @@ bool Manager::add( Rule* pRule )
 		// Inform SecurityTableModel about new rule.
 		emit ruleAdded( pRule );
 
-		if ( !m_bIsLoading )
+		if ( bDoSanityCheck )
 		{
 			// Unlock mutex before performing system wide security check.
 			writeLock.unlock();
@@ -1368,10 +1367,6 @@ bool Manager::fromP2P( const QString& sPath )
 	quint8 nGuiThrottle = 0;
 	uint   nCount       = 0;
 
-	m_oRWLock.lockForWrite();
-	m_bIsLoading = true;
-	m_oRWLock.unlock();
-
 	QTextStream fsImport( &file );
 	while ( !fsImport.atEnd() )
 	{
@@ -1407,7 +1402,7 @@ bool Manager::fromP2P( const QString& sPath )
 			pRule->setExpiryTime( RuleTime::Forever );
 			pRule->m_bAutomatic = false;
 
-			nCount += add( pRule );
+			nCount += add( pRule, false );
 		}
 
 		++nGuiThrottle;
@@ -1418,10 +1413,6 @@ bool Manager::fromP2P( const QString& sPath )
 			nGuiThrottle = 0;
 		}
 	}
-
-	m_oRWLock.lockForWrite();
-	m_bIsLoading = false;
-	m_oRWLock.unlock();
 
 	m_oSanity.sanityCheck();
 	save();
@@ -1481,10 +1472,6 @@ bool Manager::fromXML( const QString& sPath )
 
 	const quint32 tNow = common::getTNowUTC();
 
-	m_oRWLock.lockForWrite();
-	m_bIsLoading = true;
-	m_oRWLock.unlock();
-
 	Rule* pRule = NULL;
 	uint nRuleCount = 0;
 
@@ -1504,7 +1491,7 @@ bool Manager::fromXML( const QString& sPath )
 			{
 				if ( !pRule->isExpired( tNow ) )
 				{
-					nRuleCount += add( pRule );
+					nRuleCount += add( pRule, false );
 				}
 				else
 				{
@@ -1528,10 +1515,6 @@ bool Manager::fromXML( const QString& sPath )
 		// prevent GUI from becoming unresponsive
 		qApp->processEvents( QEventLoop::ExcludeUserInputEvents, 50 );
 	}
-
-	m_oRWLock.lockForWrite();
-	m_bIsLoading = false;
-	m_oRWLock.unlock();
 
 	m_oSanity.sanityCheck();
 	save();
@@ -1846,7 +1829,6 @@ bool Manager::load( const QString& sPath )
 
 		m_oRWLock.lockForWrite();
 		m_bDenyPolicy = bDenyPolicy;
-		m_bIsLoading  = true; // Prevents sanity check from being executed at each add() operation.
 		m_vRules.reserve( 2 * nCount ); // prevent unneccessary reallocations of the vector...
 		m_oRWLock.unlock();
 
@@ -1863,17 +1845,13 @@ bool Manager::load( const QString& sPath )
 				}
 				else
 				{
-					nSuccessCount += add( pRule );
+					nSuccessCount += add( pRule, false );
 				}
 
 				pRule = NULL;
 				--nCount;
 			}
 		}
-
-		m_oRWLock.lockForWrite();
-		m_bIsLoading = false;
-		m_oRWLock.unlock();
 
 		postLogMessage( LogSeverity::Information,
 						tr( "Loaded %0 security rules from file: %1"
@@ -1892,10 +1870,6 @@ bool Manager::load( const QString& sPath )
 		}
 
 		clear();
-
-		m_oRWLock.lockForWrite();
-		m_bIsLoading = false;
-		m_oRWLock.unlock();
 
 		return false;
 	}

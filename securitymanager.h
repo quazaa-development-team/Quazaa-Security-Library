@@ -70,7 +70,6 @@
 // TODO: add defines for hit matching
 // TODO: improve doxygen
 // TODO: add header with all defines and external dependencies
-// TODO: handle m_bIsLoading and its locking more gracefully.
 // TODO: Add quint16 GUI ID to rules and update GUI only when there is a change to the rule.
 // TODO: Enable/disable this according to the visibility within the GUI
 // TODO: http://quazaa.sourceforge.net/index.php?option=com_jfusion&Itemid=4&jfile=viewtopic.php&f=8&t=201&view=unread#unread
@@ -176,7 +175,6 @@ public:
 	bool            m_bShutDown;
 	bool            m_bExpiryRequested;
 	bool            m_bDenyPrivateIPs;
-	bool            m_bIsLoading;         // true during import operations. Used to avoid unnecessary GUI updates.
 
 	bool            m_bDenyPolicy;
 	// m_bDenyPolicy == false : everything but specifically blocked IPs is allowed (default)
@@ -231,7 +229,7 @@ public:
 	 * @param pRule: the rule to be added. Will be set to NULL if redundant.
 	 * @return true if the rule has been added; false otherwise
 	 */
-	bool            add( Rule* pRule );
+	bool            add( Rule* pRule, bool bDoSanityCheck = true );
 
 	/**
 	 * @brief Manager::remove removes a rule from the manager.
