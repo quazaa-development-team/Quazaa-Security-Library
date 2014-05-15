@@ -37,7 +37,7 @@ Security::Manager securityManager;
 using namespace Security;
 
 /**
- * @brief Manager::Manager
+ * @brief Manager::Manager Constructor.
  */
 Manager::Manager() :
 	m_bEnableCountries( false ),
