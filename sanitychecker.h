@@ -34,8 +34,6 @@
 #include "externals.h"
 #include "securerule.h"
 
-// TODO: check usage of hit( ID ruleID, uint nCount );
-
 namespace Security
 {
 class SanityCecker : public QObject
