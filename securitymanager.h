@@ -404,7 +404,7 @@ public:
 	 * @param signal : the signal
 	 * @return the number of listeners
 	 */
-	//int             receivers(const char* signal) const;
+//	int             receivers(const char* signal) const;
 
 	/**
 	 * @brief Manager::emitUpdate emits a ruleUpdated signal for a given RuleGUIID nID.
@@ -496,6 +496,14 @@ public slots:
 	 * Locking: RW
 	 */
 	void            shutDown();
+
+private slots:
+	/**
+	 * @brief updateHitCount
+	 * @param ruleID
+	 * @param nCount
+	 */
+	void            updateHitCount( QUuid ruleID, uint nCount );
 
 	/* ========================================================================================== */
 	/* ======================================== Privates ======================================== */

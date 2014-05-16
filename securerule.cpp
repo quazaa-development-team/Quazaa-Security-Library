@@ -357,10 +357,10 @@ void Rule::mergeInto( Rule* pDestination )
  * @brief CSecureRule::count increases the total and today hit counters by one each.
  * Requires Locking: /
  */
-void Rule::count()
+void Rule::count( uint nCount )
 {
-	m_nToday.fetchAndAddOrdered( 1 );
-	m_nTotal.fetchAndAddOrdered( 1 );
+	m_nToday.fetchAndAddOrdered( nCount );
+	m_nTotal.fetchAndAddOrdered( nCount );
 }
 
 /**

@@ -124,7 +124,7 @@ public:
 	void    mergeInto( Rule* pDestination );
 
 	// Hit count control
-	void    count();
+	void    count( uint nCount = 1 );
 	void    resetCount();
 	quint32 getTodayCount() const;
 	quint32 getTotalCount() const;

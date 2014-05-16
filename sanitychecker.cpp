@@ -315,6 +315,8 @@ void SanityCecker::clearBatch( bool bShutDown )
 	const RuleVectorPos nSize = m_vLoadedRules.size();
 	for ( RuleVectorPos n = 0; n < nSize; ++n )
 	{
+		emit hit( pLoadedRules[n]->m_idUUID, pLoadedRules[n]->getTodayCount() );
+
 		delete pLoadedRules[n];
 	}
 

@@ -119,7 +119,7 @@ signals:
 	 * @param ruleID : the rule GUI ID
 	 * @param nCount : the number of hits
 	 */
-	void            hit( ID ruleID, uint nCount );
+	void            hit( QUuid ruleID, uint nCount );
 
 public slots:
 	/**

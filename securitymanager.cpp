@@ -134,7 +134,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 			  nAction >= 0 && nAction < RuleAction::NoOfActions );
 	Q_ASSERT( !pRule->m_idUUID.isNull() );
 
-	RuleVectorPos nExRule = getUUID( pRule->m_idUUID );
+	const RuleVectorPos nExRule = getUUID( pRule->m_idUUID );
 	if ( nExRule != m_vRules.size() )
 	{
 		// we do not allow 2 rules by the same UUID
@@ -418,7 +418,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 /**
  * @brief Manager::remove removes a rule from the manager.
  * Reminder: Do not delete the rule after calling this, it will be deleted automatically once the
- * GUI has been updated.
+ * GUI has been updated. Note that this will assert if the rule in question does not exist.
  * Locking: RW
  * @param pRule : the rule
  */
@@ -431,7 +431,12 @@ void Manager::remove( const Rule* const pRule )
 
 	m_oRWLock.lockForWrite();
 
-	remove( getUUID( pRule->m_idUUID ) );
+	const RuleVectorPos nPos = getUUID( pRule->m_idUUID );
+#ifdef _DEBUG
+	Q_ASSERT( nPos != m_vRules.size() );
+	Q_ASSERT( m_vRules[nPos] == pRule );
+#endif
+	remove( nPos );
 
 	m_oRWLock.unlock();
 }
@@ -1211,6 +1216,8 @@ bool Manager::start()
 	// initialize MissCache QMetaMethod(s)
 	m_oMissCache.start();
 
+	connect( &m_oSanity, &SanityCecker::hit, this, &Manager::updateHitCount, Qt::UniqueConnection );
+
 	connect( &securitySettings, &SecuritySettings::settingsUpdate,
 			 this, &Manager::settingsChanged );
 
@@ -1731,6 +1738,26 @@ void Manager::shutDown()
 }
 
 /**
+ * @brief updateHitCount Increases the hit counters by nCount of the rule with the given ID.
+ * Locking: RW
+ * @param ruleID The UUID of the rule in question.
+ * @param nCount The amount of hits to add to the hit counters.
+ */
+void Manager::updateHitCount( QUuid ruleID, uint nCount )
+{
+	m_oRWLock.lockForWrite();
+	const RuleVectorPos nPos = getUUID( ruleID );
+
+	if ( nPos != m_vRules.size() )
+	{
+		m_vRules[nPos]->count( nCount );
+		emit ruleUpdated( m_vRules[nPos]->m_nGUIID );
+	}
+
+	m_oRWLock.unlock();
+}
+
+/**
  * @brief Manager::hit increases the rule counters and emits an updating signal to the GUI.
  * Locking: /
  * @param pRule : the rule that has been hit
@@ -1978,8 +2005,13 @@ void Manager::insertRange( IPRangeRule*& pNew )
 								tr( "Merging IP range rules. Removing overlapped IP range %1."
 								  ).arg( m_vIPRanges[nPos]->getContentString() ) );
 
+				const RuleVectorPos nUUIDPos = getUUID( m_vIPRanges[nPos]->m_idUUID );
+#ifdef _DEBUG
+				Q_ASSERT( nUUIDPos != m_vRules.size() );
+				Q_ASSERT( m_vRules[nUUIDPos]->m_idUUID == m_vIPRanges[nPos]->m_idUUID );
+#endif
 				// this moves a new rule to position nPos, so we don't need to do sth like ++nPos
-				remove( getUUID( m_vIPRanges[nPos]->m_idUUID ) );
+				remove( nUUIDPos );
 
 				// TODO: remove for alpha1
 				Q_ASSERT( nSize != m_vIPRanges.size() );
@@ -2109,10 +2141,7 @@ Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
 	{
 		// TODO: remove for alpha1
 #ifdef _DEBUG
-		if ( i != nSize && ( i < nBegin || i > nBegin + n - 1 ) )
-		{
-			Q_ASSERT( false );
-		}
+		Q_ASSERT( i == nSize || ( i >= nBegin && i <= nBegin + n - 1 ) );
 #endif // _DEBUG
 
 		nHalf = n >> 1;
@@ -2138,22 +2167,17 @@ Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
 
 	// TODO: remove for alpha1
 #ifdef _DEBUG
-	RuleVectorPos j;
-	for ( j = 0; j < nSize; ++j )
-	{
-		if ( idUUID == pRules[j]->m_idUUID )
-		{
-			break;
-		}
-	}
-
-	if ( j != nReturn )
-	{
-		Q_ASSERT( false );
-	}
+	Q_ASSERT( i == nSize || i == nReturn );
 #endif
 
-	return nReturn;
+	if ( nReturn < m_vRules.size() && pRules[nReturn]->m_idUUID == idUUID )
+	{
+		return nReturn;
+	}
+	else
+	{
+		return nSize;
+	}
 }
 
 /**
@@ -2187,7 +2211,12 @@ Manager::RuleVectorPos Manager::getHash( const HashSet& vHashes ) const
 		{
 			if ( ( *it ).second->match( vHashes ) )
 			{
-				return getUUID( ( *it ).second->m_idUUID );
+				RuleVectorPos nPos = getUUID( ( *it ).second->m_idUUID );
+#ifdef _DEBUG
+				Q_ASSERT( nPos != m_vRules.size() );
+				Q_ASSERT( m_vRules[nPos]->m_idUUID == ( *it ).second->m_idUUID );
+#endif
+				return nPos;
 			}
 			++it;
 		}
