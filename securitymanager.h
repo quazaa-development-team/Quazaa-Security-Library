@@ -58,7 +58,6 @@
 // 1.0 - Original implementation by Shareaza
 // 2.0 - Adjustments for IP ranges, Regular Expressions etc.
 
-// TODO: Use QMetaMethod for method invokation
 // TODO: make sure the rule editing dialogue is protected when rules are removed.
 // TODO: use hashtable for single IPs
 // TODO: add defines for hit matching
@@ -171,6 +170,8 @@ public:
 	// m_bDenyPolicy == true  : everything but specifically allowed IPs is rejected
 	// Note that the default policy is only applied to IP related rules, as using it for everything
 	// else does not make any sense.
+
+	QMetaMethod     m_pfExpire;
 
 public:
 	/* ========================================================================================== */

@@ -56,6 +56,17 @@ MissCache::MissCache() :
 {
 }
 
+void MissCache::start()
+{
+	const QMetaObject* pMetaObject = metaObject();
+	int nMethodIndex    = pMetaObject->indexOfMethod( "expire()" );
+	m_pfExpire          = pMetaObject->method( nMethodIndex );
+
+#ifdef _DEBUG
+	Q_ASSERT( m_pfExpire.isValid() );
+#endif
+}
+
 uint MissCache::size( QAbstractSocket::NetworkLayerProtocol eProtocol ) const
 {
 	uint nReturn;
@@ -234,7 +245,7 @@ void MissCache::evaluateUsage()
 void MissCache::requestExpiry()
 {
 	m_bExpiryRequested = true;
-	QMetaObject::invokeMethod( this, "expire", Qt::QueuedConnection );
+	m_pfExpire.invoke( this, Qt::QueuedConnection );
 }
 
 void MissCache::expire()

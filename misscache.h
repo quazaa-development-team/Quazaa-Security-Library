@@ -27,6 +27,7 @@
 
 #include <set>
 #include <QMutex>
+#include <QMetaMethod>
 #include <QHostAddress>
 
 namespace Security
@@ -84,6 +85,8 @@ public:
 
 	bool            m_bExpiryRequested;
 
+	QMetaMethod     m_pfExpire;
+
 	/**
 	 * @brief qHostAddressToIP4 converts an IP and a time to an IPv4Entry
 	 * @param oIP : the IP
@@ -112,6 +115,11 @@ public:
 	 * @brief MissCache creates an empty miss cache.
 	 */
 	MissCache();
+
+	/**
+	 * @brief start initializes the QMetaMethod.
+	 */
+	void start();
 
 	/**
 	 * @brief size allows accessing the size of the cache

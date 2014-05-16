@@ -1200,6 +1200,17 @@ bool Manager::start()
 {
 	registerMetaTypes();
 
+	const QMetaObject* pMetaObject = metaObject();
+	int nMethodIndex    = pMetaObject->indexOfMethod( "expire()" );
+	m_pfExpire          = pMetaObject->method( nMethodIndex );
+
+#ifdef _DEBUG
+	Q_ASSERT( m_pfExpire.isValid() );
+#endif // _DEBUG
+
+	// initialize MissCache QMetaMethod(s)
+	m_oMissCache.start();
+
 	connect( &securitySettings, &SecuritySettings::settingsUpdate,
 			 this, &Manager::settingsChanged );
 
@@ -2197,7 +2208,7 @@ void Manager::expireLater()
 		m_bExpiryRequested = true;
 
 		signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval );
-		QMetaObject::invokeMethod( this, "expire", Qt::QueuedConnection );
+		m_pfExpire.invoke( this, Qt::QueuedConnection );
 	}
 }
 
