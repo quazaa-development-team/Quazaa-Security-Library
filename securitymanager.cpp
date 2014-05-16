@@ -1458,9 +1458,11 @@ bool Manager::fromXML( const QString& sPath )
 	QXmlStreamReader xmlDocument( &oFile );
 
 	if ( xmlDocument.atEnd() ||
-		 !xmlDocument.readNextStartElement() ||
+		 !xmlDocument.readNextStartElement() || // read first element
 		 xmlDocument.name().toString().compare( "security", Qt::CaseInsensitive ) )
 	{
+		postLogMessage( LogSeverity::Error,
+						tr( "Could not import rules. File is not a valid security XML file." ) );
 		return false;
 	}
 
@@ -1490,10 +1492,14 @@ bool Manager::fromXML( const QString& sPath )
 
 	Rule* pRule = NULL;
 	uint nRuleCount = 0;
+	quint8 nActivityCounter = 0;
 
 	// For all rules do:
 	while ( !xmlDocument.atEnd() )
 	{
+		++nActivityCounter;
+		nActivityCounter %= 50;
+
 		// Go forward until the beginning of the next rule
 		xmlDocument.readNextStartElement();
 
@@ -1528,8 +1534,11 @@ bool Manager::fromXML( const QString& sPath )
 							xmlDocument.name().toString() );
 		}
 
-		// prevent GUI from becoming unresponsive
-		qApp->processEvents( QEventLoop::ExcludeUserInputEvents, 50 );
+		if ( !nActivityCounter )
+		{
+			// prevent GUI from becoming unresponsive
+			qApp->processEvents( QEventLoop::ExcludeUserInputEvents );
+		}
 	}
 
 	m_oSanity.sanityCheck();
@@ -1557,8 +1566,12 @@ bool Manager::toXML( const QString& sPath ) const
 
 	QXmlStreamWriter xmlDocument( &oFile );
 
-	xmlDocument.writeStartElement( xmlns, "security" );
-	xmlDocument.writeAttribute( "version", SECURITY_XML_VERSION );
+	xmlDocument.setAutoFormatting( true );
+
+	xmlDocument.writeStartDocument();                               // use xml v1.0 (default)
+	xmlDocument.writeDefaultNamespace( xmlns );                     // Prevent all elements being
+	xmlDocument.writeStartElement( xmlns, "security" );             // prefixed by namespace info.
+	xmlDocument.writeAttribute( "version", SECURITY_XML_VERSION );  // define security XML version
 
 	m_oRWLock.lockForRead();
 
@@ -1576,6 +1589,7 @@ bool Manager::toXML( const QString& sPath ) const
 	m_oRWLock.unlock();
 
 	xmlDocument.writeEndElement();
+	xmlDocument.writeEndDocument();
 
 	return true;
 }

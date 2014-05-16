@@ -686,8 +686,7 @@ void Rule::toXML( const Rule& oRule, QXmlStreamWriter& oXMLdocument )
 	}
 	else
 	{
-		sValue = "%1";
-		sValue.arg( oRule.m_tExpire );
+		sValue = QString::number( oRule.m_tExpire );
 	}
 	oXMLdocument.writeAttribute( "expire", sValue );
 
