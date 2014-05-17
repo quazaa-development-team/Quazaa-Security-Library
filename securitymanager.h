@@ -58,7 +58,6 @@
 // 1.0 - Original implementation by Shareaza
 // 2.0 - Adjustments for IP ranges, Regular Expressions etc.
 
-// TODO: make sure the rule editing dialogue is protected when rules are removed.
 // TODO: use hashtable for single IPs
 // TODO: add defines for hit matching
 // TODO: improve doxygen
