@@ -46,15 +46,37 @@ bool UserAgentRule::operator==( const Rule& pRule ) const
 
 bool UserAgentRule::parseContent( const QString& sContent )
 {
-	m_sContent = sContent.trimmed();
-
 	if ( m_bRegExp )
 	{
 #if QT_VERSION >= 0x050000
-		m_regularExpressionContent = QRegularExpression( m_sContent );
+		QRegularExpression exp = QRegularExpression( sContent.trimmed() );
+
+		if ( exp.isValid() )
+		{
+			m_sContent = sContent.trimmed();
+			m_regularExpressionContent = exp;
+		}
+		else
+		{
+			return false;
+		}
 #else
-		m_regExpContent = QRegExp( m_sContent );
+		QRegExp exp = QRegExp( sContent.trimmed() );
+
+		if ( exp.isValid() )
+		{
+			m_sContent = sContent.trimmed();
+			m_regExpContent = exp;
+		}
+		else
+		{
+			return false;
+		}
 #endif
+	}
+	else
+	{
+		m_sContent = sContent.trimmed();
 	}
 
 	return true;
