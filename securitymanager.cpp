@@ -141,7 +141,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 		remove( nExRule );
 	}
 
-	// TODO: remove for alpha1
+	// REMOVE for beta 1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -395,7 +395,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 						tr( "A new security rule has been merged into an existing one." ) );
 	}
 
-	// TODO: remove for alpha1
+	// REMOVE for beta 1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -1678,7 +1678,7 @@ void Manager::expire()
 
 	m_bExpiryRequested = false;
 
-	// TODO: remove for alpha1
+	// REMOVE for beta 1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -1723,7 +1723,7 @@ void Manager::settingsChanged()
 			}
 			else
 			{
-				// TODO: remove assert after testing
+				// REMOVE after testing
 				Q_ASSERT( signalQueue.setInterval( m_idRuleExpiry, m_tRuleExpiryInterval ) );
 			}
 		} // m_tRuleExpiryInterval == 0 disables interval rule expiry
@@ -1925,7 +1925,7 @@ bool Manager::load( const QString& sPath )
 	}
 	oFile.close();
 
-	// TODO: remove for alpha1
+	// REMOVE for beta 1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -2027,7 +2027,7 @@ void Manager::insertRange( IPRangeRule*& pNew )
 				// this moves a new rule to position nPos, so we don't need to do sth like ++nPos
 				remove( nUUIDPos );
 
-				// TODO: remove for alpha1
+				// REMOVE for beta 1
 				Q_ASSERT( nSize != m_vIPRanges.size() );
 			}
 
@@ -2139,7 +2139,7 @@ Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
 	RuleVectorPos n = nSize;
 	RuleVectorPos nReturn = nSize;
 
-	// TODO: remove for alpha1
+	// REMOVE for beta 1
 #ifdef _DEBUG
 	RuleVectorPos i;
 	for ( i = 0; i < nSize; ++i )
@@ -2153,7 +2153,7 @@ Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
 
 	while ( n > 0 )
 	{
-		// TODO: remove for alpha1
+		// REMOVE for beta 1
 #ifdef _DEBUG
 		Q_ASSERT( i == nSize || ( i >= nBegin && i <= nBegin + n - 1 ) );
 #endif // _DEBUG
@@ -2179,7 +2179,7 @@ Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
 		}
 	}
 
-	// TODO: remove for alpha1
+	// REMOVE for beta 1
 #ifdef _DEBUG
 	Q_ASSERT( i == nSize || i == nReturn );
 #endif
@@ -2296,7 +2296,7 @@ void Manager::remove( RuleVectorPos nVectorPos )
 		IPRangeVectorPos nPos;
 		IPRangeRule* pTest = findRangeMatch( ( ( IPRangeRule* )pRule )->startIP(), nPos );
 
-		// TODO: remove for alpha1
+		// REMOVE for beta 1
 		Q_ASSERT( pTest == pRule );
 		Q_ASSERT( nPos < m_vIPRanges.size() );
 
@@ -2454,7 +2454,7 @@ void Manager::remove( RuleVectorPos nVectorPos )
 	// Remove rule entry from list of all rules
 	erase( nVectorPos );
 
-	// TODO: remove for alpha1
+	// REMOVE for beta 1
 #ifdef _DEBUG
 	for ( RuleVectorPos i = 0; i < m_vRules.size(); ++i )
 	{
@@ -2846,7 +2846,7 @@ bool Manager::isPrivateNew( const EndPoint& oAddress )
 			{
 				if ( oAddress <= pRules[nMiddle]->endIP() )
 				{
-					// TODO: remove for alpha1
+					// REMOVE for beta 1
 					Q_ASSERT( pRules[nMiddle]->match( oAddress ) );
 					return true;
 				}
@@ -2909,7 +2909,7 @@ Manager::IPRangeVectorPos Manager::findRangeForMerging( const EndPoint& oAddress
 
 	IPRangeVectorPos nReturn = bFound ? nMiddle : nBegin;
 
-	// TODO: remove for alpha1
+	// REMOVE for beta 1
 #ifdef _DEBUG
 	IPRangeVectorPos j = 0;
 	while ( j < nSize && pRanges[j]->startIP() < oAddress )

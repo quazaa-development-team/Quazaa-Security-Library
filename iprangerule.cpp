@@ -84,7 +84,7 @@ IPRangeRule* IPRangeRule::merge( IPRangeRule*& pOther )
 	Q_ASSERT( pOther->m_oEndIP >= pOther->m_oStartIP );
 	Q_ASSERT(         m_oEndIP >=         m_oStartIP );
 
-	// TODO: All other asserts in this method shall be removed for Quazaa 1.0.0.0
+	// REMOVE All other asserts in this method for Quazaa 1.0.0.0
 
 	bool bThisContainsOtherStartIP = contains( pOther->startIP() );
 	bool bThisContainsOtherEndIP   = contains( pOther->endIP() );
