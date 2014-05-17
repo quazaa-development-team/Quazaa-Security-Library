@@ -1,7 +1,7 @@
 /*
 ** external.h
 **
-** Copyright © Quazaa Development Team, 2009-2013.
+** Copyright © Quazaa Development Team, 2009-2014.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
 **
 ** The Quazaa Security Library is free software; this file may be used under the terms of the GNU
@@ -38,8 +38,8 @@
 #include "geoiplist.h"
 #endif
 
-#include "NetworkCore/Hashes/hash.h"
 #include "NetworkCore/queryhit.h"
+#include "NetworkCore/Hashes/hashset.h"
 
 #include "commonfunctions.h"
 
