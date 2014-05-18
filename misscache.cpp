@@ -210,7 +210,7 @@ void MissCache::evaluateUsage()
 {
 	// Note: The size of the country map is considered to be negligible here, it it will not
 	//       contain a large number of rules in 99% of the use cases.
-	//       Also, we don't need a lock here as the negative impasct of an erroneous value at this
+	//       Also, we don't need a lock here as the negative impact of an erroneous value at this
 	//       place is negligible.
 	uint nIPMap       = ( uint )securityManager.m_lmIPs.size();
 	uint nIPRanges    = ( uint )securityManager.m_vIPRanges.size();

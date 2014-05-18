@@ -46,8 +46,32 @@
 #include "Misc/idprovider.h"
 #include "Misc/timedsignalqueue.h"
 
+#include <QString>
+
 namespace Security
 {
+
+/**
+ * @brief The CountryHasher struct allows to transform a two letter country code into its unique 32
+ * bit hash.
+ */
+struct CountryHasher
+{
+	/**
+	 * @brief operator() Transforms a given country code into its hash.
+	 * @param sCountryCode The two letter country code.
+	 * @return The 32 bit hash of the country code.
+	 */
+	quint32 operator()( const QString& sCountryCode )
+	{
+		Q_ASSERT( sCountryCode.length() == 2 );
+
+		quint32 nReturn = 1;
+		nReturn *= sCountryCode[0].unicode();
+		nReturn *= sCountryCode[1].unicode();
+		return nReturn;
+	}
+};
 
 /**
  * @brief postLogMessage writes a message to the system log or to the debug output.

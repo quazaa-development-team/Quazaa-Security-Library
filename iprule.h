@@ -47,8 +47,8 @@ public:
 
 	bool        parseContent( const QString& sContent );
 
-	QHostAddress    IP() const;
-	void            setIP( const QHostAddress& oIP );
+	const QHostAddress& IP() const;
+	void                setIP( const QHostAddress& oIP );
 
 	bool        match( const EndPoint& oAddress ) const;
 	void        toXML( QXmlStreamWriter& oXMLdocument ) const;

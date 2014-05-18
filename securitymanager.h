@@ -25,10 +25,9 @@
 #ifndef SECURITYMANAGER_H
 #define SECURITYMANAGER_H
 
-#include <list>
 #include <map>
-#include <queue>
-#include <set>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <QFile>
 
@@ -58,16 +57,16 @@
 // 1.0 - Original implementation by Shareaza
 // 2.0 - Adjustments for IP ranges, Regular Expressions etc.
 
-// TODO: use hashtable for single IPs
 // TODO: add defines for hit matching
 // TODO: improve doxygen
-// TODO: define doxygen standards within the wiki
 // TODO: Enable/disable GUI updating according to the visibility within the GUI
 // TODO: Add last hit time to rules and make that data visible within the GUI
 
 namespace Security
 {
 typedef QSharedPointer<Rule> SharedRulePtr;
+
+typedef std::unordered_set<ID> IDSet;
 
 /**
  * @brief The Manager class manages the security rules and allows checking content against them.
@@ -87,9 +86,10 @@ private:
 	// use this if you don't want to care about signed/unsigned...
 	typedef RuleVector::size_type RuleVectorPos;
 
-	typedef std::map< uint, IPRule*             > IPMap;
+	typedef std::hash< QHostAddress > IPHasher;
+	typedef std::unordered_map< quint32, IPRule*      > IPMap;
 #if SECURITY_ENABLE_GEOIP
-	typedef std::map< QString, CountryRule*     > CountryRuleMap;
+	typedef std::unordered_map< quint32, CountryRule* > CountryMap;
 #endif // SECURITY_ENABLE_GEOIP
 
 	typedef std::vector< IPRangeRule*           >   IPRangeVector;
@@ -125,6 +125,7 @@ public:
 	RuleVector      m_vRules;
 
 	// single IP blocking rules
+	IPHasher        m_oIPHasher;
 	IPMap           m_lmIPs;
 
 	// multiple IP blocking rules
@@ -134,7 +135,8 @@ public:
 	// country rules
 #if SECURITY_ENABLE_GEOIP
 	bool            m_bEnableCountries;
-	CountryRuleMap  m_lmCountries;
+	CountryHasher   m_oCountryHasher;
+	CountryMap      m_lmCountries;
 #endif // SECURITY_ENABLE_GEOIP
 
 	// hash rules
@@ -396,17 +398,7 @@ public:
 	 * rules are written to file.
 	 * @return true if successful; false otherwise.
 	 */
-	bool            toXML( const QString& sPath, const std::set<ID>& lsIDs = std::set<ID>() ) const;
-
-	/**
-	 * @brief Manager::receivers returns the number of listeners to a given signal of the manager.
-	 * Note that this is a method that violates the modularity principle.
-	 * Plz don't use it if you've got a problem with that(for example because of religious reasons).
-	 * Locking: /
-	 * @param signal : the signal
-	 * @return the number of listeners
-	 */
-//	int             receivers(const char* signal) const;
+	bool            toXML( const QString& sPath, const IDSet& lsIDs = IDSet() ) const;
 
 	/**
 	 * @brief Manager::emitUpdate emits a ruleUpdated signal for a given GUI ID nID.

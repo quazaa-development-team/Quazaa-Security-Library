@@ -50,7 +50,7 @@ bool IPRule::parseContent( const QString& sContent )
 	return false;
 }
 
-QHostAddress IPRule::IP() const
+const QHostAddress& IPRule::IP() const
 {
 	return m_oIP;
 }
@@ -65,11 +65,8 @@ bool IPRule::match( const EndPoint& oAddress ) const
 {
 	Q_ASSERT( !oAddress.isNull() && m_nType == RuleType::IPAddress );
 
-	if ( !oAddress.isNull() && oAddress == m_oIP )
-	{
-		return true;
-	}
-	return false;
+	// Compares IP only as m_oIP is a QHostAddress.
+	return oAddress == m_oIP;
 }
 
 void IPRule::toXML( QXmlStreamWriter& oXMLdocument ) const

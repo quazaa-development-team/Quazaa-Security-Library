@@ -166,8 +166,8 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 	{
 	case RuleType::IPAddress:
 	{
-		uint nIP = qHash( ( ( IPRule* )pRule )->IP() );
-		IPMap::iterator it = m_lmIPs.find( nIP );
+		const quint32 nIPHash = m_oIPHasher( ( ( IPRule* )pRule )->IP() );
+		IPMap::iterator it = m_lmIPs.find( nIPHash );
 
 		if ( it != m_lmIPs.end() ) // there is a conflicting rule in our map
 		{
@@ -178,7 +178,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 		}
 		else
 		{
-			m_lmIPs[ nIP ] = ( IPRule* )pRule;
+			m_lmIPs[ nIPHash ] = ( IPRule* )pRule;
 
 			bNewAddress = true;
 		}
@@ -196,19 +196,19 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 #if SECURITY_ENABLE_GEOIP
 	case RuleType::Country:
 	{
-		const QString country = pRule->getContentString();
-		CountryRuleMap::iterator i = m_lmCountries.find( country );
+		const quint32 nCountryHash = m_oCountryHasher( pRule->getContentString() );
+		CountryMap::iterator it = m_lmCountries.find( nCountryHash );
 
-		if ( i != m_lmCountries.end() ) // there is a conflicting rule in our map
+		if ( it != m_lmCountries.end() ) // there is a conflicting rule in our map
 		{
-			pRule->mergeInto( ( *i ).second );
+			pRule->mergeInto( ( *it ).second );
 
 			delete pRule;
 			pRule = NULL;
 		}
 		else
 		{
-			m_lmCountries[ country ] = ( CountryRule* )pRule;
+			m_lmCountries[ nCountryHash ] = ( CountryRule* )pRule;
 
 			bNewAddress = true;
 		}
@@ -762,8 +762,8 @@ bool Manager::isDenied( const EndPoint& oAddress )
 #if SECURITY_ENABLE_GEOIP
 	if ( m_bEnableCountries )
 	{
-		CountryRuleMap::const_iterator itCountries;
-		itCountries = m_lmCountries.find( oAddress.country() );
+		CountryMap::const_iterator itCountries;
+		itCountries = m_lmCountries.find( m_oCountryHasher( oAddress.country() ) );
 
 		if ( itCountries != m_lmCountries.end() )
 		{
@@ -821,7 +821,7 @@ bool Manager::isDenied( const EndPoint& oAddress )
 	// Fifth, check the IP rules lookup map.
 	{
 		IPMap::const_iterator itIPs;
-		itIPs = m_lmIPs.find( qHash( oAddress ) );
+		itIPs = m_lmIPs.find( m_oIPHasher( oAddress ) );
 
 		if ( itIPs != m_lmIPs.end() )
 		{
@@ -1550,7 +1550,7 @@ bool Manager::fromXML( const QString& sPath )
 	return nRuleCount;
 }
 
-bool Manager::toXML( const QString& sPath , const std::set<ID>& lsIDs ) const
+bool Manager::toXML( const QString& sPath , const IDSet& lsIDs ) const
 {
 	QFile oFile( sPath );
 	if ( !oFile.open( QIODevice::ReadWrite ) )
@@ -1603,19 +1603,6 @@ bool Manager::toXML( const QString& sPath , const std::set<ID>& lsIDs ) const
 
 	return true;
 }
-
-/**
- * @brief Manager::receivers returns the number of listeners to a given signal of the manager.
- * Note that this is a method that violates the modularity principle.
- * Plz don't use it if you've got a problem with that(for example because of religious reasons).
- * Locking: /
- * @param signal : the signal
- * @return the number of listeners
- */
-/*int Manager::receivers(const char* signal) const
-{
-	return QObject::receivers( signal );
-}*/
 
 /**
  * @brief Manager::emitUpdate emits a ruleUpdated signal for a given RuleGUIID nID.
@@ -2350,8 +2337,8 @@ void Manager::remove( const RuleVectorPos nVectorPos )
 	{
 	case RuleType::IPAddress:
 	{
-		uint nIP = qHash( ( ( IPRule* )pRule )->IP() );
-		IPMap::iterator it = m_lmIPs.find( nIP );
+		const QHostAddress& rIP = ( ( IPRule* )pRule )->IP();
+		IPMap::iterator it = m_lmIPs.find( m_oIPHasher( rIP ) );
 
 		if ( it != m_lmIPs.end() && ( *it ).second->m_idUUID == pRule->m_idUUID )
 		{
@@ -2380,7 +2367,8 @@ void Manager::remove( const RuleVectorPos nVectorPos )
 #if SECURITY_ENABLE_GEOIP
 	case RuleType::Country:
 	{
-		CountryRuleMap::iterator it = m_lmCountries.find( pRule->getContentString() );
+		CountryMap::iterator it =
+				m_lmCountries.find( m_oCountryHasher( pRule->getContentString() ) );
 
 		if ( it != m_lmCountries.end() && ( *it ).second->m_idUUID == pRule->m_idUUID )
 		{
