@@ -1,7 +1,7 @@
 /*
 ** sanitychecker.cpp
 **
-** Copyright © Quazaa Development Team, 2009-2013.
+** Copyright © Quazaa Development Team, 2009-2014.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
 **
 ** The Quazaa Security Library is free software; this file may be used under the terms of the GNU
@@ -59,7 +59,7 @@ bool SanityCecker::isNewlyDenied( const EndPoint& oAddress )
 
 	Q_ASSERT( nMax );
 
-	Rule** pRules = &m_vLoadedRules[0];
+	Rule* const * const pRules = &m_vLoadedRules[0];
 
 	while ( n < nMax )
 	{
@@ -105,7 +105,7 @@ bool SanityCecker::isNewlyDenied( const QueryHit* const pHit, const QList<QStrin
 
 	Q_ASSERT( nMax );
 
-	Rule** pRules = &m_vLoadedRules[0];
+	Rule* const * const pRules = &m_vLoadedRules[0];
 
 	while ( n < nMax )
 	{
@@ -311,7 +311,7 @@ void SanityCecker::clearBatch( bool bShutDown )
 	// There should at least be one rule.
 	Q_ASSERT( m_vLoadedRules.size() );
 
-	Rule** pLoadedRules = &m_vLoadedRules[0];
+	const Rule* const * const pLoadedRules = &m_vLoadedRules[0];
 	const RuleVectorPos nSize = m_vLoadedRules.size();
 	for ( RuleVectorPos n = 0; n < nSize; ++n )
 	{

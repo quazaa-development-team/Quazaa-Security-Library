@@ -1,7 +1,7 @@
 /*
 ** securitymanager.cpp
 **
-** Copyright © Quazaa Development Team, 2009-2013.
+** Copyright © Quazaa Development Team, 2009-2014.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
 **
 ** The Quazaa Security Library is free software; this file may be used under the terms of the GNU
@@ -104,7 +104,7 @@ void Manager::setDenyPolicy( bool bDenyPolicy )
 bool Manager::check( const Rule* const pRule ) const
 {
 	m_oRWLock.lockForRead();
-	bool bReturn = pRule && getUUID( pRule->m_idUUID ) != m_vRules.size();
+	bool bReturn = pRule && find( pRule->m_idUUID ) != m_vRules.size();
 	m_oRWLock.unlock();
 
 	return bReturn;
@@ -134,7 +134,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 			  nAction >= 0 && nAction < RuleAction::NoOfActions );
 	Q_ASSERT( !pRule->m_idUUID.isNull() );
 
-	const RuleVectorPos nExRule = getUUID( pRule->m_idUUID );
+	const RuleVectorPos nExRule = find( pRule->m_idUUID );
 	if ( nExRule != m_vRules.size() )
 	{
 		// we do not allow 2 rules by the same UUID
@@ -221,7 +221,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 	case RuleType::Hash:
 	{
 		const HashSet& vHashes = ( ( HashRule* )pRule )->getHashes();
-		RuleVectorPos nPos = getHash( vHashes );
+		RuleVectorPos nPos = find( vHashes );
 
 		if ( nPos != m_vRules.size() )
 		{
@@ -253,7 +253,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 
 		if ( nSize )
 		{
-			RegularExpressionRule** pRegExpRules = &m_vRegularExpressions[0];
+			RegularExpressionRule* const * const pRegExpRules = &m_vRegularExpressions[0];
 			for ( RegExpVectorPos i = 0; i < nSize; ++i )
 			{
 				if ( pRegExpRules[i]->getContentString() == pRule->getContentString() )
@@ -282,7 +282,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 
 		if ( nSize )
 		{
-			ContentRule** pContentRules = &m_vContents[0];
+			ContentRule* const * const pContentRules = &m_vContents[0];
 			for ( ContentVectorPos i = 0; i < nSize; ++i )
 			{
 				if ( pContentRules[i]->getContentString() ==  pRule->getContentString() &&
@@ -312,7 +312,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 
 		if ( nSize )
 		{
-			UserAgentRule** pUserAgentRules = &m_vUserAgents[0];
+			UserAgentRule* const * const pUserAgentRules = &m_vUserAgents[0];
 			for ( UserAgentVectorPos i = 0; i < nSize; ++i )
 			{
 				if ( pUserAgentRules[i]->getContentString() ==  pRule->getContentString() )
@@ -431,7 +431,7 @@ void Manager::remove( const Rule* const pRule )
 
 	m_oRWLock.lockForWrite();
 
-	const RuleVectorPos nPos = getUUID( pRule->m_idUUID );
+	const RuleVectorPos nPos = find( pRule->m_idUUID );
 #ifdef _DEBUG
 	Q_ASSERT( nPos != m_vRules.size() );
 	Q_ASSERT( m_vRules[nPos] == pRule );
@@ -624,7 +624,7 @@ void Manager::ban( const QueryHit* const pHit, RuleTime::Time nBanLength, quint8
 	}
 
 	m_oRWLock.lockForRead();
-	bool bAlreadyBlocked = ( getHash( pHit->m_vHashes ) != m_vRules.size() );
+	bool bAlreadyBlocked = ( find( pHit->m_vHashes ) != m_vRules.size() );
 	m_oRWLock.unlock();
 
 	if ( bAlreadyBlocked )
@@ -1342,7 +1342,7 @@ quint32 Manager::writeToFile( const void* const pManager, QFile& oFile )
 
 	if ( nCount )
 	{
-		Rule** pRules = &( pSManager->m_vRules )[0];
+		const Rule* const * const pRules = &( pSManager->m_vRules )[0];
 		for ( RuleVectorPos n = 0; n < nCount; ++n )
 		{
 			Rule::save( pRules[n], oStream );
@@ -1579,7 +1579,7 @@ bool Manager::toXML( const QString& sPath ) const
 
 	if ( nSize )
 	{
-		Rule* const* pRules = &m_vRules[0];
+		const Rule* const * const pRules = &m_vRules[0];
 		for ( RuleVectorPos n = 0; n < nSize ; ++n )
 		{
 			pRules[n]->toXML( xmlDocument );
@@ -1631,7 +1631,7 @@ quint32 Manager::requestRuleInfo()
 
 	if ( nSize )
 	{
-		Rule** pRules = &m_vRules[0];
+		Rule* const * const pRules = &m_vRules[0];
 		for ( quint32 n = 0; n < nSize ; ++n )
 		{
 			emit ruleInfo( pRules[n] );
@@ -1661,7 +1661,7 @@ void Manager::expire()
 	{
 		const quint32 tNow = common::getTNowUTC();
 
-		Rule** pRules   = &m_vRules[0];
+		const Rule* const * const pRules = &m_vRules[0];
 		RuleVectorPos n = nSize;
 
 		while ( n > 0 )
@@ -1760,7 +1760,7 @@ void Manager::shutDown()
 void Manager::updateHitCount( QUuid ruleID, uint nCount )
 {
 	m_oRWLock.lockForWrite();
-	const RuleVectorPos nPos = getUUID( ruleID );
+	const RuleVectorPos nPos = find( ruleID );
 
 	if ( nPos != m_vRules.size() )
 	{
@@ -1810,8 +1810,8 @@ void Manager::loadPrivates()
 	vRanges.push_back( QString(  "203.0.113.0-203.0.113.255"   ) );
 	vRanges.push_back( QString(    "240.0.0.0-255.255.255.255" ) );
 
-	QString*     pRanges = &vRanges[0];
-	IPRangeRule* pRule   = NULL;
+	const QString* const pRanges = &vRanges[0];
+	IPRangeRule* pRule = NULL;
 
 	for ( uchar n = 0; n < 12; ++n )
 	{
@@ -1833,7 +1833,7 @@ void Manager::clearPrivates()
 
 	if ( nSize )
 	{
-		IPRangeRule** pRule = &m_vPrivateRanges[0];
+		const IPRangeRule* const * const pRule = &m_vPrivateRanges[0];
 		for ( IPRangeVectorPos n = 0; n < nSize; ++n )
 		{
 			delete pRule[n];
@@ -1950,44 +1950,57 @@ bool Manager::load( const QString& sPath )
  */
 void Manager::insert( Rule* pRule )
 {
-	RuleVectorPos nPos = m_vRules.size();
-	m_vRules.push_back( NULL );
+	const RuleVectorPos nMax = m_vRules.size();
 
-	Rule** pArray = &m_vRules[0]; // access internal array
-
-	while ( nPos > 0 && pRule->m_idUUID < pArray[nPos - 1]->m_idUUID )
+	if ( nMax )
 	{
-		pArray[nPos] = pArray[nPos - 1];
-		--nPos;
-	}
+		m_vRules.push_back( NULL );
 
-	pArray[nPos] = pRule;
+		Rule** const pRules = &m_vRules[0];
+		RuleVectorPos nPos = findInternal( pRule->m_idUUID, pRules, nMax );
+
+		/* Note: it is guaranteed that:
+		 * ( pRules[nPos]->m_idUUID == idUUID ) ||
+		 * ( pRules[nPos]->m_idUUID > idUUID && !nPos || pRules[nBegin - 1]->m_idUUID < idUUID )
+		 */
+
+		// This method may only be called to insert rules whose
+		// UUIDs are not already present within the rule vector.
+		Q_ASSERT( nPos == nMax || pRules[nPos]->m_idUUID != pRule->m_idUUID );
+
+		// move all rules starting from position nPos one spot to the right
+		memmove( pRules + nPos + 1, pRules + nPos, ( nMax - nPos ) * sizeof( Rule* ) );
+
+		pRules[nPos] = pRule;
+	}
+	else
+	{
+		m_vRules.push_back( pRule );
+	}
 }
 
 /**
- * @brief Manager::erase removes the rule at the position nPos from the vector.
- * Note: this does not free the memory. See the QSharedPointer emitted at the end of
- * Manager::remove(RuleVectorPos) for that.
+ * @brief erase Removes the rule at the position nPos from the vector.
+ * Note: this does not free the memory of the rule. The caller needs to make sure of that.
+ * See the QSharedPointer emitted at the end of Manager::remove( RuleVectorPos ) for that.
  * Locking: REQUIRES RW
  * @param nPos : the position
  */
 void Manager::erase( RuleVectorPos nPos )
 {
+#ifdef _DEBUG
 	Q_ASSERT( nPos >= 0 && nPos < m_vRules.size() );
+#endif // _DEBUG
 
 	const RuleVectorPos nMax = m_vRules.size() - 1;
 
-	Rule** pArray = &m_vRules[0]; // access internal array
+	Rule** pRules = &m_vRules[0]; // access internal array
 
-	RuleVectorPos i = nPos;
-	while ( i < nMax )            // move all other elements 1 pos up the latter
-	{
-		pArray[i] = pArray[i + 1];
-		++i;
-	}
+	// Move all items on positions after nPos one spot to the left.
+	memmove( pRules + nPos, pRules + nPos + 1, ( nMax - nPos ) * sizeof( Rule* ) );
 
 	m_vRules.pop_back();          // remove last element
-}                                 // (either the deleted one or a copy of the one next to it)
+}
 
 /**
  * @brief Manager::insertRange inserts a range rule into the respective container.
@@ -2019,7 +2032,7 @@ void Manager::insertRange( IPRangeRule*& pNew )
 								tr( "Merging IP range rules. Removing overlapped IP range %1."
 								  ).arg( m_vIPRanges[nPos]->getContentString() ) );
 
-				const RuleVectorPos nUUIDPos = getUUID( m_vIPRanges[nPos]->m_idUUID );
+				const RuleVectorPos nUUIDPos = find( m_vIPRanges[nPos]->m_idUUID );
 #ifdef _DEBUG
 				Q_ASSERT( nUUIDPos != m_vRules.size() );
 				Q_ASSERT( m_vRules[nUUIDPos]->m_idUUID == m_vIPRanges[nPos]->m_idUUID );
@@ -2065,10 +2078,9 @@ void Manager::insertRangeHelper( IPRangeRule* pNewRange )
 
 	IPRangeRule** pArray = &m_vIPRanges[0]; // access internal array
 
-	while ( nPos > 0 && pNewRange->startIP() < pArray[nPos - 1]->startIP() )
+	while ( nPos > 0 && pNewRange->startIP() < pArray[--nPos]->startIP() )
 	{
-		pArray[nPos] = pArray[nPos - 1];
-		--nPos;
+		pArray[nPos + 1] = pArray[nPos];
 	}
 
 	pArray[nPos] = pNewRange;
@@ -2091,12 +2103,8 @@ void Manager::eraseRange( const IPRangeVectorPos nPos )
 
 	IPRangeRule** pArray = &m_vIPRanges[0]; // access internal array
 
-	IPRangeVectorPos i = nPos;
-	while ( i < nMax )                      // move all other elements 1 pos up the latter
-	{
-		pArray[i] = pArray[i + 1];
-		++i;
-	}
+	// Move all items on positions after nPos one spot to the left.
+	memmove( pArray + nPos, pArray + nPos + 1, ( nMax - nPos ) * sizeof( Rule* ) );
 
 	m_vIPRanges.pop_back();
 
@@ -2118,13 +2126,88 @@ void Manager::eraseRange( const IPRangeVectorPos nPos )
 }
 
 /**
+ * @brief findInternal Allows to determine the theoretical position of the rule with idUUID
+ * within pRules.
+ * Locking: REQUIRES R
+ * @param idUUID The rule ID
+ * @param pRules Array containing pointers to rules.
+ * @param nSize The size of that array.
+ * @return The theoretical rule position nPos with
+ * ( pRules[nPos]->m_idUUID == idUUID ) ||
+ * ( pRules[nPos]->m_idUUID > idUUID && !nPos || pRules[nBegin - 1]->m_idUUID < idUUID )
+ */
+Manager::RuleVectorPos Manager::findInternal( const QUuid& idUUID, const Rule* const * const pRules,
+											  const RuleVectorPos nSize ) const
+{
+	RuleVectorPos nMiddle, nHalf, nBegin = 0;
+	RuleVectorPos n = nSize;
+
+	// Note: In the comments nPos is the theoretical position of the UUID.
+	while ( n > 0 )
+	{
+		nHalf = n >> 1;
+
+		nMiddle = nBegin + nHalf;
+
+		if ( idUUID < pRules[nMiddle]->m_idUUID )
+		{
+			// at this point: nPos >= nBegin && nPos < nMiddle
+			n = nHalf;
+			// at this point: nPos >= nBegin && nPos < nBegin + n
+		}
+		else
+		{
+			if ( idUUID == pRules[nMiddle]->m_idUUID )
+			{
+				// at this point: nPos == nMiddle
+				return nMiddle;
+				break;
+			}
+			// at this point: nPos > nMiddle && nPos <= nBegin + n
+
+			nBegin = nMiddle + 1;
+			n -= nHalf + 1;
+
+			// at this point: nPos >= nBegin && nPos <= nBegin + n
+		}
+
+		// at this point: nPos >= nBegin && nPos <= nBegin + n
+	}
+
+	// REMOVE for Quazaa 1.0
+#ifdef _DEBUG
+	if ( nBegin != nSize )
+	{
+		bool bNBeginBigger = pRules[nBegin]->m_idUUID > idUUID;
+
+		if ( !bNBeginBigger )
+		{
+			Q_ASSERT( bNBeginBigger );
+		}
+	}
+
+	if ( nBegin )
+	{
+		bool bLeftSmaller  = pRules[nBegin - 1]->m_idUUID < idUUID;
+
+		if ( !bLeftSmaller )
+		{
+			Q_ASSERT( bLeftSmaller );
+		}
+	}
+#endif // _DEBUG
+
+	return nBegin;
+}
+
+/**
  * @brief Manager::getUUID returns the rule position for the given UUID.
  * Note that there is always max one rule per UUID.
  * Locking: REQUIRES R
  * @param idUUID : the UUID
  * @return the rule position
  */
-Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
+Manager::RuleVectorPos Manager::find( const QUuid& idUUID ) const
 {
 	const RuleVectorPos nSize = m_vRules.size();
 
@@ -2133,60 +2216,36 @@ Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
 		return nSize;
 	}
 
-	Rule* const* pRules = &m_vRules[0];
-
-	RuleVectorPos nMiddle, nHalf, nBegin = 0;
-	RuleVectorPos n = nSize;
-	RuleVectorPos nReturn = nSize;
-
 	// REMOVE for beta 1
 #ifdef _DEBUG
 	RuleVectorPos i;
 	for ( i = 0; i < nSize; ++i )
 	{
-		if ( idUUID == pRules[i]->m_idUUID )
+		if ( idUUID == m_vRules[i]->m_idUUID )
 		{
 			break;
 		}
 	}
 #endif // _DEBUG
 
-	while ( n > 0 )
-	{
-		// REMOVE for beta 1
-#ifdef _DEBUG
-		Q_ASSERT( i == nSize || ( i >= nBegin && i <= nBegin + n - 1 ) );
-#endif // _DEBUG
+	const Rule* const * const pRules = &m_vRules[0];
 
-		nHalf = n >> 1;
+	RuleVectorPos nRos = findInternal( idUUID, pRules, nSize );
 
-		nMiddle = nBegin + nHalf;
-
-		if ( idUUID < pRules[nMiddle]->m_idUUID )
-		{
-			n = nHalf;
-		}
-		else
-		{
-			if ( idUUID == pRules[nMiddle]->m_idUUID )
-			{
-				nReturn = nMiddle;
-				break;
-			}
-
-			nBegin = nMiddle + 1;
-			n -= nHalf + 1;
-		}
-	}
+	/* Note: it is guaranteed that:
+	 * ( pRules[nPos]->m_idUUID == idUUID ) ||
+	 * ( pRules[nPos]->m_idUUID > idUUID && !nPos || pRules[nBegin - 1]->m_idUUID < idUUID )
+	 */
 
 	// REMOVE for beta 1
 #ifdef _DEBUG
-	Q_ASSERT( i == nSize || i == nReturn );
+	// Check if we found the right spot using findInternal().
+	Q_ASSERT( i == nSize || i == nRos );
 #endif
 
-	if ( nReturn < m_vRules.size() && pRules[nReturn]->m_idUUID == idUUID )
+	if ( nRos < m_vRules.size() && pRules[nRos]->m_idUUID == idUUID )
 	{
-		return nReturn;
+		return nRos;
 	}
 	else
 	{
@@ -2201,7 +2260,7 @@ Manager::RuleVectorPos Manager::getUUID( const QUuid& idUUID ) const
  * @param hashes : a vector of hashes to look for
  * @return the rule position
  */
-Manager::RuleVectorPos Manager::getHash( const HashSet& vHashes ) const
+Manager::RuleVectorPos Manager::find( const HashSet& vHashes ) const
 {
 	// We are not searching for any hash. :)
 	if ( vHashes.empty() )
@@ -2225,7 +2284,7 @@ Manager::RuleVectorPos Manager::getHash( const HashSet& vHashes ) const
 		{
 			if ( ( *it ).second->match( vHashes ) )
 			{
-				RuleVectorPos nPos = getUUID( ( *it ).second->m_idUUID );
+				RuleVectorPos nPos = find( ( *it ).second->m_idUUID );
 #ifdef _DEBUG
 				Q_ASSERT( nPos != m_vRules.size() );
 				Q_ASSERT( m_vRules[nPos]->m_idUUID == ( *it ).second->m_idUUID );
@@ -2263,16 +2322,16 @@ void Manager::expireLater()
  * Locking: REQUIRES RW
  * @param nPos : the position
  */
-void Manager::remove( RuleVectorPos nVectorPos )
+void Manager::remove( const RuleVectorPos nVectorPos )
 {
-	//qDebug() << "[Security] Starting to remove rule at position: " << QString::number(nVectorPos);
+//	qDebug() << "[Security] Starting to remove rule at position: " << QString::number(nVectorPos);
 
 	Q_ASSERT( nVectorPos >= 0 && nVectorPos < m_vRules.size() );
 
-	if ( nVectorPos == m_vRules.size() )
+	/*if ( nVectorPos == m_vRules.size() )
 	{
 		return;
-	}
+	}*/
 
 	Rule* pRule  = m_vRules[nVectorPos];
 
@@ -2357,7 +2416,7 @@ void Manager::remove( RuleVectorPos nVectorPos )
 		{
 			RegExpVectorPos         nPos   = 0;
 			const RegExpVectorPos   nMax   = nSize - 1;
-			RegularExpressionRule** pArray = &m_vRegularExpressions[0]; // access internal array
+			RegularExpressionRule** pArray = &m_vRegularExpressions[0];
 
 			while ( nPos < nSize )
 			{
@@ -2368,11 +2427,8 @@ void Manager::remove( RuleVectorPos nVectorPos )
 				++nPos;
 			}
 
-			while ( nPos < nMax )            // move all other elements 1 pos up the latter
-			{
-				pArray[nPos] = pArray[nPos + 1];
-				++nPos;
-			}
+			// Move all items on positions after nPos one spot to the left.
+			memmove( pArray + nPos, pArray + nPos + 1, ( nMax - nPos ) * sizeof( Rule* ) );
 
 			m_vRegularExpressions.pop_back();          // remove last element
 		}
@@ -2385,9 +2441,9 @@ void Manager::remove( RuleVectorPos nVectorPos )
 
 		if ( nSize )
 		{
-			ContentVectorPos       nPos   = 0;
-			const ContentVectorPos nMax   = nSize - 1;
-			ContentRule**          pArray = &m_vContents[0]; // access internal array
+			ContentVectorPos       nPos = 0;
+			const ContentVectorPos nMax = nSize - 1;
+			ContentRule**        pArray = &m_vContents[0]; // access internal array
 
 			while ( nPos < nSize )
 			{
@@ -2398,11 +2454,8 @@ void Manager::remove( RuleVectorPos nVectorPos )
 				++nPos;
 			}
 
-			while ( nPos < nMax )            // move all other elements 1 pos up the latter
-			{
-				pArray[nPos] = pArray[nPos + 1];
-				++nPos;
-			}
+			// Move all items on positions after nPos one spot to the left.
+			memmove( pArray + nPos, pArray + nPos + 1, ( nMax - nPos ) * sizeof( Rule* ) );
 
 			m_vContents.pop_back();          // remove last element
 		}
@@ -2415,9 +2468,9 @@ void Manager::remove( RuleVectorPos nVectorPos )
 
 		if ( nSize )
 		{
-			UserAgentVectorPos       nPos   = 0;
-			const UserAgentVectorPos nMax   = nSize - 1;
-			UserAgentRule**          pArray = &m_vUserAgents[0]; // access internal array
+			UserAgentVectorPos       nPos = 0;
+			const UserAgentVectorPos nMax = nSize - 1;
+			UserAgentRule**        pArray = &m_vUserAgents[0]; // access internal array
 
 			while ( nPos < nSize )
 			{
@@ -2428,11 +2481,8 @@ void Manager::remove( RuleVectorPos nVectorPos )
 				++nPos;
 			}
 
-			while ( nPos < nMax )           // move all other elements 1 pos up the latter
-			{
-				pArray[nPos] = pArray[nPos + 1];
-				++nPos;
-			}
+			// Move all items on positions after nPos one spot to the left.
+			memmove( pArray + nPos, pArray + nPos + 1, ( nMax - nPos ) * sizeof( Rule* ) );
 
 			m_vUserAgents.pop_back();       // remove last element
 		}
@@ -2492,8 +2542,8 @@ bool Manager::isAgentDeniedInternal( const QString& sUserAgent )
 
 	if ( nSize )
 	{
-		UserAgentRule** pArray = &m_vUserAgents[0];
-		const quint32 tNow     = common::getTNowUTC();
+		UserAgentRule* const * const pArray = &m_vUserAgents[0];
+		const quint32 tNow = common::getTNowUTC();
 
 		for ( UserAgentVectorPos n = 0; n < nSize; ++n )
 		{
@@ -2538,7 +2588,7 @@ bool Manager::isAgentDeniedInternal( const QString& sUserAgent )
 	const ContentVectorPos nSize = m_vContents.size();
 	if ( nSize )
 	{
-	ContentRule** pArray = &m_vContents[0];
+	const ContentRule* const * const pArray = &m_vContents[0];
 	const quint32 tNow = common::getTNowUTC();
 
 	for ( ContentVectorPos n = 0; n < nSize; ++n )
@@ -2587,7 +2637,7 @@ bool Manager::isDenied( const QueryHit* const pHit )
 	const quint32 tNow = common::getTNowUTC();
 
 	// Search for a rule matching these hashes
-	RuleVectorPos nPos = getHash( vHashes );
+	RuleVectorPos nPos = find( vHashes );
 
 	// If this rule matches the file, return the specified action.
 	if ( nPos != m_vRules.size() )
@@ -2619,7 +2669,7 @@ bool Manager::isDenied( const QueryHit* const pHit )
 
 	if ( nSize )
 	{
-		ContentRule** pArray = &m_vContents[0];
+		ContentRule* const * const pArray = &m_vContents[0];
 
 		for ( ContentVectorPos n = 0; n < nSize; ++n )
 		{
@@ -2671,8 +2721,8 @@ bool Manager::isDenied( const QList<QString>& lQuery, const QString& sContent )
 
 	if ( nSize )
 	{
-		const quint32           tNow   = common::getTNowUTC();
-		RegularExpressionRule** pArray = &m_vRegularExpressions[0];
+		const quint32 tNow = common::getTNowUTC();
+		RegularExpressionRule* const * const pArray = &m_vRegularExpressions[0];
 
 		for ( RegExpVectorPos n = 0; n < nSize; ++n )
 		{
@@ -2825,7 +2875,7 @@ bool Manager::isPrivateNew( const EndPoint& oAddress )
 
 	if ( nSize )
 	{
-		IPRangeRule** pRules = &m_vPrivateRanges[0];
+		const IPRangeRule* const * const pRules = &m_vPrivateRanges[0];
 
 		IPRangeVectorPos nHalf;
 		IPRangeVectorPos nMiddle;
@@ -2874,7 +2924,7 @@ Manager::IPRangeVectorPos Manager::findRangeForMerging( const EndPoint& oAddress
 		return nSize;
 	}
 
-	IPRangeRule** pRanges = &m_vIPRanges[0];
+	const IPRangeRule* const * const pRanges = &m_vIPRanges[0];
 
 	IPRangeVectorPos nMiddle, nHalf, nBegin = 0;
 	IPRangeVectorPos nItemsRemaining = nSize;

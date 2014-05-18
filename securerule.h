@@ -1,7 +1,7 @@
 /*
 ** securerule.h
 **
-** Copyright © Quazaa Development Team, 2009-2013.
+** Copyright © Quazaa Development Team, 2009-2014.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
 **
 ** The Quazaa Security Library is free software; this file may be used under the terms of the GNU
@@ -121,7 +121,7 @@ public:
 	 * pDestination.
 	 * Requires Locking: RW
 	 */
-	void    mergeInto( Rule* pDestination );
+	void    mergeInto( Rule* pDestination ) const;
 
 	// Hit count control
 	void    count( uint nCount = 1 );

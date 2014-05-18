@@ -1,7 +1,7 @@
 /*
 ** securerule.cpp
 **
-** Copyright © Quazaa Development Team, 2009-2013.
+** Copyright © Quazaa Development Team, 2009-2014.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
 **
 ** The Quazaa Security Library is free software; this file may be used under the terms of the GNU
@@ -307,7 +307,7 @@ quint32 Rule::getExpiryTime() const
  * pDestination.
  * Requires Locking: RW
  */
-void Rule::mergeInto( Rule* pDestination )
+void Rule::mergeInto( Rule* pDestination ) const
 {
 	if ( m_sContent != pDestination->m_sContent || m_nType != pDestination->m_nType )
 	{

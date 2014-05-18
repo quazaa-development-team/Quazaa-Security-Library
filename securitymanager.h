@@ -1,7 +1,7 @@
 /*
 ** securitymanager.h
 **
-** Copyright © Quazaa Development Team, 2009-2013.
+** Copyright © Quazaa Development Team, 2009-2014.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
 **
 ** The Quazaa Security Library is free software; this file may be used under the terms of the GNU
@@ -539,9 +539,9 @@ public:
 	bool            load( const QString& sPath );
 
 	/**
-	 * @brief Manager::insert inserts a new rule at the correct place into the rules vector.
+	 * @brief insert Inserts a new rule at the correct place into the rules vector.
 	 * Locking: REQUIRES RW
-	 * @param pRule : the rule to be inserted
+	 * @param pRule : The rule to be inserted into the rules vector.
 	 */
 	void            insert( Rule* pRule );
 
@@ -573,13 +573,27 @@ public:
 	void            eraseRange( const IPRangeVectorPos nPos );
 
 	/**
+	 * @brief findInternal Allows to determine the theoretical position of the rule with idUUID
+	 * within pRules.
+	 * Locking: REQUIRES R
+	 * @param idUUID The rule ID
+	 * @param pRules Array containing pointers to rules.
+	 * @param nSize The size of that array.
+	 * @return The theoretical rule position nPos with
+	 * ( pRules[nPos]    ->m_idUUID <= idUUID ) &&
+	 * ( nPos + 1 == nSize || pRules[nPos + 1]->m_idUUID > idUUID )
+	 */
+	RuleVectorPos   findInternal( const QUuid& idUUID, const Rule* const * const pRules,
+								  const RuleVectorPos nSize ) const;
+
+	/**
 	 * @brief Manager::getUUID returns the rule position for the given UUID.
 	 * Note that there is always max one rule per UUID.
 	 * Locking: REQUIRES R
-	 * @param idUUID : the UUID
-	 * @return the rule position
+	 * @param idUUID : the rule UUID
+	 * @return the rule position; m_vRules.size() if no rule by the specified ID could be found.
 	 */
-	RuleVectorPos   getUUID( const QUuid& idUUID ) const;
+	RuleVectorPos   find( const QUuid& idUUID ) const;
 
 	/**
 	 * @brief Manager::getHash
@@ -588,7 +602,7 @@ public:
 	 * @param hashes : a vector of hashes to look for
 	 * @return the rule position
 	 */
-	RuleVectorPos   getHash( const HashSet& hashes ) const;
+	RuleVectorPos   find( const HashSet& vHashes ) const;
 
 	/**
 	 * @brief Manager::expireLater invokes delayed rule expiry on return to the main loop.
@@ -604,7 +618,7 @@ public:
 	 * Locking: REQUIRES RW
 	 * @param nPos : the position
 	 */
-	void            remove( RuleVectorPos nVectorPos );
+	void            remove( const RuleVectorPos nVectorPos );
 
 	/**
 	 * @brief Manager::isAgentDenied checks a user agent name against the list of user agent rules.
@@ -620,7 +634,7 @@ public:
 	 * @param sContent : the content string
 	 * @return true if the content is denied; false otherwise
 	 */
-	//bool            isDenied(const QString& sContent);
+//	bool            isDenied(const QString& sContent);
 
 	/**
 	 * @brief Manager::isDenied checks a hit against hash and content rules.
