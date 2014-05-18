@@ -61,8 +61,9 @@
 // TODO: use hashtable for single IPs
 // TODO: add defines for hit matching
 // TODO: improve doxygen
-// TODO: Enable/disable this according to the visibility within the GUI
-// TODO: http://quazaa.sourceforge.net/index.php?option=com_jfusion&Itemid=4&jfile=viewtopic.php&f=8&t=201&view=unread#unread
+// TODO: define doxygen standards within the wiki
+// TODO: Enable/disable GUI updating according to the visibility within the GUI
+// TODO: Add last hit time to rules and make that data visible within the GUI
 
 namespace Security
 {
@@ -388,12 +389,14 @@ public:
 	bool            fromXML( const QString& sPath );
 
 	/**
-	 * @brief Manager::toXML exports all rules to an XML file.
+	 * @brief toXML Exports all rules to a Security XML file.
 	 * Locking: R
-	 * @param sPath : the path to the new rules file
-	 * @return true if successful; false otherwise
+	 * @param sPath The path to the new file.
+	 * @param lsIDs The GUI IDs of the rules to write to the XML file. If this is not provided, all
+	 * rules are written to file.
+	 * @return true if successful; false otherwise.
 	 */
-	bool            toXML( const QString& sPath ) const;
+	bool            toXML( const QString& sPath, const std::set<ID>& lsIDs = std::set<ID>() ) const;
 
 	/**
 	 * @brief Manager::receivers returns the number of listeners to a given signal of the manager.
@@ -406,7 +409,7 @@ public:
 //	int             receivers(const char* signal) const;
 
 	/**
-	 * @brief Manager::emitUpdate emits a ruleUpdated signal for a given RuleGUIID nID.
+	 * @brief Manager::emitUpdate emits a ruleUpdated signal for a given GUI ID nID.
 	 * Locking: /
 	 * @param nID : the ID
 	 */

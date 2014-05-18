@@ -1550,13 +1550,7 @@ bool Manager::fromXML( const QString& sPath )
 	return nRuleCount;
 }
 
-/**
- * @brief Manager::toXML exports all rules to an XML file.
- * Locking: R
- * @param sPath : the path to the new rules file
- * @return true if successful; false otherwise
- */
-bool Manager::toXML( const QString& sPath ) const
+bool Manager::toXML( const QString& sPath , const std::set<ID>& lsIDs ) const
 {
 	QFile oFile( sPath );
 	if ( !oFile.open( QIODevice::ReadWrite ) )
@@ -1580,9 +1574,25 @@ bool Manager::toXML( const QString& sPath ) const
 	if ( nSize )
 	{
 		const Rule* const * const pRules = &m_vRules[0];
-		for ( RuleVectorPos n = 0; n < nSize ; ++n )
+
+		if ( lsIDs.empty() )
 		{
-			pRules[n]->toXML( xmlDocument );
+			// write all rules to the specified security XML file
+			for ( RuleVectorPos nPos = 0; nPos < nSize ; ++nPos )
+			{
+				pRules[nPos]->toXML( xmlDocument );
+			}
+		}
+		else
+		{
+			// write only the requested rules to the security XML file
+			for ( RuleVectorPos nPos = 0; nPos < nSize ; ++nPos )
+			{
+				if ( lsIDs.count( pRules[nPos]->m_nGUIID ) )
+				{
+					pRules[nPos]->toXML( xmlDocument );
+				}
+			}
 		}
 	}
 
