@@ -1,7 +1,7 @@
 /*
 ** iprangerule.cpp
 **
-** Copyright © Quazaa Development Team, 2009-2013.
+** Copyright © Quazaa Development Team, 2009-2014.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
 **
 ** The Quazaa Security Library is free software; this file may be used under the terms of the GNU
@@ -122,6 +122,9 @@ IPRangeRule* IPRangeRule::merge( IPRangeRule*& pOther )
 
 				// return remaining second part of this rule
 				pReturn = pNewRule;
+
+				// make sure the new rule got its own unique UUID
+				pReturn->m_idUUID = QUuid::createUuid();
 			}
 		}
 		else

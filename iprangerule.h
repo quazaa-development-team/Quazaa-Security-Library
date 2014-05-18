@@ -1,7 +1,7 @@
 /*
 ** iprangerule.h
 **
-** Copyright © Quazaa Development Team, 2009-2013.
+** Copyright © Quazaa Development Team, 2009-2014.
 ** This file is part of the Quazaa Security Library (quazaa.sourceforge.net)
 **
 ** The Quazaa Security Library is free software; this file may be used under the terms of the GNU
@@ -48,8 +48,8 @@ public:
 
 	bool            parseContent( const QString& sContent );
 
-	EndPoint       startIP() const;
-	EndPoint       endIP() const;
+	EndPoint        startIP() const;
+	EndPoint        endIP() const;
 
 	/**
 	 * @brief merge merges pOther into this rule.
