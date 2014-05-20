@@ -93,6 +93,7 @@ private:
 	// Hit counters
 	QAtomicInt  m_nToday;
 	QAtomicInt  m_nTotal;
+	QAtomicInt  m_tLastHit;
 
 	quint32     m_tExpire;
 
@@ -230,7 +231,7 @@ public:
 	 * @brief count increases the total and today hit counters by one each.
 	 * <br><b>Requires Locking: /</b> (atomic op)
 	 */
-	void    count( uint nCount = 1 );
+	void    count( quint32 tNow, uint nCount = 1 );
 
 	/**
 	 * @brief resetCount resets total and today hit counters to 0.
@@ -261,6 +262,14 @@ public:
 	 * @param nTotal  The new value of the total hit counter.
 	 */
 	void    loadTotalCount( quint32 nTotal );
+
+	/**
+	 * @brief lastHit allows to access the last hit time.
+	 * <br><b>Requires Locking: /</b> (atomic op)
+	 *
+	 * @return the time this rule was hit last.
+	 */
+	quint32 lastHit() const;
 
 	/**
 	 * @brief type allows to access the type of this rule.

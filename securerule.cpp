@@ -49,6 +49,7 @@ IDProvider<ID> Rule::m_oIDProvider;
 Rule::Rule() :
 	m_nToday( 0 ),
 	m_nTotal( 0 ),
+	m_tLastHit( 0 ),
 	m_tExpire( RuleTime::Forever )
 {
 	// This invalidates the rule as long as it does not contain any useful content.
@@ -65,25 +66,25 @@ Rule::~Rule()
 	m_oIDProvider.release( m_nGUIID );
 }
 
-Rule::Rule( const Rule& pRule )
+// The usage of a custom copy constructor makes sure each rule gets a distinct GUI ID.
+Rule::Rule( const Rule& pRule ) :
+	m_nType     ( pRule.m_nType      ),
+	m_sContent  ( pRule.m_sContent   ),
+	m_nToday    ( pRule.m_nToday     ),
+	m_nTotal    ( pRule.m_nTotal     ),
+	m_nAction   ( pRule.m_nAction    ),
+	m_idUUID    ( pRule.m_idUUID     ),
+	m_tLastHit  ( pRule.m_tLastHit   ),
+	m_tExpire   ( pRule.m_tExpire    ),
+	m_sComment  ( pRule.m_sComment   ),
+	m_bAutomatic( pRule.m_bAutomatic ),
+	m_nGUIID    ( m_oIDProvider.aquire() )
 {
-	// The usage of a custom copy constructor makes sure each rule gets a distinct GUI ID.
-	m_nType      = pRule.m_nType;
-	m_sContent   = pRule.m_sContent;
-	m_nToday     = pRule.m_nToday;
-	m_nTotal     = pRule.m_nTotal;
-	m_nAction    = pRule.m_nAction;
-	m_idUUID     = pRule.m_idUUID;
-	m_tExpire    = pRule.m_tExpire;
-	m_sComment   = pRule.m_sComment;
-	m_bAutomatic = pRule.m_bAutomatic;
-
-	m_nGUIID     = m_oIDProvider.aquire();
 }
 
 bool Rule::operator==( const Rule& pRule ) const
 {
-	// we don't compare GUI IDs or hit counters
+	// we don't compare GUI IDs, hit counters and last hit time
 	return m_nType      == pRule.m_nType      &&
 		   m_nAction    == pRule.m_nAction    &&
 		   m_tExpire    == pRule.m_tExpire    &&
@@ -190,10 +191,12 @@ void Rule::mergeInto( Rule* pDestination ) const
 	securityManager.emitUpdate( pDestination->m_nGUIID );
 }
 
-void Rule::count( uint nCount )
+void Rule::count( quint32 tNow, uint nCount )
 {
 	m_nToday.fetchAndAddOrdered( nCount );
 	m_nTotal.fetchAndAddOrdered( nCount );
+
+	m_tLastHit.store( common::uintToInt( tNow ) );
 }
 
 void Rule::resetCount()
@@ -217,6 +220,11 @@ void Rule::loadTotalCount( quint32 nTotal )
 	m_nTotal.storeRelease( nTotal );
 }
 
+quint32 Rule::lastHit() const
+{
+	return common::intToUint( m_tLastHit.load() );
+}
+
 RuleType::Type Rule::type() const
 {
 	return m_nType;
@@ -237,7 +245,7 @@ bool Rule::match( const QList<QString>&, const QString& ) const
 	return false;
 }
 
-Rule* Rule::load( QDataStream& fsFile, int )
+Rule* Rule::load( QDataStream& fsFile, int nVersion )
 {
 	Rule* pRule = NULL;
 
@@ -246,6 +254,7 @@ Rule* Rule::load( QDataStream& fsFile, int )
 	QString     sComment;
 	QString     sUUID;
 	quint32     tExpire;
+	quint32     tLastHit;
 	quint32     nTotal;
 	bool        bAutomatic;
 	QString     sContent;
@@ -255,6 +264,17 @@ Rule* Rule::load( QDataStream& fsFile, int )
 	fsFile >> sComment;
 	fsFile >> sUUID;
 	fsFile >> tExpire;
+
+	if ( nVersion > 1 )
+	{
+		// added in version 2
+		fsFile >> tLastHit;
+	}
+	else
+	{
+		tLastHit = common::getTNowUTC();
+	}
+
 	fsFile >> nTotal;
 	fsFile >> bAutomatic;
 	fsFile >> sContent;
@@ -314,6 +334,7 @@ Rule* Rule::load( QDataStream& fsFile, int )
 	pRule->m_sComment   = sComment;
 	pRule->m_idUUID     = QUuid( sUUID );
 	pRule->m_tExpire    = tExpire;
+	pRule->m_tLastHit.store( common::uintToInt( tLastHit ) );
 	pRule->m_nTotal.storeRelease( nTotal );
 	pRule->m_bAutomatic = bAutomatic;
 	pRule->parseContent( sContent );
@@ -329,6 +350,7 @@ void Rule::save( const Rule* const pRule, QDataStream& oStream )
 	oStream << pRule->m_sComment;
 	oStream << pRule->m_idUUID.toString();
 	oStream << pRule->m_tExpire;
+	oStream << common::intToUint( pRule->m_tLastHit.load() );
 	oStream << pRule->m_nTotal.loadAcquire();
 	oStream << pRule->m_bAutomatic;
 	oStream << pRule->getContentString();

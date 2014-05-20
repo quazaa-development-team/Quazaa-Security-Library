@@ -540,7 +540,7 @@ void Manager::ban( const QHostAddress& oAddress, RuleTime::Time nBanLength,
 	// This also merges any existing rules in case the same IP is added twice.
 	if ( add( pRule ) )
 	{
-		pRule->count();
+		pRule->count( tNow );
 
 		if ( bMessage )
 		{
@@ -644,7 +644,7 @@ void Manager::ban( const QueryHit* const pHit, RuleTime::Time nBanLength, quint8
 
 		if ( add( pRule ) )
 		{
-			pRule->count();
+			pRule->count( tNow );
 		}
 
 		postLogMessage( LogSeverity::Security,
@@ -1582,7 +1582,7 @@ void Manager::updateHitCount( QUuid ruleID, uint nCount )
 
 	if ( nPos != m_vRules.size() )
 	{
-		m_vRules[nPos]->count( nCount );
+		m_vRules[nPos]->count( common::getTNowUTC(), nCount );
 		emit ruleUpdated( m_vRules[nPos]->m_nGUIID );
 	}
 
@@ -1591,7 +1591,7 @@ void Manager::updateHitCount( QUuid ruleID, uint nCount )
 
 void Manager::hit( Rule* pRule )
 {
-	pRule->count();
+	pRule->count( common::getTNowUTC() );
 	emit ruleUpdated( pRule->m_nGUIID );
 }
 

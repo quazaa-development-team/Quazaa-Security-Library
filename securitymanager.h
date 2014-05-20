@@ -47,10 +47,11 @@
 #include "sanitychecker.h"
 
 // Increment this if there have been made changes to the way of storing security rules.
-#define SECURITY_CODE_VERSION 1
+#define SECURITY_CODE_VERSION 2
 // History:
 // 0 - Initial implementation
 // 1 - Some changes to the way the rule time is stored and other minor adjustments.
+// 2 - Added last hit time to rules
 
 #define SECURITY_XML_VERSION "2.0"
 // History:
@@ -58,8 +59,6 @@
 // 2.0 - Adjustments for IP ranges, Regular Expressions etc.
 
 // TODO: check agent/vendor bad/denied calls
-// TODO: Enable/disable GUI updating according to the visibility within the GUI
-// TODO: Add last hit time to rules and make that data visible within the GUI
 
 namespace Security
 {

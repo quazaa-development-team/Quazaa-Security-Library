@@ -59,7 +59,7 @@ bool SanityChecker::isNewlyDenied( const EndPoint& oAddress )
 	{
 		if ( pRules[n]->match( oAddress ) )
 		{
-			pRules[n]->count();
+			pRules[n]->count( common::getTNowUTC() );
 
 			if ( pRules[n]->m_nAction == RuleAction::Deny )
 			{
@@ -98,7 +98,7 @@ bool SanityChecker::isNewlyDenied( const QueryHit* const pHit, const QList<QStri
 	{
 		if ( pRules[n]->match( pHit ) || pRules[n]->match( lQuery, pHit->m_sDescriptiveName ) )
 		{
-			pRules[n]->count();
+			pRules[n]->count( common::getTNowUTC() );
 
 			if ( pRules[n]->m_nAction == RuleAction::Deny )
 			{
