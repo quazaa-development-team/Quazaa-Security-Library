@@ -1457,6 +1457,8 @@ bool Manager::fromXML( const QString& sPath )
 
 	QXmlStreamReader xmlDocument( &oFile );
 
+	emit updateLoadMax( oFile.size() );
+
 	if ( xmlDocument.atEnd() ||
 		 !xmlDocument.readNextStartElement() || // read first element
 		 xmlDocument.name().toString().compare( "security", Qt::CaseInsensitive ) )
@@ -1503,6 +1505,8 @@ bool Manager::fromXML( const QString& sPath )
 		// Go forward until the beginning of the next rule
 		xmlDocument.readNextStartElement();
 
+		emit updateLoadProgress( xmlDocument.device()->pos() );
+
 		// Verify whether it's a rule
 		if ( xmlDocument.name().toString().compare( "rule", Qt::CaseInsensitive ) )
 		{
@@ -1540,6 +1544,9 @@ bool Manager::fromXML( const QString& sPath )
 			qApp->processEvents( QEventLoop::ExcludeUserInputEvents );
 		}
 	}
+
+	// report 100% complete
+	emit updateLoadProgress( oFile.size() );
 
 	m_oSanity.sanityCheck();
 	save();
