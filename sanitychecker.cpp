@@ -38,12 +38,6 @@ SanityCecker::~SanityCecker()
 	clear();
 }
 
-/**
- * @brief isNewlyDenied checks an IP against the list of loaded new security rules.
- * Locking: REQUIRES R
- * @param oAddress : the IP to be checked
- * @return true if the IP is newly banned; false otherwise
- */
 bool SanityCecker::isNewlyDenied( const EndPoint& oAddress )
 {
 	if ( oAddress.isNull() )
@@ -83,13 +77,6 @@ bool SanityCecker::isNewlyDenied( const EndPoint& oAddress )
 	return false;
 }
 
-/**
- * @brief isNewlyDenied checks a hit against the list of loaded new security rules.
- * Locking: REQUIRES R
- * @param pHit : the QueryHit
- * @param lQuery : the query string
- * @return true if the hit is newly banned; false otherwise
- */
 bool SanityCecker::isNewlyDenied( const QueryHit* const pHit, const QList<QString>& lQuery )
 {
 	if ( !pHit )
@@ -129,13 +116,6 @@ bool SanityCecker::isNewlyDenied( const QueryHit* const pHit, const QList<QStrin
 	return false;
 }
 
-/**
- * @brief sanityCheck triggers a system wide sanity check.
- * Qt slot.
- * The sanity check is delayed by 5s, if a write lock couldn't be aquired after 200ms.
- * The sanity check is aborted if it takes longer than 2min to finish. (debug version only)
- * Locking: QUEUE + RW
- */
 void SanityCecker::sanityCheck()
 {
 	if ( m_bVerboose )
@@ -210,12 +190,6 @@ void SanityCecker::sanityCheck()
 	}
 }
 
-/**
- * @brief sanityCheckPerformed is a call back slot.
- * Qt slot. Must be notified by all listeners to the signal performSanityCheck() once they have
- * completed their work.
- * Locking: RW
- */
 void SanityCecker::sanityCheckPerformed()
 {
 	m_oRWLock.lockForWrite();
@@ -243,12 +217,6 @@ void SanityCecker::sanityCheckPerformed()
 }
 
 #ifdef _DEBUG
-/**
- * @brief forceEndOfSanityCheck
- * Qt slot. Aborts the currently running sanity check by clearing its rule list.
- * For use in debug version only.
- * Locking: RW
- */
 void SanityCecker::forceEndOfSanityCheck()
 {
 	m_oRWLock.lockForWrite();
@@ -270,10 +238,6 @@ void SanityCecker::forceEndOfSanityCheck()
 }
 #endif //_DEBUG
 
-/**
- * @brief loadBatch loads a batch of waiting rules into the container used for sanity checking.
- * Locking: REQUIRES QUEUE + REQUIRES RW
- */
 void SanityCecker::loadBatch()
 {
 	Q_ASSERT( !m_bNewRulesLoaded );
@@ -299,10 +263,6 @@ void SanityCecker::loadBatch()
 	m_bNewRulesLoaded = true;
 }
 
-/**
- * @brief clearBatch unloads new rules from sanity check containers.
- * Locking: REQUIRES RW
- */
 void SanityCecker::clearBatch( bool bShutDown )
 {
 	Q_ASSERT( m_bNewRulesLoaded );
@@ -315,7 +275,7 @@ void SanityCecker::clearBatch( bool bShutDown )
 	const RuleVectorPos nSize = m_vLoadedRules.size();
 	for ( RuleVectorPos n = 0; n < nSize; ++n )
 	{
-		emit hit( pLoadedRules[n]->m_idUUID, pLoadedRules[n]->getTodayCount() );
+		emit hit( pLoadedRules[n]->m_idUUID, pLoadedRules[n]->todayCount() );
 
 		delete pLoadedRules[n];
 	}

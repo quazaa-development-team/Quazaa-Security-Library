@@ -33,14 +33,13 @@
 #  include <QRegExp>
 #endif
 
-// Note: The locking information within the doxygen comments refers to the RW lock of the Security
-//       Manager.
-
 namespace Security
 {
-/* ============================================================================================== */
-/* ======================================= CUserAgentRule ======================================= */
-/* ============================================================================================== */
+
+/**
+ * @brief The UserAgentRule class manages matching user agent names either against keywords or
+ * regular expressions.
+ */
 class UserAgentRule : public Rule
 {
 private:

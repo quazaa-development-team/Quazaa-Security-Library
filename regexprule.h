@@ -33,21 +33,26 @@
 #  include <QRegExp>
 #endif
 
-// Note: The locking information within the doxygen comments refers to the RW lock of the Security
-//       Manager.
-
 namespace Security
 {
-/* ============================================================================================== */
-/* ======================================== CRegExpRule  ======================================== */
-/* ============================================================================================== */
+
+/**
+ * @brief The RegularExpressionRule class manages matching query hits (respectively their file
+ * names) against regular expressions. Note that this rule supports so-called special elements,
+ * which insert the query keywords into the rule regex.
+ *
+ * The supported special elements are:
+ * * <_>       Inserts all query keywords.
+ * * <0>..<9>  Inserts query keyword number 0..9
+ * * <>        Inserts the next query keyword
+ */
 class RegularExpressionRule : public Rule
 {
 private:
 	// There are two kinds of rules:
 	// 1. Those which contain <_>, <1>...<9> or <> (e.g. special elements)
 	// 2. All other rules.
-	bool                m_bSpecialElements; // contains special elements
+	bool                m_bSpecialElements; // true if the rule contains special elements
 
 #if QT_VERSION >= 0x050000
 	QRegularExpression  m_regularExpressionContent;

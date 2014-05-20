@@ -27,14 +27,12 @@
 
 #include "securerule.h"
 
-// Note: The locking information within the doxygen comments refers to the RW lock of the Security
-//       Manager.
-
 namespace Security
 {
-/* ============================================================================================== */
-/* ======================================== CIPRangeRule ======================================== */
-/* ============================================================================================== */
+
+/**
+ * @brief The IPRangeRule class manages IP matching against IP ranges.
+ */
 class IPRangeRule : public Rule
 {
 private:
@@ -53,12 +51,17 @@ public:
 
 	/**
 	 * @brief merge merges pOther into this rule.
-	 * Note that this changes only the ranges of this rule.
-	 * Note also that it is required for something of this rule to remain after merging.
-	 * In case this rule is split into two, the second half is returned as a new rule.
-	 * @param pOther : the rule to merge into this one; Set to NULL if superfluous after merging.
-	 * @return NULL except if pOther is contained within this rule in which case a Rule is returned
-	 * which represents the part of this rules range after the range of pOther.
+	 *
+	 * Note that this changes only the ranges of this Rule.
+	 * Note also that the caller needs to make sure for something of this rule to remain after
+	 * merging. In case this rule is split into two, the second half is returned as a new rule which
+	 * needs to be added by the Manager.
+	 *
+	 * @param pOther  The Rule to merge into this one; Set to <code>NULL</code> if superfluous after
+	 * merging.
+	 * @return <code>NULL</code> except if <code>pOther</code> is contained within this rule - in
+	 * which case this Rule is split into two parts and the second of these parts (representing the
+	 * part of this rule's range after the range of pOther) is returned.
 	 */
 	IPRangeRule*    merge( IPRangeRule*& pOther );
 

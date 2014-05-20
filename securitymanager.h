@@ -57,15 +57,20 @@
 // 1.0 - Original implementation by Shareaza
 // 2.0 - Adjustments for IP ranges, Regular Expressions etc.
 
-// TODO: add defines for hit matching
-// TODO: improve doxygen
+// TODO: check agent/vendor bad/denied calls
 // TODO: Enable/disable GUI updating according to the visibility within the GUI
 // TODO: Add last hit time to rules and make that data visible within the GUI
 
 namespace Security
 {
+/**
+ * @brief SharedRulePtr represents a security Rule.
+ */
 typedef QSharedPointer<Rule> SharedRulePtr;
 
+/**
+ * @brief IDSet represents a set of Rule GUI IDs.
+ */
 typedef std::unordered_set<ID> IDSet;
 
 /**
@@ -114,7 +119,7 @@ private:
 	/* ========================================================================================== */
 public:
 	mutable QReadWriteLock  m_oRWLock;
-	SanityCecker            m_oSanity; // has its own locking
+	SanityCecker            m_oSanity;
 
 #ifndef QUAZAA_SETUP_UNIT_TESTS
 private:
@@ -156,7 +161,8 @@ public:
 
 	// Security manager settings
 	bool            m_bLogIPCheckHits;          // Post log message on IsDenied( QHostAdress ) call
-	quint64         m_tRuleExpiryInterval;      // Check the security manager for expired hosts each x milliseconds
+	quint64         m_tRuleExpiryInterval;      // Check the security manager for expired hosts
+												// each x milliseconds
 
 	// Timer IDs
 	QUuid           m_idRuleExpiry;       // The ID of the signalQueue object.
@@ -167,18 +173,31 @@ public:
 	bool            m_bExpiryRequested;
 	bool            m_bDenyPrivateIPs;
 
+	/**
+	 * @brief m_bDenyPolicy specifies the default deny policy for IP checking.
+	 * <br><b>Values:</b>
+	 * <br><code>true </code> - all but specifically allowed IPs are rejected
+	 * <br><code>false</code> - all but specifically blocked IPs are allowed (default)
+	 */
 	bool            m_bDenyPolicy;
-	// m_bDenyPolicy == false : everything but specifically blocked IPs is allowed (default)
-	// m_bDenyPolicy == true  : everything but specifically allowed IPs is rejected
-	// Note that the default policy is only applied to IP related rules, as using it for everything
-	// else does not make any sense.
 
 	QMetaMethod     m_pfExpire;
+
+	/**
+	 * @brief sXMLNameSpace contains the namespace specification for Sheareza securiy XML files,
+	 * as used by Quazaa to export security rules to XML.
+	 */
+	static const QString sXMLNameSpace;
 
 public:
 	/* ========================================================================================== */
 	/* ====================================== Construction ====================================== */
 	/* ========================================================================================== */
+	/**
+	 * @brief Manager constructs an empty security manager. Note that you should call start() before
+	 * actually using it.
+	 * @see start()
+	 */
 	Manager();
 	~Manager();
 
@@ -186,224 +205,257 @@ public:
 	/* ======================================= Operations ======================================= */
 	/* ========================================================================================== */
 	/**
-	 * @brief Manager::getCount allows access to the amount of rules managed by the manager.
-	 * Locking: REQUIRES R
-	 * @return the amount of rules.
+	 * @brief count allows access to the amount of rules within the Manager.
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @return the number of rules
 	 */
 	RuleVectorPos   count() const;
 
 	/**
-	 * @brief Manager::denyPolicy allows access to the current deny policy.
-	 * Locking: REQUIRES R
-	 * @return the current deny policy.
+	 * @brief denyPolicy allows access to the current deny policy.
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @return the current deny policy
 	 */
 	bool            denyPolicy() const;
 
 	/**
-	 * @brief Manager::setDenyPolicy sets the deny policy to a given value.
-	 * Locking: RW
-	 * @param bDenyPolicy
+	 * @brief setDenyPolicy sets the deny policy to a given value.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * @param bDenyPolicy  The new default value returned by isDenied if no match for the requested
+	 * content could be found in the Manager.
 	 */
 	void            setDenyPolicy( bool bDenyPolicy );
 
 	/**
-	 * @brief Manager::check allows to see whether a rule with the same UUID exists within the
-	 * manager.
-	 * Locking: R
-	 * @param pRule the rule to be verified.
-	 * @return true if the rule exists within the manager; false otherwise.
+	 * @brief check allows to see whether a Rule with the same UUID exists within the Manager.
+	 * <br><b>Locking: R</b>
+	 *
+	 * @param pRule  The rule to be verified.
+	 * @return <code>true</code> if such a rule exists within the manager;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            check( const Rule* const pRule ) const;
 
 	/**
-	 * @brief Manager::add adds a rule to the security database.
-	 * Note: This makes no copy of the rule, so don't delete it after adding.
-	 * Locking: RW
-	 * @param pRule: the rule to be added. Will be set to NULL if redundant.
-	 * @return true if the rule has been added; false otherwise
+	 * @brief add inserts a rule into the security database.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * Note: This takes ownership of the rule, so don't delete it after adding.
+	 *
+	 * @param pRule  The rule to be added. Will be set to NULL if redundant.
+	 * @return <code>true</code> if the Rule has been added;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            add( Rule* pRule, bool bDoSanityCheck = true );
 
 	/**
-	 * @brief Manager::remove removes a rule from the manager.
+	 * @brief remove removes a Rule from the Manager.
+	 * <br><b>Locking: RW</b>
+	 *
 	 * Reminder: Do not delete the rule after calling this, it will be deleted automatically once
-	 * the GUI has been updated.
-	 * Locking: RW
-	 * @param pRule : the rule
+	 * the GUI has been updated. Note that this will assert if the rule in question does not exist.
+	 *
+	 * @param pRule  The Rule to remove.
 	 */
 	void            remove( const Rule* const pRule );
 
 	/**
-	 * @brief Manager::clear frees all memory and storage containers. Removes all rules.
-	 * Locking: RW
+	 * @brief clear frees all memory and storage containers. Removes all rules.
+	 * <br><b>Locking: RW</b>
 	 */
 	void            clear();
 
 	/**
-	 * @brief Manager::ban bans a given IP for a specified amount of time.
-	 * Locking: RW (call to add())
-	 * @param oAddress : the IP to ban
-	 * @param nBanLength : the amount of time until the ban shall expire
-	 * @param bMessage : whether a message shall be posted to the system log
-	 * @param sComment : comment; if blanc, a default comment is generated depending on nBanLength
-	 * @param bAutomatic : whether this was an automatic ban by Quazaa
-	 * @param sSender : string representation of the caller for debugging purposes
+	 * @brief ban bans a given IP for a specified amount of time.
+	 * <br><b>Locking: R + RW</b> (call to add())
+	 *
+	 * @param oAddress    The IP to ban.
+	 * @param nBanLength  The amount of time until the ban shall expire.
+	 * @param bMessage    Whether a message shall be posted to the system log.
+	 * @param sComment    The Rule comment; if blanc, a default comment is generated depending
+	 * on nBanLength
+	 * @param bAutomatic  Whether this was an automatic ban (as opposed to a manual ban by the user)
+	 * @param sSender     String representation of the caller (for debugging purposes only)
 	 */
 	void            ban( const QHostAddress& oAddress, RuleTime::Time nBanLength,
 						 bool bMessage = true, const QString& sComment = "", bool bAutomatic = true
 #if SECURITY_LOG_BAN_SOURCES
-																							   , const QString& sSender = ""
+						 , const QString& sSender = ""
 #endif
-					   );
+						);
 
 	/**
-	 * @brief Manager::ban bans a given file for a specified amount of time.
-	 * Locking: R + RW (call to add())
-	 * @param pHit : the file hit
-	 * @param nBanLength : the amount of time until the ban shall expire
-	 * @param nMaxHashes : the maximum amount of hashes to add to the rule
-	 * @param sComment : comment; if blanc, a default comment is generated depending on nBanLength
+	 * @brief ban bans a given file for a specified amount of time.
+	 * <br><b>Locking: R + RW</b> (during call to add())
+	 *
+	 * @param pHit        The search file hit.
+	 * @param nBanLength  The amount of time until the ban shall expire.
+	 * @param nMaxHashes  The maximum amount of hashes to add to the rule.
+	 * @param sComment    Comment; if blanc, a default comment is generated depending on nBanLength.
 	 */
 	void            ban( const QueryHit* const pHit, RuleTime::Time nBanLength,
 						 quint8 nMaxHashes = 3, const QString& sComment = "" );
 
 	/**
-	 * @brief Manager::isDenied checks an IP against the security database.
-	 * Locking: R
-	 * @param oAddress : the IP
-	 * @return true if the IP is denied; false otherwise
+	 * @brief isDenied checks an IP against the security database.
+	 * <br><b>Locking: R</b>
+	 *
+	 * @param oAddress  The IP to check.
+	 * @return <code>true</code> if the IP is denied; <br><code>false</code> otherwise.
 	 */
 	bool            isDenied( const EndPoint& oAddress );
 
 	/**
-	 * @brief Manager::isDenied checks a hit against the security database.
+	 * @brief isDenied checks a hit against the security database.
+	 * <br><b>Locking: R</b>
+	 *
 	 * Note: This does not verify the hit IP to avoid redundant checking.
-	 * Locking: R
-	 * @param pHit : the hit
-	 * @param lQuery : a list of all search keywords in the same order they have been entered in the
+	 *
+	 * @param pHit    The QueryHit to check.
+	 * @param lQuery  A list of all search keywords in the same order they have been entered in the
 	 * edit box of the GUI.
-	 * @return true if the IP is denied; false otherwise
+	 * @return <code>true</code> if the QueryHit is denied; <br><code>false</code> otherwise.
 	 */
 	bool            isDenied( const QueryHit* const pHit, const QList<QString>& lQuery );
 
 	/**
-	 * @brief Manager::isClientBad checks for bad user agents.
+	 * @brief isClientBad checks for bad user agents.
+	 * <br><b>Locking: /</b>
+	 *
 	 * Note: We don't actually ban these clients, but we don't accept them as a leaf. They are
 	 * allowed to upload, though.
-	 * Locking: /
-	 * @param sUserAgent
-	 * @return true if the remote computer is running a client that is breaking GPL, causing
-	 * problems etc.; false otherwise
+	 *
+	 * @param sUserAgent  The user agent to check against the list of bad user agents.
+	 * @return <code>true</code> if the remote computer is running a client that is breaking GPL,
+	 * causing problems etc.; <br><code>false</code> otherwise.
 	 */
 	bool            isClientBad( const QString& sUserAgent ) const;
 
 	/**
-	 * @brief Manager::isAgentBlocked checks the agent string for banned clients.
-	 * Locking: R
-	 * @param sUserAgent : the agent string to be checked
-	 * @return true for especially bad / leecher clients, as well as user defined agent blocks.
+	 * @brief isAgentBlocked checks the agent string for banned clients.
+	 * <br><b>Locking: R</b>
+	 *
+	 * @param sUserAgent  The agent string to be checked.
+	 * @return <code>true</code> for especially bad / leecher clients, as well as user defined agent
+	 * blocks; <br><code>false</code> otherwise.
 	 */
 	bool            isAgentDenied( const QString& sUserAgent );
 
 	/**
-	 * @brief Manager::isVendorBlocked checks for blocked vendors.
-	 * Locking: /
-	 * @param sVendor
-	 * @return true for blocked vendors; false otherwise
+	 * @brief isVendorBlocked checks for blocked vendors.
+	 * <br><b>Locking: /</b>
+	 *
+	 * @param sVendor  The vendor code.
+	 * @return <code>true</code> for blocked vendors; <br><code>false</code> otherwise.
 	 */
 	bool            isVendorBlocked( const QString& sVendor ) const;
 
 	/**
-	 * @brief Manager::registerMetaTypes registers the necessary meta types for signals and slots.
+	 * @brief registerMetaTypes registers the necessary meta types for using the signals
+	 * and slots of the Security Manager.
+	 * <br><b>Locking: /</b>
 	 */
 	void            registerMetaTypes();
 
 	/**
-	 * @brief Manager::start starts the Security Manager.
+	 * @brief start starts the Security Manager.
+	 * <br><b>Locking: RW</b>
+	 *
 	 * Initializes signal/slot connections, pulls settings and sets up cleanup interval counters.
-	 * Locking: RW
-	 * @return true if loading the rules was successful; false otherwise
+	 *
+	 * @return <code>true</code> if loading the Security Rules from disk was successful;
+	 * <br><code>false</code> otherwise.
 	 */
-	bool            start(); // connects signals etc.
+	bool            start();
 
 	/**
-	 * @brief Manager::stop prepares the security manager for destruction.
-	 * Saves the rules to disk, disonnects signal/slot connections, frees memory
-	 * and clears up storage containers.
-	 * Locking: RW
-	 * @return true if saving was successful; false otherwise
+	 * @brief stop prepares the security manager for destruction.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * Saves the rules to disk, disonnects signal/slot connections, frees memory and clears up
+	 * storage containers.
+	 *
+	 * @return <code>true</code> if saving was successful; <br><code>false</code> otherwise
 	 */
-	void            stop(); // makes the Security Manager ready for destruction
+	void            stop();
 
 	/**
-	 * @brief Manager::load loads the rule database from the HDD.
-	 * Locking: RW
-	 * @return true if successful; false otherwise
+	 * @brief load loads the rule database from the HDD.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * @return <code>true</code> if successful; <br><code>false</code> otherwise
 	 */
 	bool            load();
 
 	/**
-	 * @brief Manager::save writes the security rules to HDD.
-	 * Skips saving if there haven't been any important changes and bForceSaving is not set to true.
-	 * Locking: R
-	 * @param bForceSaving : use this to prevent the manager from taking the decision that saving
-	 * isn't needed ATM
-	 * @return true if saving has been successfull/saving has been skipped; false otherwise
+	 * @brief save writes the security rules to HDD.
+	 * <br><b>Locking: R</b>
+	 *
+	 * Skips saving if there haven't been any important changes and <code>bForceSaving</code> is not
+	 * set to <code>true</code>.
+	 *
+	 * @param bForceSaving  Use this to prevent the Manager from taking the decision that saving
+	 * isn't needed ATM.
 	 */
 	void            save( bool bForceSaving = false ) const;
 
 	/**
-	 * @brief Manager::writeToFile is a helper method required for save().
-	 * Locking: Requires R
-	 * @param pManager : the security manager
-	 * @param oFile : the file to be written to
+	 * @brief writeToFile is a helper method required for save().
+	 * <br><b>Locking: Requires R</b>
+	 *
+	 * @param pManager  The Security Manager.
+	 * @param oFile     The file to be written to.
 	 * @return the number of rules written to file
 	 */
 	static quint32  writeToFile( const void* const pManager, QFile& oFile ); // used by save()
 
 	/**
-	 * @brief Manager::import imports a security file with unknown format located at sPath.
-	 * Locking: RW
-	 * @param sPath : the location
-	 * @return true on success; false otherwise
+	 * @brief import imports a security file with unknown format located at sPath.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * @param sPath  The file location.
+	 * @return <code>true</code> on success; <br><code>false</code> otherwise
 	 */
 	bool            import( const QString& sPath );
 
 	/**
-	 * @brief Manager::fromP2P imports a P2P rule file into the manager.
-	 * Locking: RW
-	 * @param sPath : the file location
-	 * @return true if successful; false otherwise
+	 * @brief fromP2P imports a P2P rule file into the Manager.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * @param sPath  The file location.
+	 * @return <code>true</code> if successful; <br><code>false</code> otherwise
 	 */
 	bool            fromP2P( const QString& sPath );
 
 	/**
-	 * @brief Manager::xmlns contains the xml file schema specification.
-	 */
-	static const QString xmlns;
-
-	/**
-	 * @brief Manager::fromXML imports rules from an XML file.
-	 * Locking: RW
-	 * @param sPath : the path to the XML file.
-	 * @return true if at least one rule could be imported; false otherwise
+	 * @brief fromXML imports rules from a Shareaza style Security XML file.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * @param sPath  The path to the Shareaza security XML file.
+	 * @return <code>true</code> if at least one rule could be imported;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            fromXML( const QString& sPath );
 
 	/**
-	 * @brief toXML Exports all rules to a Security XML file.
-	 * Locking: R
-	 * @param sPath The path to the new file.
-	 * @param lsIDs The GUI IDs of the rules to write to the XML file. If this is not provided, all
-	 * rules are written to file.
-	 * @return true if successful; false otherwise.
+	 * @brief toXML exports all rules to a Shareaza style Security XML file.
+	 * <br><b>Locking: R</b>
+	 *
+	 * @param sPath  The path to the new file.
+	 * @param lsIDs  The GUI IDs of the rules to write to the XML file. If this is not provided or
+	 * empty, all rules are written to file.
+	 * @return <code>true</code> if successful; <br><code>false</code> otherwise
 	 */
 	bool            toXML( const QString& sPath, const IDSet& lsIDs = IDSet() ) const;
 
 	/**
-	 * @brief Manager::emitUpdate emits a ruleUpdated signal for a given GUI ID nID.
-	 * Locking: /
-	 * @param nID : the ID
+	 * @brief emitUpdate emits a ruleUpdated signal for a given GUI ID nID.
+	 * <br><b>Locking: /</b>
+	 *
+	 * @param nID  The rule GUI ID.
 	 */
 	void            emitUpdate( ID nID );
 
@@ -417,85 +469,90 @@ signals:
 	void            startUpFinished();
 
 	/**
-	 * @brief ruleAdded informs about a new rule having been added.
-	 * @param pRule : the rule
+	 * @brief ruleAdded informs about a new Rule having been added.
+	 * @param pRule  The newly added Rule.
 	 */
 	void            ruleAdded( Rule* pRule );
 
 	/**
-	 * @brief ruleRemoved informs about a rule having been removed.
-	 * @param pRule : the rule
+	 * @brief ruleRemoved informs about a Rule having been removed.
+	 * @param pRule  The newly removed Rule.
 	 */
 	void            ruleRemoved( SharedRulePtr pRule );
 
 	/**
-	 * @brief ruleInfo info signal to get informed about all rules within the manager.
-	 * See Manager::requestRuleList() for more information.
-	 * @param pRule : the rule
+	 * @brief ruleInfo is an info signal to get informed about all rules within the Manager.
+	 * See requestRuleList() for more information.
+	 * @param pRule  A Rule within the Manager.
 	 */
 	void            ruleInfo( Rule* pRule );
 
 	/**
-	 * @brief ruleUpdated informs about a rule having been updated.
-	 * @param nID : the GUI ID of the updated rule
+	 * @brief ruleUpdated informs about a Rule having been updated.
+	 * @param nID  The GUI ID of the updated Rule.
 	 */
 	void            ruleUpdated( ID nID );
 
 	/**
-	 * @brief cleared informs about the manager having been cleared.
+	 * @brief cleared informs about the Manager having been cleared.
 	 */
 	void            cleared();
 
 	/**
 	 * @brief updateLoadMax informs about a change in the max value of the loading progress bar.
-	 * @param max : the new max value
+	 * @param nMax  The new maximum value.
 	 */
-	void            updateLoadMax( int max );
+	void            updateLoadMax( int nMax );
 
 	/**
-	 * @brief updateLoadProgress updates the load progress bar.
-	 * @param progress : the new progress
+	 * @brief updateLoadProgress updates the loading progress bar.
+	 * @param nProgress  The new load progress.
 	 */
-	void            updateLoadProgress( int progress );
+	void            updateLoadProgress( int nProgress );
 
 	/* ========================================================================================== */
 	/* ========================================= Slots  ========================================= */
 	/* ========================================================================================== */
 public slots:
 	/**
-	 * @brief Manager::requestRuleInfo allows to request ruleInfo() signals for all rules.
-	 * Qt slot. Triggers the Security Manager to emit all rules using the ruleInfo() signal.
-	 * Locking: R
-	 * @return the number of rule info signals to expect
+	 * @brief requestRuleInfo allows to request ruleInfo signals for all rules.
+	 * <br><b>Locking: R</b>
+	 *
+	 * Remember using queued connections when connceting to the ruleInfo signal, else you risk
+	 * recieving the signals before this method returns.
+	 * @see ruleInfo()
+	 * @return the number of rule info signals for the caller to expect
 	 */
 	quint32         requestRuleInfo();
 
 	/**
-	 * @brief Manager::expire removes rules that have reached their expiration date.
-	 * Qt slot. Checks the security database for expired rules.
-	 * Locking: RW
+	 * @brief expire removes rules that have reached their expiration date.
+	 * <br><b>Locking: RW</b>
 	 */
 	void            expire();
 
 	/**
-	 * @brief Manager::settingsChanged needs to be triggered on setting changes.
-	 * Qt slot. Pulls all relevant settings from quazaaSettings.Security
-	 * and refreshes all components depending on them.
-	 * Locking: RW
+	 * @brief settingsChanged pulls all relevant settings from quazaaSettings.Security and
+	 * refreshes all components depending on them.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * Note: This needs to be triggered on setting changes.
 	 */
 	void            settingsChanged();
 
 	/**
 	 * @brief shutDown is to be triggered on application shutdown.
-	 * Locking: RW
+	 * <br><b>Locking: RW</b>
 	 */
 	void            shutDown();
 
 private slots:
 	/**
-	 * @brief updateHitCount
-	 * @param ruleID
-	 * @param nCount
+	 * @brief updateHitCount adds the amount nCount of hits to the Rule with the UUID ruleID.
+	 * <br><b>Locking: R</b>
+	 *
+	 * @param ruleID  The UUID of the Rule to be updated.
+	 * @param nCount  The number of hits to add to the specified Rule.
 	 */
 	void            updateHitCount( QUuid ruleID, uint nCount );
 
@@ -508,196 +565,224 @@ private:
 public:
 #endif
 	/**
-	 * @brief Manager::hit increases the rule counters and emits an updating signal to the GUI.
-	 * Locking: /
-	 * @param pRule : the rule that has been hit
+	 * @brief hit increases the rule counters by 1 and emits an updating signal to the GUI.
+	 * <br><b>Locking: /</b>
+	 *
+	 * @param pRule  The Rule that has been hit.
 	 */
 	void            hit( Rule* pRule );
 
 	/**
-	 * @brief Manager::loadPrivates loads the private IP renges into the appropriate container.
-	 * Locking RW
+	 * @brief loadPrivates loads the private IP ranges into the appropriate container.
+	 * <br><b>Locking: RW</b>
 	 */
 	void            loadPrivates();
 
 	/**
-	 * @brief Manager::clearPrivates clears the private rules from the respective container.
+	 * @brief clearPrivates clears the private rules from the respective container.
+	 * <br><b>Locking: REQUIRES RW</b>
 	 */
 	void            clearPrivates();
 
 	/**
-	 * @brief Manager::load loads rules from HDD file into manager.
-	 * Locking: RW
-	 * @param sPath : the location of the rule file on disk
-	 * @return true if loading was successful; false otherwise
+	 * @brief load retrieves the rules from HDD and adds them to the Manager.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * @param sPath  The location of the rule serialization file on disk.
+	 * @return <code>true</code> if loading was successful; <code>false</code> otherwise
 	 */
 	bool            load( const QString& sPath );
 
 	/**
-	 * @brief insert Inserts a new rule at the correct place into the rules vector.
-	 * Locking: REQUIRES RW
-	 * @param pRule : The rule to be inserted into the rules vector.
+	 * @brief insert sorts a new rule at the correct place into the rules vector.
+	 * <br><b>Locking: REQUIRES RW</b>
+	 *
+	 * @param pRule  The Rule to be inserted into the vector.
 	 */
 	void            insert( Rule* pRule );
 
 	/**
-	 * @brief Manager::erase removes the rule at the position nPos from the vector.
-	 * Locking: REQUIRES RW
-	 * @param nPos : the position
+	 * @brief erase removes the Rule at the position nPos from the vector.
+	 * <br><b>Locking: REQUIRES RW</b>
+	 *
+	 * Note: this does not free the memory of the Rule. The caller needs to make sure of that.
+	 * See the QSharedPointer emitted at the end of remove( RuleVectorPos ) for that.
+	 *
+	 * @param nPos  Where to remove the Rule.
 	 */
 	void            erase( RuleVectorPos nPos );
 
 	/**
-	 * @brief Manager::insertRange inserts a range rule into the respective container.
-	 * Locking: REQUIRES RW
-	 * @param pNew : the range rule
+	 * @brief insertRange inserts an IPRangeRule into the respective container.
+	 * <br><b>Locking: REQUIRES RW</b>
+	 *
+	 * @param pNew  The IPRangeRule to insert.
 	 */
 	void            insertRange( IPRangeRule*& pNew );
 
 	/**
-	 * @brief Manager::insertRangeHelper inserts a range rule at the correct place into the vector.
-	 * @param pNewRange : the range rule
+	 * @brief insertRangeHelper inserts an IPRangeRule at the correct place into the vector.
+	 * <br><b>Locking: REQUIRES RW</b>
+	 *
+	 * @param pNewRange  The IPRangeRule to insert.
 	 */
 	void            insertRangeHelper( IPRangeRule* pNewRange );
 
 	/**
-	 * @brief Manager::erase removes the rule at the position nPos from the IP ranges vector.
-	 * Locking: REQUIRES RW
-	 * @param nPos : the position
+	 * @brief erase removes the Rule at the position nPos from the IP ranges vector.
+	 * <br><b>Locking: REQUIRES RW</b>
+	 *
+	 * Note: The caller must make sure the memory is freed. This usually happens in the GUI.
+	 *
+	 * @param nPos  Where to remove the Rule.
 	 */
 	void            eraseRange( const IPRangeVectorPos nPos );
 
 	/**
 	 * @brief findInternal Allows to determine the theoretical position of the rule with idUUID
 	 * within pRules.
-	 * Locking: REQUIRES R
-	 * @param idUUID The rule ID
-	 * @param pRules Array containing pointers to rules.
-	 * @param nSize The size of that array.
-	 * @return The theoretical rule position nPos with
-	 * ( pRules[nPos]    ->m_idUUID <= idUUID ) &&
-	 * ( nPos + 1 == nSize || pRules[nPos + 1]->m_idUUID > idUUID )
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @param idUUID  The rule ID.
+	 * @param pRules  Array containing pointers to rules sorted by UUID.
+	 * @param nSize   The size of that array.
+	 * @return the theoretical RuleVectorPos nPos with
+	 * <br><code>( pRules[nPos]->m_idUUID == idUUID ) ||</code>
+	 * <br><code>( pRules[nPos]->m_idUUID > idUUID && !nPos
+	 * || pRules[nBegin - 1]->m_idUUID < idUUID )</code>
 	 */
 	RuleVectorPos   findInternal( const QUuid& idUUID, const Rule* const * const pRules,
 								  const RuleVectorPos nSize ) const;
 
 	/**
-	 * @brief Manager::getUUID returns the rule position for the given UUID.
-	 * Note that there is always max one rule per UUID.
-	 * Locking: REQUIRES R
-	 * @param idUUID : the rule UUID
-	 * @return the rule position; m_vRules.size() if no rule by the specified ID could be found.
+	 * @brief find returns the Rule position for the given UUID.
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * Note that there is always at maximum one Rule per UUID.
+	 *
+	 * @param idUUID  The rule UUID.
+	 * @return the RuleVectorPos of the Rule;
+	 * <br><code>m_vRules.size()</code> if no Rule by the specified ID could be found.
 	 */
 	RuleVectorPos   find( const QUuid& idUUID ) const;
 
 	/**
-	 * @brief Manager::getHash
-	 * Note: this returns the first rule found. There might be others, however.
-	 * Locking: REQUIRES R
-	 * @param hashes : a vector of hashes to look for
-	 * @return the rule position
+	 * @brief find allows to determine the RuleVectorPos of the Rule matching vHashes.
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * Note: This returns the first rule found. There might be others, however.
+	 *
+	 * @param vHashes  The HashSet of hashes to look for.
+	 * @return the RuleVectorPos of the HashRule;
+	 * <br><code>m_vRules.size()</code> if no HashRule by the specified HashSet could be found.
 	 */
 	RuleVectorPos   find( const HashSet& vHashes ) const;
 
 	/**
-	 * @brief Manager::expireLater invokes delayed rule expiry on return to the main loop.
-	 * Locking: REQUIRES R
+	 * @brief expireLater invokes delayed rule expiry on return to the main loop.
+	 * <br><b>Locking: REQUIRES R</b>
 	 */
 	void            expireLater();
 
 	/**
-	 * @brief Manager::remove removes the rule at nPos in the vector from the manager.
+	 * @brief remove removes the Rule at nPos in the vector from the Manager.
+	 * <br><b>Locking: REQUIRES RW</b>
+	 *
 	 * Note: Only rule vector locations after and equal to nPos are invalidited by calling this.
-	 * Note: Caller needs to make sure the rule is not accessed anymore aftor calling this, as it is
-	 * given over to a QSharedPointer which will expire as soon as the GUI has removed the rule.
-	 * Locking: REQUIRES RW
-	 * @param nPos : the position
+	 * Note: Caller needs to make sure the Rule is not accessed anymore after calling this, as it is
+	 * given over to a QSharedPointer which will expire as soon as the GUI has removed the Rule.
+	 *
+	 * @param nPos  The RuleVectorPos where the Rule to be removed is located.
 	 */
 	void            remove( const RuleVectorPos nVectorPos );
 
 	/**
-	 * @brief Manager::isAgentDenied checks a user agent name against the list of user agent rules.
-	 * Locking: REQUIRES R
-	 * @param sUserAgent : the user agent name
-	 * @return true if the user agent is denied; false otherwise
+	 * @brief isAgentDenied checks a user agent name against the list of
+	 * [UserAgentRules](@ref UserAgentRule).
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @param sUserAgent  The user agent string.
+	 * @return <code>true</code> if the user agent is denied;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            isAgentDeniedInternal( const QString& sUserAgent );
 
 	/**
-	 * @brief Manager::isDenied checks a content string against the list of list of content rules.
-	 * Locking: REQUIRES R
-	 * @param sContent : the content string
-	 * @return true if the content is denied; false otherwise
-	 */
-//	bool            isDenied(const QString& sContent);
-
-	/**
-	 * @brief Manager::isDenied checks a hit against hash and content rules.
-	 * Locking: REQUIRES R
-	 * @param pHit : the query hit
-	 * @return true if the hit is denied; false otherwise
+	 * @brief isDenied checks a QueryHit against hash and content rules.
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @param pHit  The QueryHit to be checked.
+	 * @return <code>true</code> if the hit is denied;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            isDenied( const QueryHit* const pHit );
 
 	/**
-	 * @brief Manager::isDenied checks a hit against hash and content rules.
-	 * Locking: REQUIRES R
-	 * @param lQuery : a list of all search keywords in the same order they have been entered in the
-	 * edit box of the GUI.
-	 * @param sContent : the content string/file name to be checked
-	 * @return true if the hit is denied; false otherwise
+	 * @brief isDenied checks a QueryHit name against the list of regular expression rules.
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @param lQuery    A list of all search keywords in the same order they have been entered in
+	 * the edit box of the GUI.
+	 * @param sContent  The content string/file name to be checked.
+	 * @return <code>true</code> if the hit is denied;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            isDenied( const QList<QString>& lQuery, const QString& sContent );
 
 	/**
-	 * @brief CSecurity::isPrivate checks whether a given IP is within one of the IP ranges
-	 * designated for private use.
-	 * Locking: /
-	 * @param oAddress: the IP
-	 * @return true if the IP is within a private range; false otherwise
+	 * @brief isPrivate checks whether a given IP is located within one of the IP ranges designated
+	 * for private use.
+	 * <br><b>Locking: /</b>
+	 *
+	 * @param oAddress  The IP to be checked.
+	 * @return <code>true</code> if the IP is within a private range;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            isPrivate( const EndPoint& oAddress );
 
 #if SECURITY_DISABLE_IS_PRIVATE_OLD
 	/**
-	 * @brief Manager::isPrivateOld checks an IP the old way for whether it's private.
-	 * @param oAddress : the IP
-	 * @return true if the IP is within a private range; false otherwise
+	 * @brief isPrivateOld checks an IP the old way for whether it's private.
+	 * <br><b>Locking: /</b>
+	 *
+	 * @param oAddress  The IP.
+	 * @return <code>true</code> if the IP is within a private range;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            isPrivateOld( const EndPoint& oAddress );
 
 	/**
-	 * @brief Manager::isPrivateNew checks an IP the new way for whether it's private.
-	 * @param oAddress : the IP
-	 * @return true if the IP is within a private range; false otherwise
+	 * @brief isPrivateNew checks an IP the new way for whether it's private.
+	 * <br><b>Locking: /</b>
+	 *
+	 * @param oAddress  The IP.
+	 * @return <code>true</code> if the IP is within a private range;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            isPrivateNew( const EndPoint& oAddress );
 #endif // SECURITY_DISABLE_IS_PRIVATE_OLD
 
 	/**
-	 * @brief findRangeForMerge allows to find the range rule containing or next to a given IP.
-	 * @param oIp : the IP
-	 * @return first range with a oAddress >= startIP(), (e.g. the only range that might be
-	 * containing the given IP); m_vIPRanges.size() if no such range exists.
+	 * @brief findRangeForMerge allows to find the IPRangeRule containing or next to a given IP.
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @param oIp  The IP.
+	 * @return the first range with <code>oAddress >= startIP()</code>, (e.g. the only range that
+	 * might be containing the given IP);
+	 * <br><code>m_vIPRanges.size()</code> if no such range exists.
 	 */
-	IPRangeVectorPos findRangeForMerging( const EndPoint& oAddress );
+	IPRangeVectorPos findRangeForMerging( const EndPoint& oAddress ) const;
 
 	/**
 	 * @brief findRangeMatch allows to find the range rule containing a given IP.
-	 * @param oIp : the IP
-	 * @param nPos : a value by reference that will be set to the rule pos within the vector
-	 * @return the range rule matching oAddress; NULL if no such range rule exists.
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @param oIp   The IP.
+	 * @param nPos  A reference value that will be set to the RuleVectorPos within the vector.
+	 * @return the IPRangeRule matching oAddress; <br><code>NULL</code> if no such Rule exists.
 	 */
-	IPRangeRule* findRangeMatch( const EndPoint& oAddress, IPRangeVectorPos& nPos );
-
-	/**
-	 * @brief getRWIterator converts a const_iterator to an iterator
-	 * @param constIt : the const_iterator
-	 * @return an iterator
-	 */
-	//RuleVector::iterator getRWIterator(TConstIterator constIt);
+	IPRangeRule* findRangeMatch( const EndPoint& oAddress, IPRangeVectorPos& nPos ) const;
 };
-
 }
 
 extern Security::Manager securityManager;

@@ -60,6 +60,11 @@ Rule::Rule() :
 	m_nGUIID  = m_oIDProvider.aquire();
 }
 
+Rule::~Rule()
+{
+	m_oIDProvider.release( m_nGUIID );
+}
+
 Rule::Rule( const Rule& pRule )
 {
 	// The usage of a custom copy constructor makes sure each rule gets a distinct GUI ID.
@@ -74,19 +79,6 @@ Rule::Rule( const Rule& pRule )
 	m_bAutomatic = pRule.m_bAutomatic;
 
 	m_nGUIID     = m_oIDProvider.aquire();
-}
-
-Rule::~Rule()
-{
-	m_oIDProvider.release( m_nGUIID );
-}
-
-Rule* Rule::getCopy() const
-{
-	// This method should never be called.
-	Q_ASSERT( false );
-
-	return new Rule( *this );
 }
 
 bool Rule::operator==( const Rule& pRule ) const
@@ -119,141 +111,6 @@ QString Rule::getContentString() const
 	return m_sContent;
 }
 
-bool Rule::match( const EndPoint& ) const
-{
-	return false;
-}
-/*bool Rule::match(const QString&) const
-{
-	return false;
-}*/
-bool Rule::match( const QueryHit* const ) const
-{
-	return false;
-}
-bool Rule::match( const QList<QString>&, const QString& ) const
-{
-	return false;
-}
-
-void Rule::save( const Rule* const pRule, QDataStream& oStream )
-{
-	// we don't store GUI IDs and session hit counter
-	oStream << ( quint8 )( pRule->m_nType );
-	oStream << ( quint8 )( pRule->m_nAction );
-	oStream << pRule->m_sComment;
-	oStream << pRule->m_idUUID.toString();
-	oStream << pRule->m_tExpire;
-	oStream << pRule->m_nTotal.loadAcquire();
-	oStream << pRule->m_bAutomatic;
-	oStream << pRule->getContentString();
-
-	if ( pRule->m_nType == RuleType::UserAgent )
-	{
-		oStream << ( ( UserAgentRule* )pRule )->getRegExp();
-	}
-	else if ( pRule->m_nType == RuleType::Content )
-	{
-		oStream << ( ( ContentRule* )pRule )->getAll();
-	}
-}
-
-void Rule::load( Rule*& pRule, QDataStream& fsFile, int )
-{
-	if ( pRule )
-	{
-		delete pRule;
-		pRule = NULL;
-	}
-
-	quint8      nType;
-	quint8      nAction;
-	QString     sComment;
-	QString     sUUID;
-	quint32     tExpire;
-	quint32     nTotal;
-	bool        bAutomatic;
-	QString     sContent;
-
-	fsFile >> nType;
-	fsFile >> nAction;
-	fsFile >> sComment;
-	fsFile >> sUUID;
-	fsFile >> tExpire;
-	fsFile >> nTotal;
-	fsFile >> bAutomatic;
-	fsFile >> sContent;
-
-	bool	bTmp = true;
-
-	switch ( nType )
-	{
-	case RuleType::Undefined:
-		// contentless rule
-		pRule = new Rule();
-		Q_ASSERT( false );
-		break;
-
-	case RuleType::IPAddress:
-		pRule = new IPRule();
-		break;
-
-	case RuleType::IPAddressRange:
-		pRule = new IPRangeRule();
-		break;
-
-#if SECURITY_ENABLE_GEOIP
-	case RuleType::Country:
-		pRule = new CountryRule();
-		break;
-#endif
-
-	case RuleType::Hash:
-		pRule = new HashRule();
-		break;
-
-	case RuleType::RegularExpression:
-		pRule = new RegularExpressionRule();
-		break;
-
-	case RuleType::UserAgent:
-		pRule = new UserAgentRule();
-		fsFile >> bTmp;
-		( ( UserAgentRule* )pRule )->setRegExp( bTmp );
-		break;
-
-	case RuleType::Content:
-		pRule = new ContentRule();
-		fsFile >> bTmp;
-		( ( ContentRule* )pRule )->setAll( bTmp );
-		break;
-
-	default:
-		pRule = new Rule();
-#if SECURITY_ENABLE_GEOIP
-		Q_ASSERT( false );
-#else
-		Q_ASSERT( nType == RuleType::Country )
-#endif
-		break;
-	}
-
-	pRule->m_nAction    = ( RuleAction::Action )nAction;
-	pRule->m_sComment   = sComment;
-	pRule->m_idUUID     = QUuid( sUUID );
-	pRule->m_tExpire    = tExpire;
-	pRule->m_nTotal.storeRelease( nTotal );
-	pRule->m_bAutomatic = bAutomatic;
-	pRule->parseContent( sContent );
-}
-
-/**
- * @brief CSecureRule::isExpired allows to check whether a rule has expired.
- * @param tNow indicates the current time in seconds since 1.1.1970UTC
- * @param bSession indicates whether this is the end of the session/start of a new session. In both
- * cases, set this to true and the return value for session ban rules will be true.
- * @return true if the rule has expired, false otherwise
- */
 bool Rule::isExpired( quint32 tNow, bool bSession ) const
 {
 	switch ( m_tExpire )
@@ -269,19 +126,11 @@ bool Rule::isExpired( quint32 tNow, bool bSession ) const
 	}
 }
 
-/**
- * @brief Rule::setExpiryTime
- * @param tExpire
- */
 void Rule::setExpiryTime( const quint32 tExpire )
 {
 	m_tExpire = tExpire;
 }
 
-/**
- * @brief Rule::addExpiryTime
- * @param tAdd
- */
 void Rule::addExpiryTime( const quint32 tAdd )
 {
 	if ( m_tExpire != RuleTime::Session && m_tExpire != RuleTime::Forever )
@@ -290,23 +139,11 @@ void Rule::addExpiryTime( const quint32 tAdd )
 	}
 }
 
-/**
- * @brief CSecureRule::getExpiryTime allows to access the expiry time of a rule.
- * @return srIndefinite = 0, srSession = 1 or the time in seconds since 1.1.1970UTC when the rule
- * will/has expire(d)
- */
-quint32 Rule::getExpiryTime() const
+quint32 Rule::expiryTime() const
 {
 	return m_tExpire;
 }
 
-/**
- * @brief mergeInto merges this Rule into pDestination.
- * Takes the higher expiration time, m_bAutomatic if it is false, adds the today and total
- * counters and modifies the comment string to indicate the merge. Overwrites the RuleAction of
- * pDestination.
- * Requires Locking: RW
- */
 void Rule::mergeInto( Rule* pDestination ) const
 {
 	if ( m_sContent != pDestination->m_sContent || m_nType != pDestination->m_nType )
@@ -353,64 +190,157 @@ void Rule::mergeInto( Rule* pDestination ) const
 	securityManager.emitUpdate( pDestination->m_nGUIID );
 }
 
-/**
- * @brief CSecureRule::count increases the total and today hit counters by one each.
- * Requires Locking: /
- */
 void Rule::count( uint nCount )
 {
 	m_nToday.fetchAndAddOrdered( nCount );
 	m_nTotal.fetchAndAddOrdered( nCount );
 }
 
-/**
- * @brief CSecureRule::resetCount resets total and today hit counters to 0.
- * Requires Locking: /
- */
 void Rule::resetCount()
 {
 	m_nToday.fetchAndStoreOrdered( 0 );
 	m_nTotal.fetchAndAddOrdered( 0 );
 }
 
-/**
- * @brief CSecureRule::getTodayCount allows to access the today hit counter.
- * @return the value of the today hit counter.
- * Requires Locking: /
- */
-quint32 Rule::getTodayCount() const
+quint32 Rule::todayCount() const
 {
 	return m_nToday.loadAcquire();
 }
 
-/**
- * @brief CSecureRule::getTotalCount allows to access the total hit counter.
- * @return the value of the total hit counter.
- * Requires Locking: /
- */
-quint32 Rule::getTotalCount() const
+quint32 Rule::totalCount() const
 {
 	return m_nTotal.loadAcquire();
 }
 
-/**
- * @brief CSecureRule::loadTotalCount allows to access the total hit counter.
- * @param nTotal the new value of the total hit counter.
- * Requires Locking: /
- */
 void Rule::loadTotalCount( quint32 nTotal )
 {
 	m_nTotal.storeRelease( nTotal );
 }
 
-/**
- * @brief CSecureRule::type allows to access the type of this rule.
- * @return the rule type.
- * Requires Locking: R
- */
 RuleType::Type Rule::type() const
 {
 	return m_nType;
+}
+
+bool Rule::match( const EndPoint& ) const
+{
+	return false;
+}
+
+bool Rule::match( const QueryHit* const ) const
+{
+	return false;
+}
+
+bool Rule::match( const QList<QString>&, const QString& ) const
+{
+	return false;
+}
+
+Rule* Rule::load( QDataStream& fsFile, int )
+{
+	Rule* pRule = NULL;
+
+	quint8      nType;
+	quint8      nAction;
+	QString     sComment;
+	QString     sUUID;
+	quint32     tExpire;
+	quint32     nTotal;
+	bool        bAutomatic;
+	QString     sContent;
+
+	fsFile >> nType;
+	fsFile >> nAction;
+	fsFile >> sComment;
+	fsFile >> sUUID;
+	fsFile >> tExpire;
+	fsFile >> nTotal;
+	fsFile >> bAutomatic;
+	fsFile >> sContent;
+
+	bool	bTmp = true;
+
+	switch ( nType )
+	{
+	case RuleType::Undefined:
+		Q_ASSERT( false );
+		return NULL;
+
+	case RuleType::IPAddress:
+		pRule = new IPRule();
+		break;
+
+	case RuleType::IPAddressRange:
+		pRule = new IPRangeRule();
+		break;
+
+#if SECURITY_ENABLE_GEOIP
+	case RuleType::Country:
+		pRule = new CountryRule();
+		break;
+#endif
+
+	case RuleType::Hash:
+		pRule = new HashRule();
+		break;
+
+	case RuleType::RegularExpression:
+		pRule = new RegularExpressionRule();
+		break;
+
+	case RuleType::UserAgent:
+		pRule = new UserAgentRule();
+		fsFile >> bTmp;
+		( ( UserAgentRule* )pRule )->setRegExp( bTmp );
+		break;
+
+	case RuleType::Content:
+		pRule = new ContentRule();
+		fsFile >> bTmp;
+		( ( ContentRule* )pRule )->setAll( bTmp );
+		break;
+
+	default:
+#if SECURITY_ENABLE_GEOIP
+		Q_ASSERT( false );
+#else
+		Q_ASSERT( nType == RuleType::Country )
+#endif
+		return NULL;
+	}
+
+	pRule->m_nAction    = ( RuleAction::Action )nAction;
+	pRule->m_sComment   = sComment;
+	pRule->m_idUUID     = QUuid( sUUID );
+	pRule->m_tExpire    = tExpire;
+	pRule->m_nTotal.storeRelease( nTotal );
+	pRule->m_bAutomatic = bAutomatic;
+	pRule->parseContent( sContent );
+
+	return pRule;
+}
+
+void Rule::save( const Rule* const pRule, QDataStream& oStream )
+{
+	// we don't store GUI IDs and session hit counter
+	oStream << ( quint8 )( pRule->m_nType );
+	oStream << ( quint8 )( pRule->m_nAction );
+	oStream << pRule->m_sComment;
+	oStream << pRule->m_idUUID.toString();
+	oStream << pRule->m_tExpire;
+	oStream << pRule->m_nTotal.loadAcquire();
+	oStream << pRule->m_bAutomatic;
+	oStream << pRule->getContentString();
+
+	if ( pRule->m_nType == RuleType::UserAgent )
+	{
+		oStream << ( ( UserAgentRule* )pRule )->getRegExp();
+	}
+	else if ( pRule->m_nType == RuleType::Content )
+	{
+		oStream << ( ( ContentRule* )pRule )->getAll();
+	}
 }
 
 Rule* Rule::fromXML( QXmlStreamReader& oXMLdocument, float nVersion )
@@ -649,12 +579,12 @@ Rule* Rule::fromXML( QXmlStreamReader& oXMLdocument, float nVersion )
 }
 
 // Contains default code for XML generation.
-void Rule::toXML( const Rule& oRule, QXmlStreamWriter& oXMLdocument )
+void Rule::toXML( const Rule& rRule, QXmlStreamWriter& rXMLdocument )
 {
 	QString sValue;
 
 	// Write rule action to XML file.
-	switch ( oRule.m_nAction )
+	switch ( rRule.m_nAction )
 	{
 	case RuleAction::None:
 		sValue = "null";
@@ -668,40 +598,35 @@ void Rule::toXML( const Rule& oRule, QXmlStreamWriter& oXMLdocument )
 	default:
 		Q_ASSERT( false );
 	}
-	oXMLdocument.writeAttribute( "action", sValue );
+	rXMLdocument.writeAttribute( "action", sValue );
 
-	if ( oRule.m_bAutomatic )
+	if ( rRule.m_bAutomatic )
 	{
-		oXMLdocument.writeAttribute( "automatic", "true" );
+		rXMLdocument.writeAttribute( "automatic", "true" );
 	}
 
 	// Write expiry date.
-	if ( oRule.m_tExpire == RuleTime::Forever )
+	if ( rRule.m_tExpire == RuleTime::Forever )
 	{
 		sValue = "indefinite";
 	}
-	else if ( oRule.m_tExpire == RuleTime::Session )
+	else if ( rRule.m_tExpire == RuleTime::Session )
 	{
 		sValue = "session";
 	}
 	else
 	{
-		sValue = QString::number( oRule.m_tExpire );
+		sValue = QString::number( rRule.m_tExpire );
 	}
-	oXMLdocument.writeAttribute( "expire", sValue );
+	rXMLdocument.writeAttribute( "expire", sValue );
 
 	// Write rule UUID.
-	sValue = oRule.m_idUUID.toString();
-	oXMLdocument.writeAttribute( "uuid", sValue );
+	sValue = rRule.m_idUUID.toString();
+	rXMLdocument.writeAttribute( "uuid", sValue );
 
 	// Write user comment.
-	if ( !( oRule.m_sComment.isEmpty() ) )
+	if ( !( rRule.m_sComment.isEmpty() ) )
 	{
-		oXMLdocument.writeAttribute( "comment", oRule.m_sComment );
+		rXMLdocument.writeAttribute( "comment", rRule.m_sComment );
 	}
-}
-
-void Rule::toXML( QXmlStreamWriter& ) const
-{
-	Q_ASSERT( false );
 }

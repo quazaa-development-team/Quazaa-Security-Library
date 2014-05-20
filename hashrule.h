@@ -27,20 +27,18 @@
 
 #include "securerule.h"
 
-// Note: The locking information within the doxygen comments refers to the RW lock of the Security
-//       Manager.
-
 namespace Security
 {
-/* ============================================================================================== */
-/* ========================================== HashRule ========================================== */
-/* ============================================================================================== */
+
+/**
+ * @brief The HashRule class is responsible for matching query hits against file hashes.
+ */
 class HashRule : public Rule
 {
 private:
 	HashSet m_vHashes;
 
-	// m_sContent contains a space separated list of the urns of all hashes
+	// Note: m_sContent contains a space separated list of the urns of all hashes.
 
 public:
 	HashRule();
@@ -57,7 +55,7 @@ public:
 	bool    hashEquals( const HashRule& oRule ) const;
 
 	bool    match( const QueryHit* const pHit ) const;
-	bool    match(const HashSet& vHashes ) const; // called by match(CQueryHit*)
+	bool    match( const HashSet& vHashes ) const;
 
 	void    toXML( QXmlStreamWriter& oXMLdocument ) const;
 };

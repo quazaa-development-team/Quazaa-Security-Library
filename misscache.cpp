@@ -59,8 +59,8 @@ MissCache::MissCache() :
 void MissCache::start()
 {
 	const QMetaObject* pMetaObject = metaObject();
-	int nMethodIndex    = pMetaObject->indexOfMethod( "expire()" );
-	m_pfExpire          = pMetaObject->method( nMethodIndex );
+	int nMethodIndex = pMetaObject->indexOfMethod( "expire()" );
+	m_pfExpire       = pMetaObject->method( nMethodIndex );
 
 #ifdef _DEBUG
 	Q_ASSERT( m_pfExpire.isValid() );
@@ -95,15 +95,15 @@ uint MissCache::size( QAbstractSocket::NetworkLayerProtocol eProtocol ) const
 	return nReturn;
 }
 
-void MissCache::insert( const QHostAddress& oIP, const quint32 tNow )
+void MissCache::insert( const QHostAddress& rIP, const quint32 tNow )
 {
-	Q_ASSERT( !oIP.isNull() );
+	Q_ASSERT( !rIP.isNull() );
 
 	if ( m_bUseMissCache )
 	{
 		m_oSection.lock();
 
-		switch ( oIP.protocol() )
+		switch ( rIP.protocol() )
 		{
 		case QAbstractSocket::IPv4Protocol:
 		{
@@ -112,7 +112,7 @@ void MissCache::insert( const QHostAddress& oIP, const quint32 tNow )
 				m_tOldestIP4Entry = tNow;
 			}
 
-			m_lsIPv4Cache.insert( qHostAddressToIP4( oIP, tNow ) );
+			m_lsIPv4Cache.insert( qHostAddressToIP4( rIP, tNow ) );
 
 			if ( !m_bExpiryRequested && m_lsIPv4Cache.size() > m_nMaxIPsInCache )
 			{
@@ -127,7 +127,7 @@ void MissCache::insert( const QHostAddress& oIP, const quint32 tNow )
 				m_tOldestIP6Entry = tNow;
 			}
 
-			m_lsIPv6Cache.insert( qHostAddressToIP6( oIP, tNow ) );
+			m_lsIPv6Cache.insert( qHostAddressToIP6( rIP, tNow ) );
 
 			if ( !m_bExpiryRequested && m_lsIPv6Cache.size() > m_nMaxIPsInCache )
 			{
@@ -136,30 +136,30 @@ void MissCache::insert( const QHostAddress& oIP, const quint32 tNow )
 			break;
 		}
 		default:
-			qDebug() << QString( "Cannot handle protocol %1 in miss cache." ).arg( oIP.protocol() );
+			qDebug() << QString( "Cannot handle protocol %1 in miss cache." ).arg( rIP.protocol() );
 		}
 
 		m_oSection.unlock();
 	}
 }
 
-void MissCache::erase( const QHostAddress& oIP )
+void MissCache::erase( const QHostAddress& rIP )
 {
 	if ( m_bUseMissCache )
 	{
 		m_oSection.lock();
 
-		if ( oIP.protocol() == QAbstractSocket::IPv4Protocol )
+		if ( rIP.protocol() == QAbstractSocket::IPv4Protocol )
 		{
-			m_lsIPv4Cache.erase( qHostAddressToIP4( oIP ) );
+			m_lsIPv4Cache.erase( qHostAddressToIP4( rIP ) );
 		}
-		else if ( oIP.protocol() == QAbstractSocket::IPv6Protocol )
+		else if ( rIP.protocol() == QAbstractSocket::IPv6Protocol )
 		{
-			m_lsIPv6Cache.erase( qHostAddressToIP6( oIP ) );
+			m_lsIPv6Cache.erase( qHostAddressToIP6( rIP ) );
 		}
 		else
 		{
-			qDebug() << QString( "Cannot handle protocol %1 in miss cache." ).arg( oIP.protocol() );
+			qDebug() << QString( "Cannot handle protocol %1 in miss cache." ).arg( rIP.protocol() );
 		}
 
 		m_oSection.unlock();
@@ -179,26 +179,26 @@ void MissCache::clear()
 	m_oSection.unlock();
 }
 
-bool MissCache::check( const QHostAddress& oIP ) const
+bool MissCache::check( const QHostAddress& rIP ) const
 {
 	bool bReturn = false;
 
 	m_oSection.lock();
 
-	switch ( oIP.protocol() )
+	switch ( rIP.protocol() )
 	{
 	case QAbstractSocket::IPv4Protocol:
 	{
-		bReturn = m_lsIPv4Cache.find( qHostAddressToIP4( oIP ) ) != m_lsIPv4Cache.end();
+		bReturn = m_lsIPv4Cache.find( qHostAddressToIP4( rIP ) ) != m_lsIPv4Cache.end();
 		break;
 	}
 	case QAbstractSocket::IPv6Protocol:
 	{
-		bReturn = m_lsIPv6Cache.find( qHostAddressToIP6( oIP ) ) != m_lsIPv6Cache.end();
+		bReturn = m_lsIPv6Cache.find( qHostAddressToIP6( rIP ) ) != m_lsIPv6Cache.end();
 		break;
 	}
 	default:
-		qDebug() << QString( "Cannot handle protocol %1 in miss cache." ).arg( oIP.protocol() );
+		qDebug() << QString( "Cannot handle protocol %1 in miss cache." ).arg( rIP.protocol() );
 	}
 
 	m_oSection.unlock();

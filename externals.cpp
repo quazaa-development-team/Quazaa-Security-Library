@@ -89,12 +89,24 @@ void Security::SecuritySettings::stop()
 				&securitySettings, &Security::SecuritySettings::settingsChanged );
 }
 
-/**
- * @brief Settings::settingsChanged needs to be triggered on setting changes.
- * Qt slot. Pulls all relevant settings from quazaaSettings.Security
- * and forwards them to the security manager.
- * Locking: YES
- */
+bool SecuritySettings::logIPCheckHits()
+{
+	QMutexLocker l( &m_oLock );
+	return m_bLogIPCheckHits;
+}
+
+bool SecuritySettings::ignorePrivateIPs()
+{
+	QMutexLocker l( &m_oLock );
+	return m_bIgnorePrivateIPs;
+}
+
+quint64 SecuritySettings::ruleExpiryInterval()
+{
+	QMutexLocker l( &m_oLock );
+	return m_tRuleExpiryInterval;
+}
+
 void Security::SecuritySettings::settingsChanged()
 {
 	m_oLock.lock();

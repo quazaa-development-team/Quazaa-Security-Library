@@ -33,6 +33,9 @@
 namespace Security
 {
 
+/**
+ * @brief The MissCache class implements an IP lookup cache for IPv4 and IPv6 addresses.
+ */
 class MissCache : QObject
 {
 	Q_OBJECT
@@ -42,7 +45,7 @@ private:
 #else
 public:
 #endif
-	typedef quint32                       IPv4Addr;
+	typedef quint32 IPv4Addr;
 
 	typedef struct
 	{
@@ -65,7 +68,9 @@ public:
 		bool operator()( const IPv6Entry& first, const IPv6Entry& second ) const
 		{
 			// second half of IPv6 is to be expected to be more diverse than first half
-			return first.second.data[1] < second.second.data[1];
+			return first.second.data[1] == second.second.data[1] ?
+					first.second.data[0] < second.second.data[0] :
+					first.second.data[1] < second.second.data[1];
 		}
 	};
 
@@ -88,88 +93,97 @@ public:
 	QMetaMethod     m_pfExpire;
 
 	/**
-	 * @brief qHostAddressToIP4 converts an IP and a time to an IPv4Entry
-	 * @param oIP : the IP
-	 * @param tNow : the time
-	 * @return the IPv4Entry
+	 * @brief qHostAddressToIP4 converts an IP and a time to an IPv4Entry.
+	 *
+	 * @param oIP   The IP
+	 * @param tNow  The current time
+	 * @return An IPv4Entry
 	 */
 	static IPv4Entry qHostAddressToIP4( const QHostAddress& oIP, const quint32 tNow = 0 );
 
 	/**
-	 * @brief qHostAddressToIP6 converts an IP and a time to an IPv6Entry
-	 * @param oIP : the IP
-	 * @param tNow : the time
-	 * @return the IPv6Entry
+	 * @brief qHostAddressToIP6 converts an IP and a time to an IPv6Entry.
+	 *
+	 * @param oIP   The IP
+	 * @param tNow  The current time
+	 * @return An IPv6Entry
 	 */
 	static IPv6Entry qHostAddressToIP6( const QHostAddress& oIP, const quint32 tNow = 0 );
 
 	/**
-	 * @brief qipv6addrToIPv6Addr onverts an Q_IPV6ADDR struct to an IPv6Addr
-	 * @param qip6 : the Q_IPV6ADDR struct
-	 * @return the IPv6Addr
+	 * @brief qipv6addrToIPv6Addr converts an Q_IPV6ADDR struct to an IPv6Addr.
+	 *
+	 * @param qip6  The Q_IPV6ADDR struct
+	 * @return An IPv6Addr
 	 */
 	static IPv6Addr qipv6addrToIPv6Addr( const Q_IPV6ADDR& qip6 );
 
 public:
 	/**
-	 * @brief MissCache creates an empty miss cache.
+	 * @brief MissCache constructs an empty MissCache.
 	 */
 	MissCache();
 
 	/**
-	 * @brief start initializes the QMetaMethod.
+	 * @brief start initializes internal structures. This must be called before using the cache for
+	 * the first time.
 	 */
 	void start();
 
 	/**
-	 * @brief size allows accessing the size of the cache
-	 * @param eProtocol allows to specify the protocol. Defaults to
+	 * @brief size allows accessing the size of the MissCache.
+	 *
+	 * @param eProtocol Allows to specify the protocol. Defaults to
 	 * QAbstractSocket::UnknownNetworkLayerProtocol which will return the total number of IPv4 and
-	 * IPv6 entries in the cache.
-	 * @return the number of IPs in the cache
+	 * IPv6 entries in the MissCache.
+	 * @return The number of IPs in the cache.
 	 */
 	uint size( QAbstractSocket::NetworkLayerProtocol eProtocol =
 				   QAbstractSocket::UnknownNetworkLayerProtocol ) const;
 
 	/**
-	 * @brief insert allows to insert an IP into the cache
-	 * @param oIP : the IP
-	 * @param tNow : the current time
+	 * @brief insert allows to insert an IP into the MissCache.
+	 *
+	 * @param rIP   The IP to insert.
+	 * @param tNow  The current time.
 	 */
-	void insert( const QHostAddress& oIP, const quint32 tNow );
+	void insert( const QHostAddress& rIP, const quint32 tNow );
 
 	/**
-	 * @brief erase removes a specified IP from the cache
-	 * @param oIP : the IP
+	 * @brief erase removes a specified IP from the MissCache.
+	 *
+	 * @param rIP   The IP
 	 */
-	void erase( const QHostAddress& oIP );
+	void erase( const QHostAddress& rIP );
 
 	/**
-	 * @brief clear removes all IPs from the cache
+	 * @brief clear removes all IPs from the MissCache.
 	 */
 	void clear();
 
 	/**
-	 * @brief check allows to test whether a specified IP is currently part of the cache.
-	 * @param oIP : the IP
-	 * @return true if the IP could be found; false otherwise
+	 * @brief check allows to test whether a specified IP is currently part of the MissCache.
+	 *
+	 * @param rIP   The IP
+	 * @return true if the IP was found; false otherwise
 	 */
-	bool check( const QHostAddress& oIP ) const;
+	bool check( const QHostAddress& rIP ) const;
 
 	/**
-	 * @brief evaluateUsage recalculates the maximal cache size etc.
+	 * @brief evaluateUsage recalculates the maximal cache size, determines whether it is logical
+	 * to use the cache or not etc.
 	 */
-	void evaluateUsage();				// determines whether it is logical to use the cache or not
+	void evaluateUsage();
 
 private slots:
 	/**
-	 * @brief expire removes all IPs added prior than (tNow - tOldestIP)/2
+	 * @brief expire removes all IPs added prior than ( tNow - tOldestIP ) / 2.
 	 */
 	void expire();
 
 private:
 	/**
-	 * @brief requestExpiry allows to request a delayed expiry
+	 * @brief requestExpiry allows to request a delayed expiry.
 	 */
 	void requestExpiry();
 };

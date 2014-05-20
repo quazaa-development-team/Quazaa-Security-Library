@@ -29,7 +29,9 @@
 
 namespace Security
 {
-// keyword (any/all) matching
+/**
+ * @brief The ContentRule class is responsible for the any/all keyword content matching.
+ */
 class ContentRule : public Rule
 {
 private:
@@ -50,7 +52,7 @@ public:
 	void    setAll( bool all = true );
 	bool    getAll() const;
 
-	bool    match( const QString& sFileName ) const; // called by  match(CQueryHit*)
+	bool    match( const QString& sFileName ) const;
 	bool    match( const QueryHit* const pHit ) const;
 
 	void    toXML( QXmlStreamWriter& oXMLdocument ) const;

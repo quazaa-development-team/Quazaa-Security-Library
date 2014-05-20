@@ -36,6 +36,11 @@
 
 namespace Security
 {
+
+/**
+ * @brief The SanityCecker class manages coordinating the rechecking of the entire application in
+ * the case of rule additions.
+ */
 class SanityCecker : public QObject
 {
 	Q_OBJECT
@@ -68,12 +73,16 @@ private:
 	bool            m_bVerboose;
 
 public:
+	/**
+	 * @brief SanityCecker constructs an empty SanityCecker.
+	 */
 	SanityCecker();
 	~SanityCecker();
 
 	/**
-	 * @brief push writes a new rule to the queue for sanity checking.
-	 * Locking: RW + R on the rule.
+	 * @brief push adds a new rule to the queue for sanity checking.
+	 * <br><b>Locking: QUEUE + REQUIRES R on the rule</b>
+	 *
 	 * @param pRule : the rule.
 	 */
 	inline void     push( Rule* pRule );
@@ -84,24 +93,28 @@ public:
 	inline void     lockForRead();
 
 	/**
-	 * @brief unlock frees the read lock.
+	 * @brief unlock unlocks the read lock.
 	 */
 	inline void     unlock();
 
 	/**
 	 * @brief isNewlyDenied checks an IP against the list of loaded new security rules.
-	 * Locking: REQUIRES R
-	 * @param oAddress : the IP to be checked
-	 * @return true if the IP is newly banned; false otherwise
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @param oAddress  The IP to be checked
+	 * @return <code>true</code> if the IP is newly banned;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            isNewlyDenied( const EndPoint& oAddress );
 
 	/**
 	 * @brief isNewlyDenied checks a hit against the list of loaded new security rules.
-	 * Locking: REQUIRES R
-	 * @param pHit : the QueryHit
-	 * @param lQuery : the query string
-	 * @return true if the hit is newly banned; false otherwise
+	 * <br><b>Locking: REQUIRES R</b>
+	 *
+	 * @param pHit    The QueryHit
+	 * @param lQuery  The query string
+	 * @return <code>true</code> if the IP is newly banned;
+	 * <br><code>false</code> otherwise
 	 */
 	bool            isNewlyDenied( const QueryHit* const pHit, const QList<QString>& lQuery );
 
@@ -114,35 +127,38 @@ signals:
 	/**
 	 * @brief hit informs the security manager about the number of its the rules have recieved
 	 * during the sanity check.
-	 * @param ruleID : the rule GUI ID
-	 * @param nCount : the number of hits
+	 *
+	 * @param ruleID  The rule GUI ID
+	 * @param nCount  The number of hits
 	 */
 	void            hit( QUuid ruleID, uint nCount );
 
 public slots:
 	/**
 	 * @brief sanityCheck triggers a system wide sanity check.
-	 * Qt slot.
-	 * The sanity check is delayed by 5s, if a write lock couldn't be aquired after 200ms.
+	 * <br><b>Locking: QUEUE + RW</b>
+	 *
+	 * The sanity check is delayed by 5s, if a write lock couldn't be aquired after 200ms.<br>
 	 * The sanity check is aborted if it takes longer than 2min to finish. (debug version only)
-	 * Locking: QUEUE + RW
 	 */
 	void            sanityCheck();
 
 	/**
-	 * @brief sanityCheckPerformed is a call back slot.
-	 * Qt slot. Must be notified by all listeners to the signal performSanityCheck() once they have
+	 * @brief sanityCheckPerformed is a call-back slot.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * Note: Must be notified by all listeners to the signal performSanityCheck() once they have
 	 * completed their work.
-	 * Locking: RW
 	 */
 	void            sanityCheckPerformed();
 
 #ifdef _DEBUG // use failsafe to abort sanity check only in debug version
 	/**
-	 * @brief forceEndOfSanityCheck
-	 * Qt slot. Aborts the currently running sanity check by clearing its rule list.
-	 * For use in debug version only.
-	 * Locking: RW
+	 * @brief forceEndOfSanityCheck aborts the currently running sanity check by clearing its rule
+	 * list.
+	 * <br><b>Locking: RW</b>
+	 *
+	 * Note: For useage in debug version only.
 	 */
 	void            forceEndOfSanityCheck();
 #endif
@@ -150,28 +166,23 @@ public slots:
 private:
 	/**
 	 * @brief loadBatch loads a batch of waiting rules into the container used for sanity checking.
-	 * Locking: REQUIRES QUEUE + REQUIRES RW
+	 * <br><b>Locking: REQUIRES QUEUE + REQUIRES RW</b>
 	 */
 	void            loadBatch();
 
 	/**
-	 * @brief clearBatch unloads new rules from sanity check containers.
-	 * Locking: REQUIRES RW
+	 * @brief clearBatch unloads the new rules from sanity check containers.
+	 * <br><b>Locking: REQUIRES RW</b>
 	 */
 	void            clearBatch( bool bShutDown = false );
 
 	/**
 	 * @brief clear removes all rules. Only to be called on shutdown.
-	 * Locking: REQUIRES RW
+	 * <br><b>Locking: REQUIRES RW</b>
 	 */
 	void            clear();
 };
 
-/**
- * @brief push writes a new rule to the queue for sanity checking.
- * Locking: QUEUE + REQUIRES R on the rule.
- * @param pRule : the rule.
- */
 void SanityCecker::push( Rule* pRule )
 {
 	m_oQueueLock.lock();
@@ -179,17 +190,11 @@ void SanityCecker::push( Rule* pRule )
 	m_oQueueLock.unlock();
 }
 
-/**
- * @brief lockForWrite allocates a lock for reading.
- */
 void SanityCecker::lockForRead()
 {
 	m_oRWLock.lockForRead();
 }
 
-/**
- * @brief unlock frees the read lock.
- */
 void SanityCecker::unlock()
 {
 	m_oRWLock.unlock();

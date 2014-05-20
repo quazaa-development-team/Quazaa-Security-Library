@@ -27,14 +27,12 @@
 
 #include "securerule.h"
 
-// Note: The locking information within the doxygen comments refers to the RW lock of the Security
-//       Manager.
-
 namespace Security
 {
-/* ============================================================================================== */
-/* ========================================== CIPRule  ========================================== */
-/* ============================================================================================== */
+
+/**
+ * @brief The IPRule class manages matching IPs against a single IP.
+ */
 class IPRule : public Rule
 {
 private:

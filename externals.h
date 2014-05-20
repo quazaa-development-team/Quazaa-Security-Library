@@ -50,7 +50,6 @@
 
 namespace Security
 {
-
 /**
  * @brief The CountryHasher struct allows to transform a two letter country code into its unique 32
  * bit hash.
@@ -58,8 +57,8 @@ namespace Security
 struct CountryHasher
 {
 	/**
-	 * @brief operator() Transforms a given country code into its hash.
-	 * @param sCountryCode The two letter country code.
+	 * @brief operator() transforms a given country code into its hash.
+	 * @param sCountryCode  The two letter country code.
 	 * @return The 32 bit hash of the country code.
 	 */
 	quint32 operator()( const QString& sCountryCode )
@@ -75,17 +74,20 @@ struct CountryHasher
 
 /**
  * @brief postLogMessage writes a message to the system log or to the debug output.
- * Requires locking: /
- * @param eSeverity : the message severity
- * @param sMessage : the message string
- * @param bDebug : Defaults to false. If set to true, the message is send to qDebug() instead of
- * to the system log.
+ * <br><b>Locking: /</b>
+ *
+ * @param eSeverity  The message severity.
+ * @param sMessage   The message string.
+ * @param bDebug     If set to <code>true</code>, the message is send to qDebug() instead of to the
+ * system log. Defaults to <code>false</code>.
  */
 void postLogMessage( LogSeverity eSeverity, QString sMessage, bool bDebug = false );
 
 /**
- * @brief dataPath
- * @return
+ * @brief dataPath allows the Manager to access the data path.
+ * <br><b>Locking: /</b>
+ *
+ * @return The location where the Manager is supposed to store its data between sessions.
  */
 QString dataPath();
 
@@ -93,26 +95,66 @@ class SecuritySettings : public QObject
 {
 	Q_OBJECT
 
-public:
+private:
 	QMutex  m_oLock;
 
 	bool    m_bLogIPCheckHits;
 	bool    m_bIgnorePrivateIPs;
 	quint64 m_tRuleExpiryInterval;
 
+public:
+	/**
+	 * @brief start must be called on application startup. Inintalizes the necessary signal/slot
+	 * connections and makes sure the resective settings are loaded from the settings manager.
+	 */
 	void start();
+
+	/**
+	 * @brief stop should be called on application shutdown.
+	 */
 	void stop();
+
+	/**
+	 * @brief logIPCheckHits allows to access the logIPCheckHits setting.
+	 * <br><b>Locking: YES</b>
+	 *
+	 * @return <code>true</code> if the Manager should report IP rule hits to the system log;
+	 * <br><code>false</code> otherwise
+	 */
+	bool logIPCheckHits();
+
+	/**
+	 * @brief logIPCheckHits allows to access the ignorePrivateIPs setting.
+	 * <br><b>Locking: YES</b>
+	 *
+	 * @return <code>true</code> if the Manager should deny private IPs on principle;
+	 * <br><code>false</code> otherwise
+	 */
+	bool ignorePrivateIPs();
+
+	/**
+	 * @brief logIPCheckHits allows to access the ruleExpiryInterval setting.
+	 * <br><b>Locking: YES</b>
+	 *
+	 * @return the time in ms between two rule expiry cleanups.
+	 */
+	quint64 ruleExpiryInterval();
 
 public slots:
 	/**
-	 * @brief Settings::settingsChanged needs to be triggered on setting changes.
-	 * Qt slot. Pulls all relevant settings from quazaaSettings.Security
-	 * and forwards them to the security manager.
-	 * Locking: YES
+	 * @brief settingsChanged pulls all relevant settings from the settings manager and notifies the
+	 * security Manager.
+	 * <br><b>Locking: YES</b>
+	 *
+	 * Note: Needs to be triggered on setting changes.
 	 */
 	void settingsChanged();
 
 signals:
+	/**
+	 * @brief settingsUpdate informs the Manager about changed settings having been pulled from the
+	 * settings manager.
+	 */
 	void settingsUpdate();
 };
 }

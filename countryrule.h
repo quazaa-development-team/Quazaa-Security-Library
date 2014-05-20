@@ -28,16 +28,12 @@
 #include "securerule.h"
 
 #if SECURITY_ENABLE_GEOIP
-
-// Note: The locking information within the doxygen comments refers to the RW lock of the Security
-//       Manager.
-
 namespace Security
 {
-/* ============================================================================================== */
-/* ======================================== CCountryRule ======================================== */
-/* ============================================================================================== */
 
+/**
+ * @brief The CountryRule class is responsible for the country IP maching.
+ */
 class CountryRule : public Rule
 {
 public:
