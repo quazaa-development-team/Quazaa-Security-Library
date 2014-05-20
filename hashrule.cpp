@@ -49,7 +49,10 @@ void HashRule::setHashes( const HashSet& hashes )
 
 	for ( quint8 i = 0, nSize = hashes.size(); i < nSize; ++i )
 	{
-		m_sContent += hashes[i]->toURN() + " ";
+		if ( hashes[i] )
+		{
+			m_sContent += hashes[i]->toURN() + " ";
+		}
 	}
 
 	m_sContent = m_sContent.trimmed();

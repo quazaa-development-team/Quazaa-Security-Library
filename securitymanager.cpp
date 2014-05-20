@@ -208,8 +208,11 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 			// similar but not 100% identical content, add hashes to map.
 			for ( quint8 i = 0, nSize = vHashes.size(); i < nSize; ++i )
 			{
-				uint nKey = qHash( vHashes[i]->rawValue() );
-				m_lmmHashes.insert( HashPair( nKey, ( HashRule* )pRule ) );
+				if ( vHashes[i] )
+				{
+					uint nKey = qHash( vHashes[i]->rawValue() );
+					m_lmmHashes.insert( HashPair( nKey, ( HashRule* )pRule ) );
+				}
 			}
 
 			bNewHit	= true;
@@ -2022,25 +2025,28 @@ Manager::RuleVectorPos Manager::find( const HashSet& vHashes ) const
 	// For each hash that has been given to the function:
 	for ( quint8 i = 0, nSize = vHashes.size(); i < nSize; ++i )
 	{
-		// 1. Check whether a corresponding rule can be found in our lookup container.
-		oBounds = m_lmmHashes.equal_range( qHash( vHashes[i]->rawValue() ) );
-
-		HashIterator it = oBounds.first;
-
-		// 2. Iterate threw all rules that include the current hash
-		// (this is important for weaker hashes to deal correctly with hash collisions)
-		while ( it != oBounds.second )
+		if ( vHashes[i] )
 		{
-			if ( ( *it ).second->match( vHashes ) )
+			// 1. Check whether a corresponding rule can be found in our lookup container.
+			oBounds = m_lmmHashes.equal_range( qHash( vHashes[i]->rawValue() ) );
+
+			HashIterator it = oBounds.first;
+
+			// 2. Iterate threw all rules that include the current hash
+			// (this is important for weaker hashes to deal correctly with hash collisions)
+			while ( it != oBounds.second )
 			{
-				RuleVectorPos nPos = find( ( *it ).second->m_idUUID );
+				if ( ( *it ).second->match( vHashes ) )
+				{
+					RuleVectorPos nPos = find( ( *it ).second->m_idUUID );
 #ifdef _DEBUG
-				Q_ASSERT( nPos != m_vRules.size() );
-				Q_ASSERT( m_vRules[nPos]->m_idUUID == ( *it ).second->m_idUUID );
+					Q_ASSERT( nPos != m_vRules.size() );
+					Q_ASSERT( m_vRules[nPos]->m_idUUID == ( *it ).second->m_idUUID );
 #endif
-				return nPos;
+					return nPos;
+				}
+				++it;
 			}
-			++it;
 		}
 	}
 
@@ -2061,14 +2067,8 @@ void Manager::expireLater()
 
 void Manager::remove( const RuleVectorPos nVectorPos )
 {
-//	qDebug() << "[Security] Starting to remove rule at position: " << QString::number(nVectorPos);
-
+	// We only allow removing valid positions.
 	Q_ASSERT( nVectorPos >= 0 && nVectorPos < m_vRules.size() );
-
-	/*if ( nVectorPos == m_vRules.size() )
-	{
-		return;
-	}*/
 
 	Rule* pRule  = m_vRules[nVectorPos];
 
@@ -2130,17 +2130,20 @@ void Manager::remove( const RuleVectorPos nVectorPos )
 		std::pair<HashRuleMap::iterator, HashRuleMap::iterator> oBounds;
 		for ( quint8 i = 0, nSize = vHashes.size(); i < nSize; ++i )
 		{
-			oBounds = m_lmmHashes.equal_range( qHash( vHashes[i]->rawValue() ) );
-			it = oBounds.first;
-
-			while ( it != oBounds.second )
+			if ( vHashes[i] )
 			{
-				if ( ( *it ).second->m_idUUID == pHashRule->m_idUUID )
+				oBounds = m_lmmHashes.equal_range( qHash( vHashes[i]->rawValue() ) );
+				it = oBounds.first;
+
+				while ( it != oBounds.second )
 				{
-					m_lmmHashes.erase( it );
-					break;
+					if ( ( *it ).second->m_idUUID == pHashRule->m_idUUID )
+					{
+						m_lmmHashes.erase( it );
+						break;
+					}
+					++it;
 				}
-				++it;
 			}
 		}
 	}
