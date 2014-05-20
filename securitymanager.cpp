@@ -1114,7 +1114,7 @@ bool Manager::start()
 	// initialize MissCache QMetaMethod(s)
 	m_oMissCache.start();
 
-	connect( &m_oSanity, &SanityCecker::hit, this, &Manager::updateHitCount, Qt::UniqueConnection );
+	connect( &m_oSanity, &SanityChecker::hit, this, &Manager::updateHitCount, Qt::UniqueConnection );
 
 	connect( &securitySettings, &SecuritySettings::settingsUpdate,
 			 this, &Manager::settingsChanged );

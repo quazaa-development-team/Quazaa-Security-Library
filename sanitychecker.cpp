@@ -26,19 +26,19 @@
 
 using namespace Security;
 
-SanityCecker::SanityCecker() :
+SanityChecker::SanityChecker() :
 	m_bNewRulesLoaded( false ),
 	m_nPendingOperations( 0 ),
 	m_bVerboose( false )
 {
 }
 
-SanityCecker::~SanityCecker()
+SanityChecker::~SanityChecker()
 {
 	clear();
 }
 
-bool SanityCecker::isNewlyDenied( const EndPoint& oAddress )
+bool SanityChecker::isNewlyDenied( const EndPoint& oAddress )
 {
 	if ( oAddress.isNull() )
 	{
@@ -77,7 +77,7 @@ bool SanityCecker::isNewlyDenied( const EndPoint& oAddress )
 	return false;
 }
 
-bool SanityCecker::isNewlyDenied( const QueryHit* const pHit, const QList<QString>& lQuery )
+bool SanityChecker::isNewlyDenied( const QueryHit* const pHit, const QList<QString>& lQuery )
 {
 	if ( !pHit )
 	{
@@ -116,7 +116,7 @@ bool SanityCecker::isNewlyDenied( const QueryHit* const pHit, const QList<QStrin
 	return false;
 }
 
-void SanityCecker::sanityCheck()
+void SanityChecker::sanityCheck()
 {
 	if ( m_bVerboose )
 	{
@@ -190,7 +190,7 @@ void SanityCecker::sanityCheck()
 	}
 }
 
-void SanityCecker::sanityCheckPerformed()
+void SanityChecker::sanityCheckPerformed()
 {
 	m_oRWLock.lockForWrite();
 
@@ -217,7 +217,7 @@ void SanityCecker::sanityCheckPerformed()
 }
 
 #ifdef _DEBUG
-void SanityCecker::forceEndOfSanityCheck()
+void SanityChecker::forceEndOfSanityCheck()
 {
 	m_oRWLock.lockForWrite();
 
@@ -238,7 +238,7 @@ void SanityCecker::forceEndOfSanityCheck()
 }
 #endif //_DEBUG
 
-void SanityCecker::loadBatch()
+void SanityChecker::loadBatch()
 {
 	Q_ASSERT( !m_bNewRulesLoaded );
 	Q_ASSERT( m_vLoadedRules.empty() );
@@ -263,7 +263,7 @@ void SanityCecker::loadBatch()
 	m_bNewRulesLoaded = true;
 }
 
-void SanityCecker::clearBatch( bool bShutDown )
+void SanityChecker::clearBatch( bool bShutDown )
 {
 	Q_ASSERT( m_bNewRulesLoaded );
 	Q_ASSERT( !m_nPendingOperations );
@@ -295,7 +295,7 @@ void SanityCecker::clearBatch( bool bShutDown )
 	m_bNewRulesLoaded = false;
 }
 
-void SanityCecker::clear()
+void SanityChecker::clear()
 {
 	m_oRWLock.lockForWrite();
 	m_oQueueLock.lock();

@@ -22,8 +22,8 @@
 ** Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#ifndef SANITYCECKER_H
-#define SANITYCECKER_H
+#ifndef SANITYCHECKER_H
+#define SANITYCHECKER_H
 
 #include <QObject>
 #include <QReadWriteLock>
@@ -41,7 +41,7 @@ namespace Security
  * @brief The SanityCecker class manages coordinating the rechecking of the entire application in
  * the case of rule additions.
  */
-class SanityCecker : public QObject
+class SanityChecker : public QObject
 {
 	Q_OBJECT
 
@@ -76,8 +76,8 @@ public:
 	/**
 	 * @brief SanityCecker constructs an empty SanityCecker.
 	 */
-	SanityCecker();
-	~SanityCecker();
+	SanityChecker();
+	~SanityChecker();
 
 	/**
 	 * @brief push adds a new rule to the queue for sanity checking.
@@ -183,22 +183,22 @@ private:
 	void            clear();
 };
 
-void SanityCecker::push( Rule* pRule )
+void SanityChecker::push( Rule* pRule )
 {
 	m_oQueueLock.lock();
 	m_lqNewRules.push( pRule->getCopy() );
 	m_oQueueLock.unlock();
 }
 
-void SanityCecker::lockForRead()
+void SanityChecker::lockForRead()
 {
 	m_oRWLock.lockForRead();
 }
 
-void SanityCecker::unlock()
+void SanityChecker::unlock()
 {
 	m_oRWLock.unlock();
 }
 }
 
-#endif // SANITYCECKER_H
+#endif // SANITYCHECKER_H

@@ -119,7 +119,7 @@ private:
 	/* ========================================================================================== */
 public:
 	mutable QReadWriteLock  m_oRWLock;
-	SanityCecker            m_oSanity;
+	SanityChecker            m_oSanity;
 
 #ifndef QUAZAA_SETUP_UNIT_TESTS
 private:
