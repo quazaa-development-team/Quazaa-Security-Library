@@ -1,7 +1,7 @@
 #
 # security.pri
 #
-# Copyright © Quazaaa Development Team, 2009-2013.
+# Copyright © Quazaaa Development Team, 2009-2014.
 # This file is part of QUAZAA (quazaa.sourceforge.net)
 #
 # Quazaa is free software; this file may be used under the terms of the GNU
@@ -29,6 +29,7 @@ INCLUDEPATH += $$PWD
 
 # Headers
 HEADERS += \
+		$$PWD/clientversion.h \
 		$$PWD/contentrule.h \
 		$$PWD/countryrule.h \
 		$$PWD/externals.h \
@@ -40,10 +41,12 @@ HEADERS += \
 		$$PWD/sanitychecker.h \
 		$$PWD/securerule.h \
 		$$PWD/securitymanager.h \
+		$$PWD/useragent.h \
 		$$PWD/useragentrule.h
 
 # Sources
 SOURCES += \
+		$$PWD/clientversion.cpp \
 		$$PWD/contentrule.cpp \
 		$$PWD/countryrule.cpp \
 		$$PWD/externals.cpp \
@@ -55,4 +58,5 @@ SOURCES += \
 		$$PWD/sanitychecker.cpp \
 		$$PWD/securerule.cpp \
 		$$PWD/securitymanager.cpp \
+		$$PWD/useragent.cpp \
 		$$PWD/useragentrule.cpp
