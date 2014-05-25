@@ -152,7 +152,7 @@ void RegularExpressionRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 	oXMLdocument.writeStartElement( "rule" );
 
 	oXMLdocument.writeAttribute( "type", "regexp" );
-	oXMLdocument.writeAttribute( "content", getContentString() );
+	oXMLdocument.writeAttribute( "content", contentString() );
 
 	Rule::toXML( *this, oXMLdocument );
 

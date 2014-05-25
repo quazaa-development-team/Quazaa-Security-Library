@@ -87,7 +87,7 @@ bool Manager::check( const Rule* const pRule ) const
 	return bReturn;
 }
 
-bool Manager::add(Rule* pRule , bool bDoSanityCheck )
+bool Manager::add( Rule* pRule , bool bDoSanityCheck )
 {
 	if ( !pRule )
 	{
@@ -166,7 +166,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 #if SECURITY_ENABLE_GEOIP
 	case RuleType::Country:
 	{
-		const quint32 nCountryHash = m_oCountryHasher( pRule->getContentString() );
+		const quint32 nCountryHash = m_oCountryHasher( pRule->contentString() );
 		CountryMap::iterator it = m_lmCountries.find( nCountryHash );
 
 		if ( it != m_lmCountries.end() ) // there is a conflicting rule in our map
@@ -229,7 +229,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 			RegularExpressionRule* const * const pRegExpRules = &m_vRegularExpressions[0];
 			for ( RegExpVectorPos i = 0; i < nSize; ++i )
 			{
-				if ( pRegExpRules[i]->getContentString() == pRule->getContentString() )
+				if ( pRegExpRules[i]->contentString() == pRule->contentString() )
 				{
 					pRule->mergeInto( pRegExpRules[i] );
 
@@ -258,7 +258,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 			ContentRule* const * const pContentRules = &m_vContents[0];
 			for ( ContentVectorPos i = 0; i < nSize; ++i )
 			{
-				if ( pContentRules[i]->getContentString() ==  pRule->getContentString() &&
+				if ( pContentRules[i]->contentString() ==  pRule->contentString() &&
 					 pContentRules[i]->getAll()           == ( ( ContentRule* )pRule )->getAll() )
 				{
 					pRule->mergeInto( pContentRules[i] );
@@ -288,7 +288,7 @@ bool Manager::add(Rule* pRule , bool bDoSanityCheck )
 			UserAgentRule* const * const pUserAgentRules = &m_vUserAgents[0];
 			for ( UserAgentVectorPos i = 0; i < nSize; ++i )
 			{
-				if ( pUserAgentRules[i]->getContentString() ==  pRule->getContentString() )
+				if ( pUserAgentRules[i]->contentString() ==  pRule->contentString() )
 				{
 					pRule->mergeInto( pUserAgentRules[i] );
 
@@ -1818,7 +1818,7 @@ void Manager::insertRange( IPRangeRule*& pNew )
 			{
 				postLogMessage( LogSeverity::Security,
 								tr( "Merging IP range rules. Removing overlapped IP range %1."
-								  ).arg( m_vIPRanges[nPos]->getContentString() ) );
+								  ).arg( m_vIPRanges[nPos]->contentString() ) );
 
 				const RuleVectorPos nUUIDPos = find( m_vIPRanges[nPos]->m_idUUID );
 #ifdef _DEBUG
@@ -1871,7 +1871,7 @@ void Manager::insertRangeHelper( IPRangeRule* pNewRange )
 
 void Manager::eraseRange( const IPRangeVectorPos nPos )
 {
-	qDebug() << "Erasing range from range vector: " << m_vIPRanges[nPos]->getContentString();
+	qDebug() << "Erasing range from range vector: " << m_vIPRanges[nPos]->contentString();
 
 	const IPRangeVectorPos nSize = m_vIPRanges.size();
 	const IPRangeVectorPos nMax  = nSize - 1;
@@ -2108,7 +2108,7 @@ void Manager::remove( const RuleVectorPos nVectorPos )
 	case RuleType::Country:
 	{
 		CountryMap::iterator it =
-				m_lmCountries.find( m_oCountryHasher( pRule->getContentString() ) );
+				m_lmCountries.find( m_oCountryHasher( pRule->contentString() ) );
 
 		if ( it != m_lmCountries.end() && ( *it ).second->m_idUUID == pRule->m_idUUID )
 		{

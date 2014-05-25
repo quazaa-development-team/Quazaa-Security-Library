@@ -76,7 +76,7 @@ void IPRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 	oXMLdocument.writeStartElement( "rule" );
 
 	oXMLdocument.writeAttribute( "type", "address" );
-	oXMLdocument.writeAttribute( "address", getContentString() );
+	oXMLdocument.writeAttribute( "address", contentString() );
 
 	Rule::toXML( *this, oXMLdocument );
 

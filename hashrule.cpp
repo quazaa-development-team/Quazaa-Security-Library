@@ -167,7 +167,7 @@ void HashRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 	oXMLdocument.writeStartElement( "rule" );
 
 	oXMLdocument.writeAttribute( "type", "hash" );
-	oXMLdocument.writeAttribute( "content", getContentString() );
+	oXMLdocument.writeAttribute( "content", contentString() );
 
 	Rule::toXML( *this, oXMLdocument );
 

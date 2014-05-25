@@ -183,7 +183,7 @@ public:
 	 * @brief getContentString allows to access the content string. This is used mainly in the GUI.
 	 * @return the content string
 	 */
-	QString         getContentString() const;
+	QString         contentString() const;
 
 	/**
 	 * @brief isExpired allows to check whether a Rule has expired.

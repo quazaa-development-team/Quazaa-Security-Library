@@ -169,7 +169,7 @@ void ContentRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 		oXMLdocument.writeAttribute( "match", "any" );
 	}
 
-	oXMLdocument.writeAttribute( "content", getContentString() );
+	oXMLdocument.writeAttribute( "content", contentString() );
 
 	Rule::toXML( *this, oXMLdocument );
 

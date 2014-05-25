@@ -60,7 +60,7 @@ public:
 	bool    parseContent( const QString& sContent );
 
 	void    setRegExp( bool bRegExp );
-	bool    getRegExp() const;
+	bool    isRegExp() const;
 
 	// partial and complete string matching as well as regEx matching
 	bool    match( const QString& sUserAgent ) const;

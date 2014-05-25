@@ -105,7 +105,7 @@ bool Rule::parseContent( const QString& )
 	return false;
 }
 
-QString Rule::getContentString() const
+QString Rule::contentString() const
 {
 	Q_ASSERT( m_nType != RuleType::Undefined );
 
@@ -353,11 +353,11 @@ void Rule::save( const Rule* const pRule, QDataStream& oStream )
 	oStream << common::intToUint( pRule->m_tLastHit.load() );
 	oStream << pRule->m_nTotal.loadAcquire();
 	oStream << pRule->m_bAutomatic;
-	oStream << pRule->getContentString();
+	oStream << pRule->contentString();
 
 	if ( pRule->m_nType == RuleType::UserAgent )
 	{
-		oStream << ( ( UserAgentRule* )pRule )->getRegExp();
+		oStream << ( ( UserAgentRule* )pRule )->isRegExp();
 	}
 	else if ( pRule->m_nType == RuleType::Content )
 	{

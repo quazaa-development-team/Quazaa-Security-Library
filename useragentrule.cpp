@@ -96,7 +96,7 @@ void UserAgentRule::setRegExp( bool bRegExp )
 	}
 }
 
-bool UserAgentRule::getRegExp() const
+bool UserAgentRule::isRegExp() const
 {
 	return m_bRegExp;
 }
@@ -138,7 +138,7 @@ void UserAgentRule::toXML( QXmlStreamWriter& oXMLdocument ) const
 		oXMLdocument.writeAttribute( "match", "list" );
 	}
 
-	oXMLdocument.writeAttribute( "content", getContentString() );
+	oXMLdocument.writeAttribute( "content", contentString() );
 
 	Rule::toXML( *this, oXMLdocument );
 

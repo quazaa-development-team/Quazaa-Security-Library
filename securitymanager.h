@@ -239,12 +239,12 @@ public:
 	bool            check( const Rule* const pRule ) const;
 
 	/**
-	 * @brief add inserts a rule into the security database.
+	 * @brief add inserts a Rule into the security database.
 	 * <br><b>Locking: RW</b>
 	 *
-	 * Note: This takes ownership of the rule, so don't delete it after adding.
+	 * Note: This takes ownership of the Rule, so don't delete it after adding.
 	 *
-	 * @param pRule  The rule to be added. Will be set to NULL if redundant.
+	 * @param pRule  The Rule to be added. Will be set to NULL if redundant.
 	 * @return <code>true</code> if the Rule has been added;
 	 * <br><code>false</code> otherwise
 	 */
