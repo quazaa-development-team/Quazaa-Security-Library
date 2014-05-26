@@ -22,8 +22,37 @@
 ** Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <QRegularExpression>
+
 #include "useragent.h"
 
-UserAgent::UserAgent()
+UserAgent::UserAgent( const QString& sUserAgent ) :
+	m_sUserAgent( sUserAgent )
 {
+	// TODO: parse input
+}
+
+QString UserAgent::userAgentString() const
+{
+	return m_sUserAgent;
+}
+
+QString UserAgent::clientName() const
+{
+	return m_sClientName;
+}
+
+ClientVersion UserAgent::clientVersion() const
+{
+	return m_oClientVersion;
+}
+
+QString UserAgent::libraryName() const
+{
+	return m_sLibraryName;
+}
+
+ClientVersion UserAgent::libraryVersion() const
+{
+	return m_oLibraryVersion;
 }

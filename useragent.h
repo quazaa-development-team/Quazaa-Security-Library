@@ -25,10 +25,27 @@
 #ifndef USERAGENT_H
 #define USERAGENT_H
 
+#include "clientversion.h"
+
 class UserAgent
 {
+private:
+	const QString m_sUserAgent;
+
+	QString       m_sClientName;
+	ClientVersion m_oClientVersion;
+
+	QString       m_sLibraryName;
+	ClientVersion m_oLibraryVersion;
+
 public:
-	UserAgent();
+	UserAgent( const QString& sUserAgent );
+
+	QString userAgentString() const;
+	QString clientName() const;
+	ClientVersion clientVersion() const;
+	QString libraryName() const;
+	ClientVersion libraryVersion() const;
 };
 
 #endif // USERAGENT_H

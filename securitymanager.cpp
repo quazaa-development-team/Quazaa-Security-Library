@@ -821,6 +821,8 @@ bool Manager::isClientBad( const QString& sUserAgent ) const
 
 	QString sSubStr;
 
+	// TODO: Use new UserAgent class once it has been finished.
+
 	// Bad/old/unapproved versions of Shareaza
 	if ( sUserAgent.startsWith( "shareaza", Qt::CaseInsensitive ) )
 	{

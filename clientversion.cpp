@@ -24,6 +24,29 @@
 
 #include "clientversion.h"
 
-ClientVersion::ClientVersion()
+ClientVersion::ClientVersion( const QString& sVersion , Style eStyle ) :
+	m_eStyle( eStyle ),
+	m_sVersion( sVersion )
 {
+	switch ( eStyle )
+	{
+	case Style::QuazaaDefault:
+	case Style::eMule:
+	default:
+	}
+}
+
+ClientVersion::Style ClientVersion::style() const
+{
+	return m_eStyle;
+}
+
+quint32 ClientVersion::version() const
+{
+	return m_nVersion;
+}
+
+QString ClientVersion::versionString() const
+{
+	return m_sVersion;
 }
