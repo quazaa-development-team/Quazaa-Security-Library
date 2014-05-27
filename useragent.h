@@ -29,8 +29,16 @@
 
 class UserAgent
 {
+public:
+	enum class Style : quint8 { Unknown = 0,        // unable to parse
+								QuazaaDefault = 1,  // client name + d.d.d.d, where d is 0-255
+								GnucDNA = 2,        // like quazaa default, only 2 times
+								eMule = 3,          // client name + d.d[a-z] (+ suffix)
+								Simple = 4          // client name + d.d      (+ suffix)
+							  };
 private:
 	const QString m_sUserAgent;
+	Style         m_eStyle;
 
 	QString       m_sClientName;
 	ClientVersion m_oClientVersion;
@@ -40,6 +48,24 @@ private:
 
 public:
 	UserAgent( const QString& sUserAgent );
+
+	bool operator<( const UserAgent& other );
+	bool operator>( const UserAgent& other );
+
+	bool operator<=( const UserAgent& other );
+	bool operator>=( const UserAgent& other );
+
+	/**
+	 * @brief operator == compares two UserAgents.
+	 * @param other  The other UserAgent.
+	 * @return <code>true</code> if completely equal or equal in name only and at least one of the
+	 * versions is 0; <br><code>false</code> otherwise
+	 */
+	bool operator==( const UserAgent& other );
+	bool operator!=( const UserAgent& other );
+
+	void parse( const QString& sWhat, const Style eHow,
+				QString& sNameDest, ClientVersion& rClientDest );
 
 	QString userAgentString() const;
 	QString clientName() const;

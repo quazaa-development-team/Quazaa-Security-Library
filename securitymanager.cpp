@@ -29,6 +29,7 @@
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
+#include "useragent.h"
 #include "securitymanager.h"
 
 #include "debug_new.h"
@@ -813,81 +814,43 @@ bool Manager::isDenied( const QueryHit* const pHit, const QList<QString>& lQuery
 
 bool Manager::isClientBad( const QString& sUserAgent ) const
 {
-	// No user agent- assume bad - They allowed to connect but no searches were performed
+	// No user agent - assume bad - They allowed to connect but no searches were performed
 	if ( sUserAgent.isEmpty() )
 	{
 		return true;
 	}
 
-	QString sSubStr;
+	UserAgent oUserAgent( sUserAgent );
 
-	// TODO: Use new UserAgent class once it has been finished.
-
-	// Bad/old/unapproved versions of Shareaza
-	if ( sUserAgent.startsWith( "shareaza", Qt::CaseInsensitive ) )
+	static const UserAgent oShareaza( "Shareaza" );
+	if ( oUserAgent == oShareaza )
 	{
-		sSubStr = sUserAgent.mid( 8 );
-		if ( sSubStr.startsWith( " 0."  ) )
-		{
-			return true;
-		}
-		// There can be some 1.x versions of the real Shareaza but most are fakes
-		if ( sSubStr.startsWith( " 1."  ) )
-		{
-			return true;
-		}
-		// There is also a Shareaza rip-off that identifies as Shareaza 2.0.0.0. Also, the real
-		if ( sSubStr.startsWith( " 2.0" ) )
-		{
-			return true;    // Shareaza 2.0.0.0 is old and bad.
-		}
-		if ( sSubStr.startsWith( " 2.1" ) )
-		{
-			return true;    // Old version
-		}
-		if ( sSubStr.startsWith( " 2.2" ) )
-		{
-			return true;    // Old version
-		}
-		if ( sSubStr.startsWith( " 2.3" ) )
-		{
-			return true;    // Old version
-		}
-		if ( sSubStr.startsWith( " 2.4" ) )
-		{
-			return true;    // Old version
-		}
-		if ( sSubStr.startsWith( " 2.5.0" ) )
-		{
-			return true;    // Old version
-		}
-		if ( sSubStr.startsWith( " 2.5.1" ) )
-		{
-			return true;    // Old version
-		}
-		if ( sSubStr.startsWith( " 2.5.2" ) )
-		{
-			return true;    // Old version
-		}
-		if ( sSubStr.startsWith( " 3" ) )
-		{
-			return true;
-		}
-		if ( sSubStr.startsWith( " 6"  ) )
-		{
-			return true;
-		}
-		if ( sSubStr.startsWith( " 7"  ) )
-		{
-			return true;
-		}
-		if ( sSubStr.startsWith( " Pro" ) )
+		static const UserAgent oShareaza2520( "Shareaza 2.5.2.0" );
+		static const UserAgent oShareaza3000( "Shareaza 3.0.0.0" );
+
+		// old and bad versions
+		if ( oUserAgent <= oShareaza2520 )
 		{
 			return true;
 		}
 
+		// fake versions
+		if ( oUserAgent >= oShareaza3000 )
+		{
+			return true;
+		}
+	}
+
+	if ( sUserAgent.startsWith( "Shareaza Pro", Qt::CaseInsensitive ) )
+	{
+		return true;
+	}
+	else
+	{
 		return false;
 	}
+
+	QString sSubStr;
 
 	// Dianlei: Shareaza rip-off
 	// add only based on alpha code, need verification for others

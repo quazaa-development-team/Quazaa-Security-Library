@@ -25,21 +25,33 @@
 #ifndef CLIENTVERSION_H
 #define CLIENTVERSION_H
 
-//#include <QtGlobal>
 #include <QString>
 
 class ClientVersion
 {
 public:
-	enum class Style : quint8 { Unknown = 0, QuazaaDefault = 1, eMule = 2 };
+	enum class Style : quint8 { Unknown = 0,        // unable to parse
+								QuazaaDefault = 1,  // d.d.d.d, where d is 0-255
+								eMule = 3,          // d.d[a-z]
+								Simple = 4          // d.d
+							  };
 
 private:
-	const Style   m_eStyle;
-	quint32       m_nVersion;
-	const QString m_sVersion;
+	Style   m_eStyle;
+	quint32 m_nVersion;
+	QString m_sVersion;
 
 public:
+	ClientVersion();
 	ClientVersion( const QString& sVersion, Style eStyle );
+
+	ClientVersion& operator=( const ClientVersion& other );
+
+	bool operator<( const ClientVersion& other );
+	bool operator>( const ClientVersion& other );
+
+	bool operator<=( const ClientVersion& other );
+	bool operator>=( const ClientVersion& other );
 
 	Style   style() const;
 	quint32 version() const;
