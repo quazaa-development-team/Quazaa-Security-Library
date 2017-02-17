@@ -26,6 +26,7 @@
 #include <QDateTime>
 #include <QMetaType>
 
+#include <QDataStream>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
@@ -40,14 +41,14 @@ Security::Manager securityManager;
 using namespace Security;
 
 Manager::Manager() :
-	m_bEnableCountries( false ),
-	m_bLogIPCheckHits( false ),
-	m_tRuleExpiryInterval( 0 ),
-	m_bUnsaved( false ),
-	m_bShutDown( false ),
-	m_bExpiryRequested( false ),
-	m_bDenyPrivateIPs( false ),
-	m_bDenyPolicy( false )
+    m_bEnableCountries( false ),
+    m_bLogIPCheckHits( false ),
+    m_tRuleExpiryInterval( 0 ),
+    m_bUnsaved( false ),
+    m_bShutDown( false ),
+    m_bExpiryRequested( false ),
+    m_bDenyPrivateIPs( false ),
+    m_bDenyPolicy( false )
 {
 	// QApplication hasn't been started when the global definition creates this object, so
 	// no qt specific calls (for example connect() or emit signal) may be used over here.
@@ -102,7 +103,7 @@ bool Manager::add( Rule* pRule , bool bDoSanityCheck )
 
 	// check for invalid rules
 	Q_ASSERT( nType   >  0 && nType   < RuleType::NoOfTypes &&
-			  nAction >= 0 && nAction < RuleAction::NoOfActions );
+	          nAction >= 0 && nAction < RuleAction::NoOfActions );
 	Q_ASSERT( !pRule->m_idUUID.isNull() );
 
 	const RuleVectorPos nExRule = find( pRule->m_idUUID );
@@ -120,8 +121,8 @@ bool Manager::add( Rule* pRule , bool bDoSanityCheck )
 		Rule* pTestRule = m_vRules[i];
 
 		if ( pTestRule->type() <= 0 ||
-			 pTestRule->type() >= RuleType::NoOfTypes ||
-			 pTestRule->totalCount() < 0 )
+		     pTestRule->type() >= RuleType::NoOfTypes ||
+		     pTestRule->totalCount() < 0 )
 		{
 			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
 			Q_ASSERT( pTestRule->totalCount() >= 0 );
@@ -260,7 +261,7 @@ bool Manager::add( Rule* pRule , bool bDoSanityCheck )
 			for ( ContentVectorPos i = 0; i < nSize; ++i )
 			{
 				if ( pContentRules[i]->contentString() ==  pRule->contentString() &&
-					 pContentRules[i]->getAll()           == ( ( ContentRule* )pRule )->getAll() )
+				     pContentRules[i]->getAll()           == ( ( ContentRule* )pRule )->getAll() )
 				{
 					pRule->mergeInto( pContentRules[i] );
 
@@ -366,7 +367,7 @@ bool Manager::add( Rule* pRule , bool bDoSanityCheck )
 	else
 	{
 		postLogMessage( LogSeverity::Security,
-						tr( "A new security rule has been merged into an existing one." ) );
+		                tr( "A new security rule has been merged into an existing one." ) );
 	}
 
 	// REMOVE for beta 1
@@ -377,8 +378,8 @@ bool Manager::add( Rule* pRule , bool bDoSanityCheck )
 		Rule* pTestRule = m_vRules[i];
 
 		if ( pTestRule->type() <= 0 ||
-			 pTestRule->type() >= RuleType::NoOfTypes ||
-			 pTestRule->totalCount() < 0 )
+		     pTestRule->type() >= RuleType::NoOfTypes ||
+		     pTestRule->totalCount() < 0 )
 		{
 			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
 			Q_ASSERT( pTestRule->totalCount() >= 0 );
@@ -448,11 +449,11 @@ void Manager::clear()
 }
 
 void Manager::ban( const QHostAddress& oAddress, RuleTime::Time nBanLength,
-				   bool bMessage, const QString& sComment, bool bAutomatic
+                   bool bMessage, const QString& sComment, bool bAutomatic
 #if SECURITY_LOG_BAN_SOURCES
-				   , const QString& sSender
+                   , const QString& sSender
 #endif // SECURITY_LOG_BAN_SOURCES
-				  )
+                  )
 {
 #ifdef _DEBUG
 	if ( oAddress.isNull() )
@@ -547,10 +548,10 @@ void Manager::ban( const QHostAddress& oAddress, RuleTime::Time nBanLength,
 		{
 			if ( sUntil.isEmpty() )
 				sUntil = tr( "until " ) +
-						 QDateTime::fromTime_t( pIPRule->expiryTime() ).toString();
+				         QDateTime::fromTime_t( pIPRule->expiryTime() ).toString();
 
 			postLogMessage( LogSeverity::Security,
-							tr( "Banned %1 %2." ).arg( oAddress.toString(), sUntil ) );
+			                tr( "Banned %1 %2." ).arg( oAddress.toString(), sUntil ) );
 		}
 	}
 	else
@@ -560,7 +561,7 @@ void Manager::ban( const QHostAddress& oAddress, RuleTime::Time nBanLength,
 }
 
 void Manager::ban( const QueryHit* const pHit, RuleTime::Time nBanLength, quint8 nMaxHashes,
-				   const QString& sComment )
+                   const QString& sComment )
 {
 	if ( !pHit || !pHit->isValid() || pHit->m_vHashes.empty() )
 	{
@@ -575,7 +576,7 @@ void Manager::ban( const QueryHit* const pHit, RuleTime::Time nBanLength, quint8
 	if ( bAlreadyBlocked )
 	{
 		postLogMessage( LogSeverity::Security,
-						tr( "Error: Could not ban already banned file." ) );
+		                tr( "Error: Could not ban already banned file." ) );
 	}
 	else
 	{
@@ -649,7 +650,7 @@ void Manager::ban( const QueryHit* const pHit, RuleTime::Time nBanLength, quint8
 		}
 
 		postLogMessage( LogSeverity::Security,
-						tr( "Banned file: " ) + pHit->m_sDescriptiveName );
+		                tr( "Banned file: " ) + pHit->m_sDescriptiveName );
 	}
 }
 
@@ -671,9 +672,9 @@ bool Manager::isDenied( const EndPoint& oAddress )
 		if ( m_bLogIPCheckHits )
 		{
 			postLogMessage( LogSeverity::Security,
-							tr( "Skipped repeat IP security check for %1 (%2 IPs cached)."
-							  ).arg( oAddress.toString(),
-									 QString::number( m_oMissCache.size() ) ) );
+			                tr( "Skipped repeat IP security check for %1 (%2 IPs cached)."
+			                  ).arg( oAddress.toString(),
+			                         QString::number( m_oMissCache.size() ) ) );
 		}
 
 		return m_bDenyPolicy;
@@ -682,8 +683,8 @@ bool Manager::isDenied( const EndPoint& oAddress )
 	if ( m_bLogIPCheckHits )
 	{
 		postLogMessage( LogSeverity::Security,
-						tr( "Called first-time IP security check for %1."
-						  ).arg( oAddress.toString() ) );
+		                tr( "Called first-time IP security check for %1."
+		                  ).arg( oAddress.toString() ) );
 	}
 
 	// Second, if quazaa local/private blocking is turned on, check if the IP is local/private
@@ -692,7 +693,7 @@ bool Manager::isDenied( const EndPoint& oAddress )
 		if ( isPrivate( oAddress ) )
 		{
 			postLogMessage( LogSeverity::Security,
-							tr( "Local/Private IP denied: %1" ).arg( oAddress.toString() ) );
+			                tr( "Local/Private IP denied: %1" ).arg( oAddress.toString() ) );
 			return true;
 		}
 	}
@@ -806,7 +807,7 @@ bool Manager::isDenied( const QueryHit* const pHit, const QList<QString>& lQuery
 
 	m_oRWLock.lockForRead();
 	bReturn = isDenied( pHit ) ||                           // test hashes, file size and extension
-			  isDenied( lQuery, pHit->m_sDescriptiveName ); // test regex
+	          isDenied( lQuery, pHit->m_sDescriptiveName ); // test regex
 	m_oRWLock.unlock();
 
 	return bReturn;
@@ -1082,7 +1083,7 @@ bool Manager::start()
 	connect( &m_oSanity, &SanityChecker::hit, this, &Manager::updateHitCount, Qt::UniqueConnection );
 
 	connect( &securitySettings, &SecuritySettings::settingsUpdate,
-			 this, &Manager::settingsChanged );
+	         this, &Manager::settingsChanged );
 
 	// Make sure to initialize the external settings module.
 	securitySettings.start();
@@ -1100,7 +1101,7 @@ void Manager::stop()
 	signalQueue.pop( this );    // Remove all cleanup intervall timers from the queue.
 
 	disconnect( &securitySettings, &SecuritySettings::settingsUpdate,
-				this, &Manager::settingsChanged );
+	            this, &Manager::settingsChanged );
 
 	securitySettings.stop();
 
@@ -1119,9 +1120,9 @@ bool Manager::load()
 	else
 	{
 		postLogMessage( LogSeverity::Warning,
-						tr( "Failed loading security rules from primary file:\n" )
-						+ sPath + "security.dat\n"
-						+ tr( "Switching to backup file instead." ) );
+		                tr( "Failed loading security rules from primary file:\n" )
+		                + sPath + "security.dat\n"
+		                + tr( "Switching to backup file instead." ) );
 
 		// try backup file if primary file failed for some reason
 		if ( load( sPath + "security_backup.dat" ) )
@@ -1130,13 +1131,13 @@ bool Manager::load()
 		}
 
 		postLogMessage( LogSeverity::Warning,
-						tr( "Failed loading security rules from backup file:\n" )
-						+ sPath + "security_backup.dat\n"
-						+ tr( "Loading default rules now." ) );
+		                tr( "Failed loading security rules from backup file:\n" )
+		                + sPath + "security_backup.dat\n"
+		                + tr( "Loading default rules now." ) );
 
 		// fall back to default file if neither primary nor backup file exists
 		sPath = QDir::toNativeSeparators( QString( "%1/DefaultSecurity.dat"
-												 ).arg( qApp->applicationDirPath() ) );
+		                                         ).arg( qApp->applicationDirPath() ) );
 		return load( sPath );
 	}
 }
@@ -1154,7 +1155,7 @@ void Manager::save( bool bForceSaving ) const
 	m_oRWLock.lockForRead();
 	m_bUnsaved   = false;
 	quint32 nCount = common::securedSaveFile( sPath, "security.dat", Component::Security,
-											this, &Security::Manager::writeToFile );
+	                                        this, &Security::Manager::writeToFile );
 	m_oRWLock.unlock();
 
 	postLogMessage( LogSeverity::Debug, tr( "%0 rules saved." ).arg( nCount ) );
@@ -1273,16 +1274,16 @@ bool Manager::fromXML( const QString& sPath )
 	emit updateLoadMax( oFile.size() );
 
 	if ( xmlDocument.atEnd() ||
-		 !xmlDocument.readNextStartElement() || // read first element
-		 xmlDocument.name().toString().compare( "security", Qt::CaseInsensitive ) )
+	     !xmlDocument.readNextStartElement() || // read first element
+	     xmlDocument.name().toString().compare( "security", Qt::CaseInsensitive ) )
 	{
 		postLogMessage( LogSeverity::Error,
-						tr( "Could not import rules. File is not a valid security XML file." ) );
+		                tr( "Could not import rules. File is not a valid security XML file." ) );
 		return false;
 	}
 
 	postLogMessage( LogSeverity::Information,
-					tr( "Importing security rules from file: " ) + sPath );
+	                tr( "Importing security rules from file: " ) + sPath );
 
 	float nVersion;
 
@@ -1298,7 +1299,7 @@ bool Manager::fromXML( const QString& sPath )
 		if ( !bOK )
 		{
 			postLogMessage( LogSeverity::Error,
-							tr( "Failed to read the Security XML version number from file." ) );
+			                tr( "Failed to read the Security XML version number from file." ) );
 			nVersion = 1.0;
 		}
 	}
@@ -1341,14 +1342,14 @@ bool Manager::fromXML( const QString& sPath )
 			else
 			{
 				postLogMessage( LogSeverity::Error,
-								tr( "Failed to read a Security Rule from XML." ) );
+				                tr( "Failed to read a Security Rule from XML." ) );
 			}
 		}
 		else
 		{
 			postLogMessage( LogSeverity::Error,
-							tr( "Unrecognized entry in XML file with name: " ) +
-							xmlDocument.name().toString() );
+			                tr( "Unrecognized entry in XML file with name: " ) +
+			                xmlDocument.name().toString() );
 		}
 
 		if ( !nActivityCounter )
@@ -1365,7 +1366,7 @@ bool Manager::fromXML( const QString& sPath )
 	save();
 
 	postLogMessage( LogSeverity::Information,
-					QString::number( nRuleCount ) + tr( " Rules imported." ) );
+	                QString::number( nRuleCount ) + tr( " Rules imported." ) );
 
 	return nRuleCount;
 }
@@ -1487,8 +1488,8 @@ void Manager::expire()
 		Rule* pTestRule = m_vRules[i];
 
 		if ( pTestRule->type() <= 0 ||
-			 pTestRule->type() >= RuleType::NoOfTypes ||
-			 pTestRule->totalCount() < 0 )
+		     pTestRule->type() >= RuleType::NoOfTypes ||
+		     pTestRule->totalCount() < 0 )
 		{
 			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
 			Q_ASSERT( pTestRule->totalCount() >= 0 );
@@ -1674,8 +1675,8 @@ bool Manager::load( const QString& sPath )
 		}
 
 		postLogMessage( LogSeverity::Information,
-						tr( "Loaded %0 security rules from file: %1"
-							).arg( QString::number( nSuccessCount ), sPath ) );
+		                tr( "Loaded %0 security rules from file: %1"
+		                    ).arg( QString::number( nSuccessCount ), sPath ) );
 
 		// perform sanity check after loading.
 		m_oSanity.sanityCheck();
@@ -1703,7 +1704,7 @@ bool Manager::load( const QString& sPath )
 		Rule* pTestRule = m_vRules[i];
 
 		if ( pTestRule->type() <= 0 ||
-			 pTestRule->type() >= RuleType::NoOfTypes )
+		     pTestRule->type() >= RuleType::NoOfTypes )
 		{
 			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
 		}
@@ -1769,7 +1770,7 @@ void Manager::insertRange( IPRangeRule*& pNew )
 	{
 		// if something will remain of m_vIPRanges[nPos] after the merging, merge
 		if ( m_vIPRanges[nPos]->startIP() < pNew->startIP() ||
-			 m_vIPRanges[nPos]->endIP()   > pNew->endIP() )
+		     m_vIPRanges[nPos]->endIP()   > pNew->endIP() )
 		{
 			// merge pNewRange into m_vIPRanges[nPos]
 			pSecondHalf = m_vIPRanges[nPos++]->merge( pNew );
@@ -1782,8 +1783,8 @@ void Manager::insertRange( IPRangeRule*& pNew )
 			while ( nPos < ( nSize = m_vIPRanges.size() ) && m_vIPRanges[nPos]->endIP() <= pNew->endIP() )
 			{
 				postLogMessage( LogSeverity::Security,
-								tr( "Merging IP range rules. Removing overlapped IP range %1."
-								  ).arg( m_vIPRanges[nPos]->contentString() ) );
+				                tr( "Merging IP range rules. Removing overlapped IP range %1."
+				                  ).arg( m_vIPRanges[nPos]->contentString() ) );
 
 				const RuleVectorPos nUUIDPos = find( m_vIPRanges[nPos]->m_idUUID );
 #ifdef _DEBUG
@@ -1857,8 +1858,8 @@ void Manager::eraseRange( const IPRangeVectorPos nPos )
 		Rule* pTestRule = m_vIPRanges[i];
 
 		if ( pTestRule->type() <= 0 ||
-			 pTestRule->type() >= RuleType::NoOfTypes ||
-			 pTestRule->totalCount() < 0 )
+		     pTestRule->type() >= RuleType::NoOfTypes ||
+		     pTestRule->totalCount() < 0 )
 		{
 			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
 			Q_ASSERT( pTestRule->totalCount() >= 0 );
@@ -1868,7 +1869,7 @@ void Manager::eraseRange( const IPRangeVectorPos nPos )
 }
 
 Manager::RuleVectorPos Manager::findInternal( const QUuid& idUUID, const Rule* const * const pRules,
-											  const RuleVectorPos nSize ) const
+                                              const RuleVectorPos nSize ) const
 {
 	RuleVectorPos nMiddle, nHalf, nBegin = 0;
 	RuleVectorPos n = nSize;
@@ -2073,7 +2074,7 @@ void Manager::remove( const RuleVectorPos nVectorPos )
 	case RuleType::Country:
 	{
 		CountryMap::iterator it =
-				m_lmCountries.find( m_oCountryHasher( pRule->contentString() ) );
+		        m_lmCountries.find( m_oCountryHasher( pRule->contentString() ) );
 
 		if ( it != m_lmCountries.end() && ( *it ).second->m_idUUID == pRule->m_idUUID )
 		{
@@ -2218,8 +2219,8 @@ void Manager::remove( const RuleVectorPos nVectorPos )
 		Rule* pTestRule = m_vRules[i];
 
 		if ( pTestRule->type() <= 0 ||
-			 pTestRule->type() >= RuleType::NoOfTypes ||
-			 pTestRule->totalCount() < 0 )
+		     pTestRule->type() >= RuleType::NoOfTypes ||
+		     pTestRule->totalCount() < 0 )
 		{
 			Q_ASSERT( pTestRule->type() > 0 && pTestRule->type() < RuleType::NoOfTypes );
 			Q_ASSERT( pTestRule->totalCount() >= 0 );
@@ -2418,67 +2419,67 @@ bool Manager::isPrivateOld( const EndPoint& oAddress )
 	}
 
 	if ( oAddress >= EndPoint( "10.0.0.0" ) &&
-		 oAddress <= EndPoint( "10.255.255.255" ) )
+	     oAddress <= EndPoint( "10.255.255.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "100.64.0.0" ) &&
-		 oAddress <= EndPoint( "100.127.255.255" ) )
+	     oAddress <= EndPoint( "100.127.255.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "127.0.0.0" ) &&
-		 oAddress <= EndPoint( "127.255.255.255" ) )
+	     oAddress <= EndPoint( "127.255.255.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "169.254.0.0" ) &&
-		 oAddress <= EndPoint( "169.254.255.255" ) )
+	     oAddress <= EndPoint( "169.254.255.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "172.16.0.0" ) &&
-		 oAddress <= EndPoint( "172.31.255.255" ) )
+	     oAddress <= EndPoint( "172.31.255.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "192.0.0.0" ) &&
-		 oAddress <= EndPoint( "192.0.2.255" ) )
+	     oAddress <= EndPoint( "192.0.2.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "192.168.0.0" ) &&
-		 oAddress <= EndPoint( "192.168.255.255" ) )
+	     oAddress <= EndPoint( "192.168.255.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "198.18.0.0" ) &&
-		 oAddress <= EndPoint( "198.19.255.255" ) )
+	     oAddress <= EndPoint( "198.19.255.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "198.51.100.0" ) &&
-		 oAddress <= EndPoint( "198.51.100.255" ) )
+	     oAddress <= EndPoint( "198.51.100.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "203.0.113.0" ) &&
-		 oAddress <= EndPoint( "203.0.113.255" ) )
+	     oAddress <= EndPoint( "203.0.113.255" ) )
 	{
 		return true;
 	}
 
 	if ( oAddress >= EndPoint( "240.0.0.0" ) &&
-		 oAddress <= EndPoint( "255.255.255.255" ) )
+	     oAddress <= EndPoint( "255.255.255.255" ) )
 	{
 		return true;
 	}

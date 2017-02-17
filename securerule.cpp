@@ -40,6 +40,8 @@
 #  include <QRegExp>
 #endif
 
+#include <QDataStream>
+
 #include "debug_new.h"
 
 using namespace Security;
@@ -47,10 +49,10 @@ using namespace Security;
 IDProvider<ID> Rule::m_oIDProvider;
 
 Rule::Rule() :
-	m_nToday( 0 ),
-	m_nTotal( 0 ),
-	m_tLastHit( 0 ),
-	m_tExpire( RuleTime::Forever )
+    m_nToday( 0 ),
+    m_nTotal( 0 ),
+    m_tLastHit( 0 ),
+    m_tExpire( RuleTime::Forever )
 {
 	// This invalidates the rule as long as it does not contain any useful content.
 	m_nType   = RuleType::Undefined;
@@ -68,17 +70,17 @@ Rule::~Rule()
 
 // The usage of a custom copy constructor makes sure each rule gets a distinct GUI ID.
 Rule::Rule( const Rule& pRule ) :
-	m_nType     ( pRule.m_nType      ),
-	m_sContent  ( pRule.m_sContent   ),
-	m_nToday    ( pRule.m_nToday     ),
-	m_nTotal    ( pRule.m_nTotal     ),
-	m_nAction   ( pRule.m_nAction    ),
-	m_idUUID    ( pRule.m_idUUID     ),
-	m_tLastHit  ( pRule.m_tLastHit   ),
-	m_tExpire   ( pRule.m_tExpire    ),
-	m_sComment  ( pRule.m_sComment   ),
-	m_bAutomatic( pRule.m_bAutomatic ),
-	m_nGUIID    ( m_oIDProvider.aquire() )
+    m_nType     ( pRule.m_nType      ),
+    m_sContent  ( pRule.m_sContent   ),
+    m_nToday    ( pRule.m_nToday     ),
+    m_nTotal    ( pRule.m_nTotal     ),
+    m_nAction   ( pRule.m_nAction    ),
+    m_idUUID    ( pRule.m_idUUID     ),
+    m_tLastHit  ( pRule.m_tLastHit   ),
+    m_tExpire   ( pRule.m_tExpire    ),
+    m_sComment  ( pRule.m_sComment   ),
+    m_bAutomatic( pRule.m_bAutomatic ),
+    m_nGUIID    ( m_oIDProvider.aquire() )
 {
 }
 
@@ -86,12 +88,12 @@ bool Rule::operator==( const Rule& pRule ) const
 {
 	// we don't compare GUI IDs, hit counters and last hit time
 	return m_nType      == pRule.m_nType      &&
-		   m_nAction    == pRule.m_nAction    &&
-		   m_tExpire    == pRule.m_tExpire    &&
-		   m_bAutomatic == pRule.m_bAutomatic &&
-		   m_idUUID     == pRule.m_idUUID     &&
-		   m_sContent   == pRule.m_sContent   &&
-		   m_sComment   == pRule.m_sComment;
+	       m_nAction    == pRule.m_nAction    &&
+	       m_tExpire    == pRule.m_tExpire    &&
+	       m_bAutomatic == pRule.m_bAutomatic &&
+	       m_idUUID     == pRule.m_idUUID     &&
+	       m_sContent   == pRule.m_sContent   &&
+	       m_sComment   == pRule.m_sComment;
 }
 
 bool Rule::operator!=( const Rule& pRule ) const
@@ -401,7 +403,7 @@ Rule* Rule::fromXML( QXmlStreamReader& oXMLdocument, float nVersion )
 				QHostAddress oMask( sMask );
 
 				if ( oIP.protocol()   == QAbstractSocket::IPv4Protocol ||
-					 oMask.protocol() == QAbstractSocket::IPv4Protocol )
+				     oMask.protocol() == QAbstractSocket::IPv4Protocol )
 				{
 					// Reference matching code (Shareaza)
 					// pTest is the IP to test, pMask the netmask and pBase the range rule base IP
